@@ -203,11 +203,13 @@ class BigQueryDialect(DefaultDialect):
             credentials_path=None,
             location=None,
             credentials_info=None,
+            with_subject=None,
             *args, **kwargs):
         super(BigQueryDialect, self).__init__(*args, **kwargs)
         self.arraysize = arraysize
         self.credentials_path = credentials_path
         self.credentials_info = credentials_info
+        self.with_subject = with_subject
         self.location = location
         self.dataset_id = None
 
@@ -223,28 +225,26 @@ class BigQueryDialect(DefaultDialect):
         self.credentials_path = credentials_path or self.credentials_path
         self.dataset_id = dataset_id
 
+        creds = None
+        project = url.host
+
         if self.credentials_path:
-            client = bigquery.Client.from_service_account_json(
-                self.credentials_path,
-                location=self.location,
-                default_query_job_config=default_query_job_config
-            )
+            creds = service_account.Credentials.from_service_account_file(
+                self.credentials_path)
         elif self.credentials_info:
-            credentials = service_account.Credentials.from_service_account_info(
-                self.credentials_info
-            )
-            client = bigquery.Client(
-                project=self.credentials_info.get('project_id'),
-                credentials=credentials,
-                location=self.location,
-                default_query_job_config=default_query_job_config,
-            )
-        else:
-            client = bigquery.Client(
-                project=url.host,
-                location=self.location,
-                default_query_job_config=default_query_job_config
-            )
+            creds = service_account.Credentials.from_service_account_info(
+                self.credentials_info)
+            project = self.credentials_info.get('project_id')
+
+        if self.with_subject:
+            creds = creds.with_subject(self.with_subject)
+
+        client = bigquery.Client(
+            credentials=creds,
+            location=self.location,
+            project=project,
+            default_query_job_config=default_query_job_config
+        )
 
         # if dataset_id is set, then we know the job_config isn't None
         if dataset_id:
