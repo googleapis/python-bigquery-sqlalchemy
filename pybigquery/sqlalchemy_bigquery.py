@@ -294,26 +294,30 @@ class BigQueryDialect(DefaultDialect):
 
             job_config.default_dataset = '{}.{}'.format(project_id, dataset_id)
 
+    @staticmethod
+    def create_credentials(credentials_path, credentials_info):
+        """
+        Create a service account credentials object if possible.
+        Using a file is preffered over using info,
+        return None if both are not available.
+        """
+        credentials = None
 
-    def _create_client_from_credentials(self, credentials, default_query_job_config, project_id):
-        if project_id is None:
-            project_id = credentials.project_id
+        if credentials_path:
+            credentials = service_account.Credentials.from_service_account_file(credentials_path)
 
-        scopes = (
+        elif credentials_info:
+            credentials = service_account.Credentials.from_service_account_info(credentials_info)
+
+        if credentials:
+            scopes = (
                 'https://www.googleapis.com/auth/bigquery',
                 'https://www.googleapis.com/auth/cloud-platform',
                 'https://www.googleapis.com/auth/drive'
             )
-        credentials = credentials.with_scopes(scopes)
+            credentials = credentials.with_scopes(scopes)
 
-        self._add_default_dataset_to_job_config(default_query_job_config, project_id, self.dataset_id)
-
-        return bigquery.Client(
-                project=project_id,
-                credentials=credentials,
-                location=self.location,
-                default_query_job_config=default_query_job_config,
-            )
+        return credentials
 
     def create_connect_args(self, url):
         project_id, location, dataset_id, arraysize, credentials_path, default_query_job_config = parse_url(url)
@@ -323,22 +327,20 @@ class BigQueryDialect(DefaultDialect):
         self.credentials_path = credentials_path or self.credentials_path
         self.dataset_id = dataset_id
 
-        if self.credentials_path:
-            credentials = service_account.Credentials.from_service_account_file(self.credentials_path)
-            client = self._create_client_from_credentials(credentials, default_query_job_config, project_id)
+        credentials = self.create_credentials(self.credentials_path, self.credentials_info)
 
-        elif self.credentials_info:
-            credentials = service_account.Credentials.from_service_account_info(self.credentials_info)
-            client = self._create_client_from_credentials(credentials, default_query_job_config, project_id)
+        # Use the credentials project as a default if no project was specefied
+        if (credentials is not None) and (project_id is None):
+            project_id = credentials.project_id
 
-        else:
-            self._add_default_dataset_to_job_config(default_query_job_config, project_id, dataset_id)
+        self._add_default_dataset_to_job_config(default_query_job_config, project_id, dataset_id)
 
-            client = bigquery.Client(
-                project=project_id,
-                location=self.location,
-                default_query_job_config=default_query_job_config
-            )
+        client = bigquery.Client(
+            project=project_id,
+            credentials=credentials,
+            location=self.location,
+            default_query_job_config=default_query_job_config
+        )
 
         return ([client], {})
 
