@@ -4,7 +4,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from google import auth
-from google.cloud import bigquery
+from google.cloud import bigquery, bigquery_storage_v1beta1
 from google.cloud.bigquery import dbapi, QueryJobConfig
 from google.cloud.bigquery.schema import SchemaField
 from google.cloud.bigquery.table import EncryptionConfiguration
@@ -320,7 +320,7 @@ class BigQueryDialect(DefaultDialect):
         return credentials
 
     def create_connect_args(self, url):
-        project_id, location, dataset_id, arraysize, credentials_path, default_query_job_config = parse_url(url)
+        project_id, location, dataset_id, arraysize, credentials_path, use_bqstorage_api, default_query_job_config = parse_url(url)
 
         self.arraysize = self.arraysize or arraysize
         self.location = location or self.location
@@ -341,8 +341,12 @@ class BigQueryDialect(DefaultDialect):
             location=self.location,
             default_query_job_config=default_query_job_config
         )
+        
+        storage_client = None 
+        if use_bqstorage_api:
+            storage_client = bigquery_storage_v1beta1.BigQueryStorageClient(credentials=credentials)
 
-        return ([client], {})
+        return ([client, storage_client], {})
 
     def _json_deserializer(self, row):
         """JSON deserializer for RECORD types.

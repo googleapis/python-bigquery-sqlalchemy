@@ -31,6 +31,7 @@ def url_with_everything():
         '?credentials_path=/some/path/to.json'
         '&location=some-location'
         '&arraysize=1000'
+        '&use_bqstorage_api=True'
         '&clustering_fields=a,b,c'
         '&create_disposition=CREATE_IF_NEEDED'
         '&destination=different-project.different-dataset.table'
@@ -46,12 +47,13 @@ def url_with_everything():
 
 
 def test_basic(url_with_everything):
-    project_id, location, dataset_id, arraysize, credentials_path, job_config = parse_url(url_with_everything)
+    project_id, location, dataset_id, arraysize, credentials_path, use_bqstorage_api, job_config = parse_url(url_with_everything)
 
     assert project_id == 'some-project'
     assert location == 'some-location'
     assert dataset_id == 'some-dataset'
     assert arraysize == 1000
+    assert use_bqstorage_api is True
     assert credentials_path == '/some/path/to.json'
     assert isinstance(job_config, QueryJobConfig)
 
@@ -69,7 +71,7 @@ def test_basic(url_with_everything):
     ('write_disposition', 'WRITE_APPEND'),
 ])
 def test_all_values(url_with_everything, param, value):
-    job_config = parse_url(url_with_everything)[5]
+    job_config = parse_url(url_with_everything)[6]
 
     config_value = getattr(job_config, param)
     if callable(value):
@@ -85,6 +87,7 @@ def test_all_values(url_with_everything, param, value):
 
 @pytest.mark.parametrize("param, value", [
     ('arraysize', 'not-int'),
+    ('use_bqstorage_api', 'not-bool'),
     ('create_disposition', 'not-attribute'),
     ('destination', 'not.fully-qualified'),
     ('dry_run', 'not-bool'),
@@ -108,24 +111,26 @@ def test_empty_url():
         assert value is None
 
 def test_empty_with_non_config():
-    url = parse_url(make_url('bigquery:///?location=some-location&arraysize=1000&credentials_path=/some/path/to.json'))
-    project_id, location, dataset_id, arraysize, credentials_path, job_config = url
+    url = parse_url(make_url('bigquery:///?location=some-location&arraysize=1000&use_bqstorage_api=False&credentials_path=/some/path/to.json'))
+    project_id, location, dataset_id, arraysize, credentials_path, use_bqstorage_api, job_config = url
 
     assert project_id is None
     assert location == 'some-location'
     assert dataset_id is None
     assert arraysize == 1000
+    assert use_bqstorage_api is False
     assert credentials_path == '/some/path/to.json'
     assert job_config is None
 
 def test_only_dataset():
     url = parse_url(make_url('bigquery:///some-dataset'))
-    project_id, location, dataset_id, arraysize, credentials_path, job_config = url
+    project_id, location, dataset_id, arraysize, credentials_path, use_bqstorage_api, job_config = url
 
     assert project_id is None
     assert location is None
     assert dataset_id == 'some-dataset'
     assert arraysize is None
+    assert use_bqstorage_api is None
     assert credentials_path is None
     assert isinstance(job_config, QueryJobConfig)
     # we can't actually test that the dataset is on the job_config,

@@ -34,6 +34,7 @@ def parse_url(url):
     dataset_id = url.database or None
     arraysize = None
     credentials_path = None
+    use_bqstorage_api = None
 
     # location
     if 'location' in query:
@@ -51,14 +52,22 @@ def parse_url(url):
         except ValueError:
             raise ValueError("invalid int in url query arraysize: " + str_arraysize)
 
+    # use_bqstorage_api
+    if 'use_bqstorage_api' in query:
+        str_use_bqstorage_api = query.pop('use_bqstorage_api')
+        try:
+            use_bqstorage_api = parse_boolean(str_use_bqstorage_api)
+        except ValueError:
+            raise ValueError("invalid boolean in url query for use_bqstorage_api: " + str_use_bqstorage_api)
+
     # if only these "non-config" values were present, the dict will now be empty
     if not query:
         # if a dataset_id exists, we need to return a job_config that isn't None
         # so it can be updated with a dataset reference from the client
         if dataset_id:
-            return project_id, location, dataset_id, arraysize, credentials_path, QueryJobConfig()
+            return project_id, location, dataset_id, arraysize, credentials_path, use_bqstorage_api, QueryJobConfig()
         else:
-            return project_id, location, dataset_id, arraysize, credentials_path, None
+            return project_id, location, dataset_id, arraysize, credentials_path, use_bqstorage_api, None
 
     job_config = QueryJobConfig()
 
@@ -170,4 +179,4 @@ def parse_url(url):
         except AttributeError:
             raise ValueError("invalid write_disposition in url query: " + query['write_disposition'])
 
-    return project_id, location, dataset_id, arraysize, credentials_path, job_config
+    return project_id, location, dataset_id, arraysize, credentials_path, use_bqstorage_api, job_config
