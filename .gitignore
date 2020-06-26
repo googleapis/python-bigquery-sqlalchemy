@@ -2,6 +2,8 @@
 *.egg
 /.env/
 /.vscode/
+/.idea/
+/.mypy_cache/
 *.pyc
 .cache/
 *.iml
@@ -9,3 +11,4 @@
 /dist
 /build
 env
+
