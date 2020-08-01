@@ -24,11 +24,18 @@ setup(
         "Topic :: Database :: Front-Ends"
     ],
     install_requires=[
+        'google-cloud-bigquery>=1.12.0',
+        'packaging>=20.0'
         'sqlalchemy>=1.1.9',
-        'google-cloud-bigquery[bqstorage]>=1.25.0',
-        'google-cloud-bigquery-storage[fastavro]>=1.0.0',
         'future',
     ],
+    extras_require = {
+    "bqstorage": [
+        "google-cloud-bigquery-storage >= 1.0.0, <2.0.0dev",
+        "grpcio >= 1.8.2, < 2.0dev",
+        "pyarrow>=0.16.0, < 2.0dev",
+        ]
+    },
     tests_require=[
         'pytz'
     ],

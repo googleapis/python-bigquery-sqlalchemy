@@ -3,12 +3,21 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+import re
+import warnings
+from packaging.version import Version, parse as parse_version
+
 from google import auth
-from google.cloud import bigquery, bigquery_storage_v1beta1
-from google.cloud.bigquery import dbapi, QueryJobConfig
+from google.cloud import bigquery
+
+try:
+    from google.cloud import bigquery_storage_v1
+except ImportError:
+    pass
+
+from google.cloud.bigquery import dbapi
 from google.cloud.bigquery.schema import SchemaField
-from google.cloud.bigquery.table import EncryptionConfiguration
-from google.cloud.bigquery.dataset import DatasetReference
+from google.cloud.bigquery.table import EncryptionConfiguration, TableReference
 from google.oauth2 import service_account
 from google.api_core.exceptions import NotFound
 from sqlalchemy.exc import NoSuchTableError
@@ -18,7 +27,6 @@ from sqlalchemy.engine.default import DefaultDialect, DefaultExecutionContext
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.sql.schema import Column
 from sqlalchemy.sql import elements
-import re
 
 from .parse_url import parse_url
 
@@ -342,11 +350,19 @@ class BigQueryDialect(DefaultDialect):
             default_query_job_config=default_query_job_config
         )
         
-        storage_client = None 
-        if use_bqstorage_api:
-            storage_client = bigquery_storage_v1beta1.BigQueryStorageClient(credentials=credentials)
+        clients = [client]
 
-        return ([client, storage_client], {})
+        if use_bqstorage_api:
+            if parse_version(bigquery.__version__) >= Version("1.26.0"):
+                try:
+                    storage_client = bigquery_storage_v1.BigQueryReadClient(credentials=credentials)
+                    clients.append(storage_client)
+                except NameError:
+                    warnings.warn("It is not possible to use the bqstorage api without installing the bqstorage extra requirement")
+            else:
+                warnings.warn('It is not possible to use the bqstorage api with google-cloud-bigquery < 1.26.0')
+
+        return (clients, {})
 
     def _json_deserializer(self, row):
         """JSON deserializer for RECORD types.
