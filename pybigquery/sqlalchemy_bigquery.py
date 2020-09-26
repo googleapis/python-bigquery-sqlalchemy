@@ -133,6 +133,9 @@ class BigQueryCompiler(SQLCompiler):
             kwargs['compile_kwargs'] = util.immutabledict({'include_table': False})
         super(BigQueryCompiler, self).__init__(dialect, statement, column_keys, inline, **kwargs)
 
+    def visit_array(self, element, **kw):
+        return "[%s]" % self.visit_clauselist(element, **kw)
+
     def visit_select(self, *args, **kwargs):
         """
         Use labels for every column.
