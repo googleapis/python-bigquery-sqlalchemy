@@ -495,6 +495,7 @@ class BigQueryDialect(DefaultDialect):
                 coltype = _type_map[col.field_type]
             except KeyError:
                 util.warn("Did not recognize type '%s' of column '%s'" % (col.field_type, col.name))
+                coltype = types.NullType
 
             result.append({
                 'name': col.name,
