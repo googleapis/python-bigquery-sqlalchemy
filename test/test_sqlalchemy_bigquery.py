@@ -1,8 +1,28 @@
+# Copyright (c) 2017 The PyBigQuery Authors
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of
+# this software and associated documentation files (the "Software"), to deal in
+# the Software without restriction, including without limitation the rights to
+# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+# the Software, and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
 from google.api_core.exceptions import BadRequest
 from pybigquery.api import ApiClient
+from pybigquery.sqlalchemy_bigquery import BigQueryDialect
 from sqlalchemy.engine import create_engine
 from sqlalchemy.schema import Table, MetaData, Column
 from sqlalchemy.ext.declarative import declarative_base
@@ -85,7 +105,13 @@ SAMPLE_COLUMNS = [
     {'name': 'datetime', 'type': types.DATETIME(), 'nullable': True, 'default': None},
     {'name': 'time', 'type': types.TIME(), 'nullable': True, 'default': None},
     {'name': 'bytes', 'type': types.BINARY(), 'nullable': True, 'default': None},
-    {'name': 'record', 'type': types.JSON(), 'nullable': True, 'default': None},
+    {
+        'name': 'record',
+        'type': types.JSON(),
+        'nullable': True,
+        'default': None,
+        'comment': 'In Standard SQL this data type is a STRUCT<name STRING, age INT64>.',
+    },
     {'name': 'record.name', 'type': types.String(), 'nullable': True, 'default': None},
     {'name': 'record.age', 'type': types.Integer(), 'nullable': True, 'default': None},
     {'name': 'nested_record', 'type': types.JSON(), 'nullable': True, 'default': None},
@@ -100,6 +126,11 @@ SAMPLE_COLUMNS = [
 def engine():
     engine = create_engine('bigquery://', echo=True)
     return engine
+
+
+@pytest.fixture(scope='session')
+def dialect():
+    return BigQueryDialect()
 
 
 @pytest.fixture(scope='session')
@@ -152,6 +183,7 @@ def session_using_test_dataset(engine_using_test_dataset):
 def inspector(engine):
     return inspect(engine)
 
+
 @pytest.fixture(scope='session')
 def inspector_using_test_dataset(engine_using_test_dataset):
     return inspect(engine_using_test_dataset)
@@ -162,10 +194,14 @@ def query():
     def query(table):
         col1 = literal_column("TIMESTAMP_TRUNC(timestamp, DAY)").label("timestamp_label")
         col2 = func.sum(table.c.integer)
+        # Test rendering of nested labels. Full expression should render in SELECT, but
+        # ORDER/GROUP BY should use label only.
+        col3 = func.sum(func.sum(table.c.integer.label("inner")).label("outer")).over().label('outer')
         query = (
             select([
                 col1,
                 col2,
+                col3,
             ])
             .where(col1 < '2017-01-01 00:00:00')
             .group_by(col1)
@@ -187,8 +223,8 @@ def test_dry_run(engine, api_client):
     sql = 'SELECT * FROM sample_one_row'
     with pytest.raises(BadRequest) as excinfo:
         api_client.dry_run_query(sql)
-
-    assert 'Table name "sample_one_row" missing dataset while no default dataset is set in the request.' in str(excinfo.value.message)
+    expected_message = 'Table name "sample_one_row" missing dataset while no default dataset is set in the request.'
+    assert expected_message in str(excinfo.value.message)
 
 
 def test_engine_with_dataset(engine_using_test_dataset):
@@ -214,8 +250,9 @@ def test_dataset_location(engine_with_location):
 
 def test_reflect_select(table, table_using_test_dataset):
     for table in [table, table_using_test_dataset]:
-        assert len(table.c) == 18
+        assert table.comment == "A sample table containing most data types."
 
+        assert len(table.c) == 18
         assert isinstance(table.c.integer, Column)
         assert isinstance(table.c.integer.type, types.Integer)
         assert isinstance(table.c.timestamp.type, types.TIMESTAMP)
@@ -268,7 +305,7 @@ def test_reflect_select_shared_table(engine):
 
 def test_reflect_table_does_not_exist(engine):
     with pytest.raises(NoSuchTableError):
-        table = Table('test_pybigquery.table_does_not_exist', MetaData(bind=engine), autoload=True)
+        Table('test_pybigquery.table_does_not_exist', MetaData(bind=engine), autoload=True)
 
     assert Table('test_pybigquery.table_does_not_exist', MetaData(bind=engine)).exists() is False
 
@@ -283,11 +320,13 @@ def test_tables_list(engine, engine_using_test_dataset):
     assert 'test_pybigquery.sample' in tables
     assert 'test_pybigquery.sample_one_row' in tables
     assert 'test_pybigquery.sample_dml' in tables
+    assert 'test_pybigquery.sample_view' not in tables
 
     tables = engine_using_test_dataset.table_names()
     assert 'sample' in tables
     assert 'sample_one_row' in tables
     assert 'sample_dml' in tables
+    assert 'sample_view' not in tables
 
 
 def test_group_by(session, table, session_using_test_dataset, table_using_test_dataset):
@@ -295,6 +334,33 @@ def test_group_by(session, table, session_using_test_dataset, table_using_test_d
     for session, table in [(session, table), (session_using_test_dataset, table_using_test_dataset)]:
         result = session.query(table.c.string, func.count(table.c.integer)).group_by(table.c.string).all()
     assert len(result) > 0
+
+
+def test_nested_labels(engine, table):
+    col = table.c.integer
+    exprs = [
+        sqlalchemy.func.sum(
+            sqlalchemy.func.sum(col.label("inner")).label("outer")
+        ).over(),
+        sqlalchemy.func.sum(
+            sqlalchemy.case([[
+                sqlalchemy.literal(True),
+                col.label("inner"),
+            ]]).label("outer")
+        ),
+        sqlalchemy.func.sum(
+            sqlalchemy.func.sum(
+                sqlalchemy.case([[
+                    sqlalchemy.literal(True), col.label("inner")
+                ]]).label("middle")
+            ).label("outer")
+        ).over(),
+    ]
+    for expr in exprs:
+        sql = str(expr.compile(engine))
+        assert "inner" not in sql
+        assert "middle" not in sql
+        assert "outer" not in sql
 
 
 def test_session_query(session, table, session_using_test_dataset, table_using_test_dataset):
@@ -306,7 +372,10 @@ def test_session_query(session, table, session_using_test_dataset, table_using_t
                 table.c.string,
                 col_concat,
                 func.avg(table.c.integer),
-                func.sum(case([(table.c.boolean == True, 1)], else_=0))
+                func.sum(case(
+                    [(table.c.boolean == sqlalchemy.literal(True), 1)],
+                    else_=0
+                ))
             )
             .group_by(table.c.string, col_concat)
             .having(func.avg(table.c.integer) > 10)
@@ -358,6 +427,16 @@ def test_compiled_query_literal_binds(engine, engine_using_test_dataset, table, 
     assert len(result) > 0
 
 
+@pytest.mark.parametrize(["column", "processed"], [
+    (types.String(), "STRING"),
+    (types.NUMERIC(), "NUMERIC"),
+    (types.ARRAY(types.String), "ARRAY<STRING>"),
+])
+def test_compile_types(engine, column, processed):
+    result = engine.dialect.type_compiler.process(column)
+    assert result == processed
+
+
 def test_joins(session, table, table_one_row):
     result = (session.query(table.c.string, func.count(table_one_row.c.integer))
                      .join(table_one_row, table_one_row.c.string == table.c.string)
@@ -393,7 +472,7 @@ def test_dml(engine, session, table_dml):
 
 def test_create_table(engine):
     meta = MetaData()
-    table = Table(
+    Table(
         'test_pybigquery.test_table_create', meta,
         Column('integer_c', sqlalchemy.Integer, doc="column description"),
         Column('float_c', sqlalchemy.Float),
@@ -423,6 +502,7 @@ def test_create_table(engine):
     Base.metadata.create_all(engine)
     Base.metadata.drop_all(engine)
 
+
 def test_schemas_names(inspector, inspector_using_test_dataset):
     datasets = inspector.get_schema_names()
     assert 'test_pybigquery' in datasets
@@ -436,20 +516,32 @@ def test_table_names_in_schema(inspector, inspector_using_test_dataset):
     assert 'test_pybigquery.sample' in tables
     assert 'test_pybigquery.sample_one_row' in tables
     assert 'test_pybigquery.sample_dml' in tables
+    assert 'test_pybigquery.sample_view' not in tables
     assert len(tables) == 3
 
     tables = inspector_using_test_dataset.get_table_names()
     assert 'sample' in tables
     assert 'sample_one_row' in tables
     assert 'sample_dml' in tables
+    assert 'sample_view' not in tables
     assert len(tables) == 3
 
 
+def test_view_names(inspector, inspector_using_test_dataset):
+    view_names = inspector.get_view_names()
+    assert "test_pybigquery.sample_view" in view_names
+    assert "test_pybigquery.sample" not in view_names
+
+    view_names = inspector_using_test_dataset.get_view_names()
+    assert "sample_view" in view_names
+    assert "sample" not in view_names
+
+
 def test_get_indexes(inspector, inspector_using_test_dataset):
-    for table in ['test_pybigquery.sample', 'test_pybigquery.sample_one_row']:
+    for _ in ['test_pybigquery.sample', 'test_pybigquery.sample_one_row']:
         indexes = inspector.get_indexes('test_pybigquery.sample')
         assert len(indexes) == 2
-        assert indexes[0] == {'name':'partition', 'column_names': ['timestamp'], 'unique': False}
+        assert indexes[0] == {'name': 'partition', 'column_names': ['timestamp'], 'unique': False}
         assert indexes[1] == {'name': 'clustering', 'column_names': ['integer', 'string'], 'unique': False}
 
 
@@ -460,9 +552,10 @@ def test_get_columns(inspector, inspector_using_test_dataset):
     for columns in columns_queries:
         for i, col in enumerate(columns):
             sample_col = SAMPLE_COLUMNS[i]
+            assert col['comment'] == sample_col.get('comment')
+            assert col['default'] == sample_col['default']
             assert col['name'] == sample_col['name']
             assert col['nullable'] == sample_col['nullable']
-            assert col['default'] == sample_col['default']
             assert col['type'].__class__.__name__ == sample_col['type'].__class__.__name__
 
     columns_without_schema = inspector_using_test_dataset.get_columns('sample')
@@ -471,15 +564,51 @@ def test_get_columns(inspector, inspector_using_test_dataset):
     for columns in columns_queries:
         for i, col in enumerate(columns):
             sample_col = SAMPLE_COLUMNS[i]
+            assert col['comment'] == sample_col.get('comment')
+            assert col['default'] == sample_col['default']
             assert col['name'] == sample_col['name']
             assert col['nullable'] == sample_col['nullable']
-            assert col['default'] == sample_col['default']
             assert col['type'].__class__.__name__ == sample_col['type'].__class__.__name__
+
+
+@pytest.mark.parametrize('provided_schema_name,provided_table_name,client_project',
+                         [
+                             ('dataset', 'table', 'project'),
+                             (None, 'dataset.table', 'project'),
+                             (None, 'project.dataset.table', 'other_project'),
+                             ('project', 'dataset.table', 'other_project'),
+                             ('project.dataset', 'table', 'other_project'),
+                         ])
+def test_table_reference(dialect, provided_schema_name,
+                         provided_table_name, client_project):
+    ref = dialect._table_reference(provided_schema_name,
+                                   provided_table_name,
+                                   client_project)
+    assert ref.table_id == 'table'
+    assert ref.dataset_id == 'dataset'
+    assert ref.project == 'project'
+
+
+@pytest.mark.parametrize('provided_schema_name,provided_table_name,client_project',
+                         [
+                             ('project.dataset', 'other_dataset.table', 'project'),
+                             ('project.dataset', 'other_project.dataset.table', 'project'),
+                             ('project.dataset.something_else', 'table', 'project'),
+                             (None, 'project.dataset.table.something_else', 'project'),
+                         ])
+def test_invalid_table_reference(dialect, provided_schema_name,
+                                 provided_table_name, client_project):
+    with pytest.raises(ValueError):
+        dialect._table_reference(provided_schema_name,
+                                 provided_table_name,
+                                 client_project)
 
 
 def test_has_table(engine, engine_using_test_dataset):
     assert engine.has_table('sample', 'test_pybigquery') is True
     assert engine.has_table('test_pybigquery.sample') is True
+    assert engine.has_table('test_pybigquery.nonexistent_table') is False
+    assert engine.has_table('nonexistent_table', 'nonexistent_dataset') is False
 
     assert engine.has_table('sample_alt', 'test_pybigquery_alt') is True
     assert engine.has_table('test_pybigquery_alt.sample_alt') is True

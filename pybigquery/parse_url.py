@@ -1,12 +1,32 @@
+# Copyright (c) 2017 The PyBigQuery Authors
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of
+# this software and associated documentation files (the "Software"), to deal in
+# the Software without restriction, including without limitation the rights to
+# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+# the Software, and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 import re
+
+from google.cloud.bigquery import QueryJobConfig
+from google.cloud.bigquery.dataset import DatasetReference
+from google.cloud.bigquery.job import CreateDisposition, WriteDisposition, QueryPriority, SchemaUpdateOption
+from google.cloud.bigquery.table import EncryptionConfiguration, TableReference
+
 GROUP_DELIMITER = re.compile(r'\s*\,\s*')
 KEY_VALUE_DELIMITER = re.compile(r'\s*\:\s*')
 
-from google.cloud.bigquery import QueryJobConfig
-from google.cloud.bigquery.job import CreateDisposition, WriteDisposition, QueryPriority, SchemaUpdateOption
-
-from google.cloud.bigquery.table import EncryptionConfiguration, TableReference
-from google.cloud.bigquery.dataset import DatasetReference
 
 def parse_boolean(bool_string):
     bool_string = bool_string.lower()
@@ -17,17 +37,22 @@ def parse_boolean(bool_string):
     else:
         raise ValueError()
 
-def parse_url(url):
+
+def parse_url(url):  # noqa: C901
     query = url.query
 
     # use_legacy_sql (legacy)
-    if 'use_legacy_sql' in query: raise ValueError("legacy sql is not supported by this dialect")
+    if 'use_legacy_sql' in query:
+        raise ValueError("legacy sql is not supported by this dialect")
     # allow_large_results (legacy)
-    if 'allow_large_results' in query: raise ValueError("allow_large_results is only allowed for legacy sql, which is not supported by this dialect")
+    if 'allow_large_results' in query:
+        raise ValueError("allow_large_results is only allowed for legacy sql, which is not supported by this dialect")
     # flatten_results (legacy)
-    if 'flatten_results' in query: raise ValueError("flatten_results is only allowed for legacy sql, which is not supported by this dialect")
+    if 'flatten_results' in query:
+        raise ValueError("flatten_results is only allowed for legacy sql, which is not supported by this dialect")
     # maximum_billing_tier (deprecated)
-    if 'maximum_billing_tier' in query: raise ValueError("maximum_billing_tier is a deprecated argument")
+    if 'maximum_billing_tier' in query:
+        raise ValueError("maximum_billing_tier is a deprecated argument")
 
     project_id = url.host
     location = None
@@ -77,7 +102,8 @@ def parse_url(url):
 
     # default_dataset
     if 'default_dataset' in query or 'dataset_id' in query or 'project_id' in query:
-        raise ValueError("don't pass default_dataset, dataset_id, project_id in url query, instead use the url host and database")
+        raise ValueError(
+            "don't pass default_dataset, dataset_id, project_id in url query, instead use the url host and database")
 
     # destination
     if 'destination' in query:
@@ -88,13 +114,15 @@ def parse_url(url):
         try:
             dest_project, dest_dataset, dest_table = query['destination'].split('.')
         except ValueError:
-            raise ValueError("url query destination parameter should be fully qualified with project, dataset, and table")
+            raise ValueError(
+                "url query destination parameter should be fully qualified with project, dataset, and table")
 
         job_config.destination = TableReference(DatasetReference(dest_project, dest_dataset), dest_table)
 
     # destination_encryption_configuration
     if 'destination_encryption_configuration' in query:
-        job_config.destination_encryption_configuration = EncryptionConfiguration(query['destination_encryption_configuration'])
+        job_config.destination_encryption_configuration = EncryptionConfiguration(
+            query['destination_encryption_configuration'])
 
     # dry_run
     if 'dry_run' in query:
