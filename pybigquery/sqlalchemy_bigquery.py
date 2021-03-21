@@ -39,8 +39,6 @@ from sqlalchemy.engine.base import Engine
 from sqlalchemy.sql.schema import Column
 from sqlalchemy.sql import elements
 
-# TODO: needed to fireup the inspect registry, check with SQLAlchemy if this is fixed on their side
-from sqlalchemy.engine.reflection import Inspector # noqa: F401
 import re
 
 from .parse_url import parse_url
