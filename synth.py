@@ -34,10 +34,7 @@ templated_files = common.py_library(
 )
 s.move(templated_files, excludes=[
     # pybigquery was originally licensed MIT
-    "LICENSE",
-    # We need constraints-*.txt support. Remove exclude when
-    # https://github.com/googleapis/synthtool/pull/869 is merged.
-    "noxfile.py",
+    "LICENSE"
 ])
 
 s.replace(
