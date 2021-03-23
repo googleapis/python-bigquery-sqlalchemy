@@ -4,7 +4,7 @@
       "git": {
         "name": ".",
         "remote": "git@github.com:tswast/python-bigquery-sqlalchemy.git",
-        "sha": "e32b76236a7d68f50224b7890d1a038f83c608f8"
+        "sha": "f367bfac64faf67f2703508d1889af8698963e84"
       }
     }
   ]

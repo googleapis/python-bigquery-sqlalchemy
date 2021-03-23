@@ -37,6 +37,10 @@ s.move(templated_files, excludes=[
     "LICENSE"
 ])
 
+# ----------------------------------------------------------------------------
+# Fixup files
+# ----------------------------------------------------------------------------
+
 s.replace(
     ["noxfile.py"],
     r"[\"']google[\"']",
@@ -45,6 +49,24 @@ s.replace(
 
 s.replace(
     ["noxfile.py"], "google/cloud", "pybigquery",
+)
+
+# Add DB config for SQLAlchemy dialect test suite.
+# https://github.com/sqlalchemy/sqlalchemy/blob/master/README.dialects.rst
+# https://github.com/googleapis/python-bigquery-sqlalchemy/issues/89
+s.replace(
+    ["setup.cfg"],
+    "universal = 1\n",
+    """universal = 1
+
+[sqla_testing]
+requirement_cls=pybigquery.requirements:Requirements
+profile_file=.profiles.txt
+
+[db]
+default=bigquery://
+bigquery=bigquery://
+"""
 )
 
 # ----------------------------------------------------------------------------
