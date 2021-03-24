@@ -136,7 +136,7 @@ SAMPLE_COLUMNS = [
 
 
 @pytest.fixture(scope="session")
-def engine(bigquery_dataset):
+def engine():
     engine = create_engine("bigquery://", echo=True)
     return engine
 
