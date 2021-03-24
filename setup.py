@@ -64,7 +64,7 @@ setup(
     ],
     platforms="Posix; MacOS X; Windows",
     install_requires=[
-        "sqlalchemy>=1.1.9,<1.4.0dev",
+        "sqlalchemy>=1.1.9,<1.4.3",
         "google-cloud-bigquery>=1.6.0",
         "future",
     ],
