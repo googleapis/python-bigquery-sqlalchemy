@@ -54,7 +54,7 @@ Python >= 3.6
 
 Unsupported Python Versions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Python == 2.7, Python == 3.5.
+Python <= 3.5.
 
 
 Mac/Linux
