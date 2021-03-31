@@ -66,7 +66,7 @@ setup(
     install_requires=[
         "sqlalchemy>=1.1.9,<1.4.0dev",
         "google-auth>=1.2.0,<2.0dev",
-        "google-cloud-bigquery>=1.6.0",
+        "google-cloud-bigquery>=1.12.0",
         "future",
     ],
     python_requires=">=3.6, <3.10",
