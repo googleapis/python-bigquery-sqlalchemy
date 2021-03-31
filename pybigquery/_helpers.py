@@ -1,4 +1,4 @@
-# Copyright 2021 Google LLC
+# Copyright 2021 The PyBigQuery Authors
 #
 # Use of this source code is governed by an MIT-style
 # license that can be found in the LICENSE file or at
@@ -37,19 +37,19 @@ def create_bigquery_client(
         credentials = service_account.Credentials.from_service_account_file(
             credentials_path
         )
+        credentials = credentials.with_scopes(SCOPES)
         default_project = credentials.project
     elif credentials_info:
         credentials = service_account.Credentials.from_service_account_info(
             credentials_info
         )
+        credentials = credentials.with_scopes(SCOPES)
         default_project = credentials.project
     else:
         credentials, default_project = google.auth.default(scopes=SCOPES)
 
     if project_id is None:
         project_id = default_project
-
-    credentials = credentials.with_scopes(SCOPES)
 
     return bigquery.Client(
         client_info=google_client_info(),
