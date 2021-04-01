@@ -26,7 +26,6 @@ import operator
 
 from google import auth
 import google.api_core.exceptions
-from google.cloud import bigquery
 from google.cloud.bigquery import dbapi
 from google.cloud.bigquery.schema import SchemaField
 from google.cloud.bigquery.table import TableReference
