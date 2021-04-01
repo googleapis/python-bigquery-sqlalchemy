@@ -4,6 +4,13 @@
 
 [1]: https://pypi.org/project/pybigquery/#history
 
+### [0.5.2](https://www.github.com/googleapis/python-bigquery-sqlalchemy/compare/v0.5.1...v0.5.2) (2021-04-01)
+
+
+### Bug Fixes
+
+* correct classifiers in `setup.py` ([#107](https://www.github.com/googleapis/python-bigquery-sqlalchemy/issues/107)) ([0cfc5de](https://www.github.com/googleapis/python-bigquery-sqlalchemy/commit/0cfc5de467823998ba72af1fee1d2a8aa865fabc))
+
 ### [0.5.1](https://www.github.com/googleapis/python-bigquery-sqlalchemy/compare/v0.5.0...v0.5.1) (2021-04-01)
 
 
