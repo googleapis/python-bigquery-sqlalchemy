@@ -355,13 +355,11 @@ def test_tables_list(engine, engine_using_test_dataset):
     tables = engine.table_names()
     assert "test_pybigquery.sample" in tables
     assert "test_pybigquery.sample_one_row" in tables
-    assert "test_pybigquery.sample_dml" in tables
     assert "test_pybigquery.sample_view" not in tables
 
     tables = engine_using_test_dataset.table_names()
     assert "sample" in tables
     assert "sample_one_row" in tables
-    assert "sample_dml" in tables
     assert "sample_view" not in tables
 
 
