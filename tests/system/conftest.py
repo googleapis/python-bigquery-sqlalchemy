@@ -4,7 +4,9 @@
 # license that can be found in the LICENSE file or at
 # https://opensource.org/licenses/MIT.
 
+import datetime
 import pathlib
+import random
 
 import pytest
 import google.api_core.exceptions
@@ -14,6 +16,12 @@ from typing import List
 
 
 DATA_DIR = pathlib.Path(__file__).parent / "data"
+
+
+def temp_suffix():
+    timestamp = datetime.datetime.utcnow().strftime("%y%m%d_%H%M%S")
+    random_string = hex(random.randrange(1000000))[2:]
+    return f"{timestamp}_{random_string}"
 
 
 def load_sample_data(
@@ -87,9 +95,13 @@ def bigquery_dataset(
 def bigquery_empty_table(bigquery_dataset, bigquery_client, bigquery_schema):
     project_id = bigquery_client.project
     dataset_id = bigquery_dataset
-    table_id = f"{project_id}.{dataset_id}.sample_dml"
+    table_id = f"{project_id}.{dataset_id}.sample_dml_{temp_suffix()}"
     empty_table = bigquery.Table(table_id, schema=bigquery_schema)
-    bigquery_client.create_table(empty_table, exists_ok=True)
+    # Add table expiration in case cleanup fails.
+    empty_table.expires = datetime.datetime.utcnow() + datetime.timedelta(days=1)
+    bigquery_client.create_table(empty_table)
+    yield table_id
+    bigquery_client.delete_table(empty_table)
 
 
 @pytest.fixture(scope="session", autouse=True)

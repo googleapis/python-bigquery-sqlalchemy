@@ -174,8 +174,8 @@ def table_one_row(engine):
 
 
 @pytest.fixture(scope="session")
-def table_dml(engine):
-    return Table("test_pybigquery.sample_dml", MetaData(bind=engine), autoload=True)
+def table_dml(engine, bigquery_empty_table):
+    return Table(bigquery_empty_table, MetaData(bind=engine), autoload=True)
 
 
 @pytest.fixture(scope="session")
@@ -520,7 +520,7 @@ def test_dml(engine, session, table_dml):
         {"string": "updated_row"}, synchronize_session=False
     )
     updated_result = table_dml.select().execute().fetchone()
-    assert updated_result["test_pybigquery.sample_dml_string"] == "updated_row"
+    assert updated_result[table_dml.c.string] == "updated_row"
 
     # test delete
     session.query(table_dml).filter(table_dml.c.string == "updated_row").delete(
