@@ -91,10 +91,8 @@ def bigquery_dataset(
     return dataset_id
 
 
-@pytest.fixture(scope="session")
-def bigquery_dml_dataset(
-    bigquery_client: bigquery.Client, bigquery_schema: List[bigquery.SchemaField]
-):
+@pytest.fixture(scope="session", autouse=True)
+def bigquery_dml_dataset(bigquery_client: bigquery.Client):
     project_id = bigquery_client.project
     dataset_id = "test_pybigquery_dml"
     dataset = bigquery.Dataset(f"{project_id}.{dataset_id}")
@@ -102,9 +100,18 @@ def bigquery_dml_dataset(
     return dataset_id
 
 
-@pytest.fixture(scope="session")
-def bigquery_empty_table(bigquery_dml_dataset, bigquery_client, bigquery_schema):
+@pytest.fixture(scope="session", autouse=True)
+def bigquery_empty_table(
+    bigquery_dataset: str,
+    bigquery_dml_dataset: str,
+    bigquery_client: bigquery.Client,
+    bigquery_schema: List[bigquery.SchemaField],
+):
     project_id = bigquery_client.project
+    # Cleanup the sample_dml table, if it exists.
+    old_table_id = f"{project_id}.{bigquery_dataset}.sample_dml"
+    bigquery_client.delete_table(old_table_id, not_found_ok=True)
+    # Create new table in its own dataset.
     dataset_id = bigquery_dml_dataset
     table_id = f"{project_id}.{dataset_id}.sample_dml_{temp_suffix()}"
     empty_table = bigquery.Table(table_id, schema=bigquery_schema)
