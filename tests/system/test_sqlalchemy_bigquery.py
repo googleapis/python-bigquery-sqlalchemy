@@ -576,16 +576,14 @@ def test_table_names_in_schema(inspector, inspector_using_test_dataset):
     tables = inspector.get_table_names("test_pybigquery")
     assert "test_pybigquery.sample" in tables
     assert "test_pybigquery.sample_one_row" in tables
-    assert "test_pybigquery.sample_dml" in tables
     assert "test_pybigquery.sample_view" not in tables
-    assert len(tables) == 3
+    assert len(tables) == 2
 
     tables = inspector_using_test_dataset.get_table_names()
     assert "sample" in tables
     assert "sample_one_row" in tables
-    assert "sample_dml" in tables
     assert "sample_view" not in tables
-    assert len(tables) == 3
+    assert len(tables) == 2
 
 
 def test_view_names(inspector, inspector_using_test_dataset):
