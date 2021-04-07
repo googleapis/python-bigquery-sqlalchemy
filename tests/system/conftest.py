@@ -96,6 +96,10 @@ def bigquery_dml_dataset(bigquery_client: bigquery.Client):
     project_id = bigquery_client.project
     dataset_id = "test_pybigquery_dml"
     dataset = bigquery.Dataset(f"{project_id}.{dataset_id}")
+    # Add default table expiration in case cleanup fails.
+    dataset.default_table_expiration_ms = 1000 * int(
+        datetime.timedelta(days=1).total_seconds()
+    )
     dataset = bigquery_client.create_dataset(dataset, exists_ok=True)
     return dataset_id
 
@@ -115,8 +119,6 @@ def bigquery_empty_table(
     dataset_id = bigquery_dml_dataset
     table_id = f"{project_id}.{dataset_id}.sample_dml_{temp_suffix()}"
     empty_table = bigquery.Table(table_id, schema=bigquery_schema)
-    # Add table expiration in case cleanup fails.
-    empty_table.expires = datetime.datetime.utcnow() + datetime.timedelta(days=1)
     bigquery_client.create_table(empty_table)
     yield table_id
     bigquery_client.delete_table(empty_table)
