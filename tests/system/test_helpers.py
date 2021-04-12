@@ -27,16 +27,16 @@ def credentials_path():
 @pytest.fixture
 def credentials_info(credentials_path):
     with open(credentials_path) as credentials_file:
-        return json.loads(credentials_file)
+        return json.load(credentials_file)
 
 
 def test_create_bigquery_client_with_credentials_path(
-    module_under_test, credentials_path, credential_info
+    module_under_test, credentials_path, credentials_info
 ):
     bqclient = module_under_test.create_bigquery_client(
         credentials_path=credentials_path
     )
-    assert bqclient.project == credential_info["project_id"]
+    assert bqclient.project == credentials_info["project_id"]
 
 
 def test_create_bigquery_client_with_credentials_path_respects_project(
