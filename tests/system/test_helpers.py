@@ -21,7 +21,7 @@ def module_under_test():
 def credentials_path():
     if "GOOGLE_APPLICATION_CREDENTIALS" not in os.environ:
         pytest.skip("GOOGLE_APPLICATION_CREDENTIALS must be set")
-    return os.environ["GOOGLE_APPLICATIONS_CREDENTIALS"]
+    return os.environ["GOOGLE_APPLICATION_CREDENTIALS"]
 
 
 @pytest.fixture
