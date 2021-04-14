@@ -41,7 +41,7 @@ def readme():
 
 setup(
     name=name,
-    version=version,
+    version=setuptools.sic(version),
     description=description,
     long_description=readme(),
     long_description_content_type="text/x-rst",
