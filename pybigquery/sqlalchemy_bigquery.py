@@ -226,6 +226,36 @@ class BigQueryCompiler(SQLCompiler):
             select, **kw, within_group_by=True
         )
 
+    ############################################################################
+    # Handle parameters in in
+
+    # Due to details in the way sqlalchemy arranges the compilation we
+    # expect the bind parameter as an array and unnest it.
+
+    # As it happens, bigquery can handle arrays directly, but there's
+    # no way to tell sqlalchemy that, so it works harder than
+    # necessary and makes us do the same.
+
+    _in_expanding_bind = re.compile(r' IN \((\[EXPANDING_\w\])\)$')
+
+    def _unnestify_in_expanding_bind(self, in_text):
+        return self._in_expanding_bind.sub(r' IN UNNEST([ \1 ])', in_text)
+
+    def visit_in_op_binary(self, binary, operator_, **kw):
+        return self._unnestify_in_expanding_bind(
+            self._generate_generic_binary(binary, ' IN ', **kw)
+        )
+
+    def visit_empty_set_expr(self, element_types):
+        return ''
+
+    def visit_notin_op_binary(self, binary, operator, **kw):
+        return self._unnestify_in_expanding_bind(
+            self._generate_generic_binary(binary, ' NOT IN ', **kw)
+        )
+
+    ############################################################################
+
 
 class BigQueryTypeCompiler(GenericTypeCompiler):
     def visit_INTEGER(self, type_, **kw):
