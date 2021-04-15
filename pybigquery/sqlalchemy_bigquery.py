@@ -236,7 +236,7 @@ class BigQueryCompiler(SQLCompiler):
     # no way to tell sqlalchemy that, so it works harder than
     # necessary and makes us do the same.
 
-    _in_expanding_bind = re.compile(r' IN \((\[EXPANDING_\w\])\)$')
+    _in_expanding_bind = re.compile(r' IN \((\[EXPANDING_\w+\])\)$')
 
     def _unnestify_in_expanding_bind(self, in_text):
         return self._in_expanding_bind.sub(r' IN UNNEST([ \1 ])', in_text)
