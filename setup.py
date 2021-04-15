@@ -19,7 +19,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import io
-from setuptools import setup
+import setuptools
 
 # Package metadata.
 
@@ -39,7 +39,7 @@ def readme():
         return f.read()
 
 
-setup(
+setuptools.setup(
     name=name,
     version=setuptools.sic(version),
     description=description,
