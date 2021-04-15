@@ -41,7 +41,7 @@ from sqlalchemy.sql.compiler import (
 from sqlalchemy.engine.default import DefaultDialect, DefaultExecutionContext
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.sql.schema import Column
-from sqlalchemy.sql import elements
+from sqlalchemy.sql import elements, selectable
 import re
 
 from .parse_url import parse_url
@@ -158,6 +158,10 @@ class BigQueryExecutionContext(DefaultExecutionContext):
 
 
 class BigQueryCompiler(SQLCompiler):
+
+    compound_keywords = SQLCompiler.compound_keywords.copy()
+    compound_keywords[selectable.CompoundSelect.UNION] = "UNION ALL"
+
     def __init__(self, dialect, statement, column_keys=None, inline=False, **kwargs):
         if isinstance(statement, Column):
             kwargs["compile_kwargs"] = util.immutabledict({"include_table": False})
@@ -224,17 +228,16 @@ class BigQueryCompiler(SQLCompiler):
 
 
 class BigQueryTypeCompiler(GenericTypeCompiler):
-    def visit_integer(self, type_, **kw):
+    def visit_INTEGER(self, type_, **kw):
         return "INT64"
 
-    def visit_float(self, type_, **kw):
+    def visit_FLOAT(self, type_, **kw):
         return "FLOAT64"
 
-    def visit_text(self, type_, **kw):
+    def visit_STRING(self, type_, **kw):
         return "STRING"
 
-    def visit_string(self, type_, **kw):
-        return "STRING"
+    visit_TEXT = visit_CHAR = visit_VARCHAR = visit_NCHAR = visit_NVARCHAR = visit_STRING
 
     def visit_ARRAY(self, type_, **kw):
         return "ARRAY<{}>".format(self.process(type_.item_type, **kw))
@@ -257,6 +260,10 @@ class BigQueryDDLCompiler(DDLCompiler):
 
     # BigQuery has no support for primary keys.
     def visit_primary_key_constraint(self, constraint):
+        return None
+
+    # BigQuery has no support for unique constraints.
+    def visit_unique_constraint(self, constraint):
         return None
 
     def get_column_specification(self, column, **kwargs):
