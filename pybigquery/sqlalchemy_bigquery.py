@@ -22,7 +22,9 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+import random
 import operator
+import uuid
 
 from google import auth
 import google.api_core.exceptions
@@ -30,6 +32,7 @@ from google.cloud.bigquery import dbapi
 from google.cloud.bigquery.schema import SchemaField
 from google.cloud.bigquery.table import TableReference
 from google.api_core.exceptions import NotFound
+
 from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy import types, util
 from sqlalchemy.sql.compiler import (
@@ -38,6 +41,7 @@ from sqlalchemy.sql.compiler import (
     DDLCompiler,
     IdentifierPreparer,
 )
+from sqlalchemy.sql.sqltypes import Integer, String
 from sqlalchemy.engine.default import DefaultDialect, DefaultExecutionContext
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.sql.schema import Column
@@ -149,6 +153,7 @@ NUMERIC = _type_map["NUMERIC"]
 
 
 class BigQueryExecutionContext(DefaultExecutionContext):
+
     def create_cursor(self):
         # Set arraysize
         c = super(BigQueryExecutionContext, self).create_cursor()
@@ -156,6 +161,11 @@ class BigQueryExecutionContext(DefaultExecutionContext):
             c.arraysize = self.dialect.arraysize
         return c
 
+    def get_insert_default(self, column):
+        if isinstance(column.type, Integer):
+            return random.randint(-9223372036854775808, 9223372036854775808) # 1<<63
+        elif isinstance(column.type, String):
+            return str(uuid.uuid4())
 
 class BigQueryCompiler(SQLCompiler):
 
@@ -168,6 +178,22 @@ class BigQueryCompiler(SQLCompiler):
         super(BigQueryCompiler, self).__init__(
             dialect, statement, column_keys, inline, **kwargs
         )
+
+    def visit_insert(self, insert_stmt, asfrom=False, **kw):
+        # The (internal) documentation for `inline` is confusing, but
+        # having `inline` be true prevents us from generating default
+        # primary-key values when we're doing executemany, which seem broken.
+
+        # We can probably do this in the constructor, but I want to
+        # make sure this only affects insert, because I'm paranoid. :)
+
+        self.inline = False
+
+
+        return super(BigQueryCompiler, self).visit_insert(
+            insert_stmt, asfrom=False, **kw
+        )
+
 
     def visit_select(self, *args, **kwargs):
         """
@@ -261,6 +287,8 @@ class BigQueryTypeCompiler(GenericTypeCompiler):
     def visit_INTEGER(self, type_, **kw):
         return "INT64"
 
+    visit_BIGINT = visit_INTEGER
+
     def visit_FLOAT(self, type_, **kw):
         return "FLOAT64"
 
@@ -343,6 +371,7 @@ class BigQueryDialect(DefaultDialect):
     supports_native_boolean = True
     supports_simple_order_by_label = True
     postfetch_lastrowid = False
+    preexecute_autoincrement_sequences = True
 
     def __init__(
         self,
@@ -653,3 +682,5 @@ class BigQueryDialect(DefaultDialect):
     def _check_unicode_description(self, connection):
         # requests gives back Unicode strings
         return True
+
+    from .colspecs import colspecs
