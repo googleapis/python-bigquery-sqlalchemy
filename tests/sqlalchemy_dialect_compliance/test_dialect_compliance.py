@@ -1,3 +1,22 @@
+# Copyright (c) 2021 The PyBigQuery Authors
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of
+# this software and associated documentation files (the "Software"), to deal in
+# the Software without restriction, including without limitation the rights to
+# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+# the Software, and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 import pytest
 from sqlalchemy import and_
 from sqlalchemy.testing.assertions import eq_
@@ -20,68 +39,49 @@ from sqlalchemy.testing.suite import (
 del QuotedNameArgumentTest
 
 
-class NoPrimaryKeySupport(_DateTest):
-    """
-    Bigquery doesn't support Primary keys
+class BQCantGuessTypeForComplexQueries(_DateTest):
+    # Like:
 
-    and has no automatic way to provide values for them.
-    """
+    # SELECT `date_table`.`id` AS `date_table_id` 
+    # FROM `date_table` 
+    # WHERE CASE WHEN (@`foo` IS NOT NULL) THEN @`foo` ELSE `date_table`.`date_data` END = `date_table`.`date_data`
+
+    # bind_expression is the hook to fix this n the BQ client side.
 
     @pytest.mark.skip()
-    def test_null(cls):
+    def test_null_bound_comparison(cls):
         pass
 
-    test_null_bound_comparison = test_round_trip = test_null
 
-
-class DateTest(NoPrimaryKeySupport, _DateTest):
+class DateTest(BQCantGuessTypeForComplexQueries, _DateTest):
     pass
 
 
-class DateTimeTest(NoPrimaryKeySupport, _DateTimeTest):
+class DateTimeTest(BQCantGuessTypeForComplexQueries, _DateTimeTest):
     pass
 
 
-class TimeTest(NoPrimaryKeySupport, _DateTimeTest):
+class TimeTest(BQCantGuessTypeForComplexQueries, TimeTest):
     pass
 
 
-class DateTimeCoercedToDateTimeTest(NoPrimaryKeySupport, _DateTimeCoercedToDateTimeTest):
+class DateTimeCoercedToDateTimeTest(BQCantGuessTypeForComplexQueries, _DateTimeCoercedToDateTimeTest):
     pass
 
 
-class DateTimeMicrosecondsTest(NoPrimaryKeySupport, _DateTimeMicrosecondsTest):
+class DateTimeMicrosecondsTest(BQCantGuessTypeForComplexQueries, _DateTimeMicrosecondsTest):
     pass
 
 
-class TimeMicrosecondsTest(NoPrimaryKeySupport, _TimeMicrosecondsTest):
-    pass
-
-
-class TextTest(NoPrimaryKeySupport, _DateTimeTest):
-    pass
-
-
-class UnicodeTextTest(NoPrimaryKeySupport, _DateTimeTest):
-    pass
-
-
-class UnicodeVarcharTest(NoPrimaryKeySupport, _DateTimeTest):
+class TimeMicrosecondsTest(BQCantGuessTypeForComplexQueries, _TimeMicrosecondsTest):
     pass
 
 
 class InsertBehaviorTest(_InsertBehaviorTest):
-    """
-    Bigquery doesn't support Primary keys
-
-    and has no automatic way to provide values for them.
-    """
 
     @pytest.mark.skip()
-    def test_autoclose_on_insert(cls):
-        pass
-
-    test_insert_from_select_autoinc = test_autoclose_on_insert
+    def test_insert_from_select_autoinc(cls):
+        """BQ has no autoinc and client-side defaults can't work for select."""
 
 
 class ExistsTest(_ExistsTest):
