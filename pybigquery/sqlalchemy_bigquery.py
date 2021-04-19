@@ -282,6 +282,47 @@ class BigQueryCompiler(SQLCompiler):
 
     ############################################################################
 
+    ############################################################################
+    # Correct for differences in the way that SQLAlchemy escape % and _ (/)
+    # and BigQuery does (\\).
+
+    @staticmethod
+    def _maybe_reescape(binary):
+        binary = binary._clone()
+        escape = binary.modifiers.pop('escape', None)
+        if escape and escape != '\\':
+            binary.right.value = escape.join(
+                v.replace(escape, '\\')
+                for v in binary.right.value.split(escape + escape)
+            )
+        return binary
+
+    def visit_contains_op_binary(self, binary, operator, **kw):
+        return super(BigQueryCompiler,self).visit_contains_op_binary(
+            self._maybe_reescape(binary), operator, **kw)
+
+    def visit_notcontains_op_binary(self, binary, operator, **kw):
+        return super(BigQueryCompiler,self).visit_notcontains_op_binary(
+            self._maybe_reescape(binary), operator, **kw)
+
+    def visit_startswith_op_binary(self, binary, operator, **kw):
+        return super(BigQueryCompiler,self).visit_startswith_op_binary(
+            self._maybe_reescape(binary), operator, **kw)
+
+    def visit_notstartswith_op_binary(self, binary, operator, **kw):
+        return super(BigQueryCompiler,self).visit_notstartswith_op_binary(
+            self._maybe_reescape(binary), operator, **kw)
+
+    def visit_endswith_op_binary(self, binary, operator, **kw):
+        return super(BigQueryCompiler,self).visit_endswith_op_binary(
+            self._maybe_reescape(binary), operator, **kw)
+
+    def visit_notendswith_op_binary(self, binary, operator, **kw):
+        return super(BigQueryCompiler,self).visit_notendswith_op_binary(
+            self._maybe_reescape(binary), operator, **kw)
+
+    ############################################################################
+
 
 class BigQueryTypeCompiler(GenericTypeCompiler):
     def visit_INTEGER(self, type_, **kw):
