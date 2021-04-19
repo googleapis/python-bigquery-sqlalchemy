@@ -345,10 +345,12 @@ class BigQueryTypeCompiler(GenericTypeCompiler):
         return "BYTES"
 
     def visit_NUMERIC(self, type_, **kw):
-        return "NUMERIC"
+        if type_.precision > 38 or type_.scale > 9:
+            return "BIGNUMERIC"
+        else:
+            return "NUMERIC"
 
-    def visit_DECIMAL(self, type_, **kw):
-        return "NUMERIC"
+    visit_DECIMAL = visit_NUMERIC
 
 
 class BigQueryDDLCompiler(DDLCompiler):
