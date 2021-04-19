@@ -34,6 +34,7 @@ from sqlalchemy.testing.suite import (
     InsertBehaviorTest as _InsertBehaviorTest,
     ExistsTest as _ExistsTest,
     NumericTest as _NumericTest,
+    LimitOffsetTest as _LimitOffsetTest,
 )
 
 # Quotes aren't allowed in BigQuery table names.
@@ -147,3 +148,12 @@ class NumericTest(_NumericTest):
 
     test_numeric_as_decimal = saving_values_of_slightly_wrong_type
     test_numeric_as_float = saving_values_of_slightly_wrong_type
+
+
+class LimitOffsetTest(_LimitOffsetTest):
+
+    @pytest.mark.skip()
+    def test_simple_offset(self):
+        """BigQuery doesn't allow an offset without a limit."""
+
+    test_bound_offset = test_simple_offset
