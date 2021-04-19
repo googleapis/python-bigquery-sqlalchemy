@@ -80,7 +80,7 @@ setuptools.setup(
     ],
     platforms="Posix; MacOS X; Windows",
     install_requires=[
-        "sqlalchemy>=1.1.9,<1.4.0dev",
+        "sqlalchemy>=1.1.9,<1.4.10",
         "google-auth>=1.2.0,<2.0dev",
         "google-cloud-bigquery>=1.12.0",
         "future",
