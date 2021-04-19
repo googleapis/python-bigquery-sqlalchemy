@@ -157,3 +157,7 @@ class LimitOffsetTest(_LimitOffsetTest):
         """BigQuery doesn't allow an offset without a limit."""
 
     test_bound_offset = test_simple_offset
+
+
+# This test requires features (indexes, primary keys, etc., that BigQuery doesn't have.
+del LongNameBlowoutTest
