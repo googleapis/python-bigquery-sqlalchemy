@@ -36,6 +36,7 @@ from sqlalchemy.testing.suite import (
     NumericTest as _NumericTest,
     LimitOffsetTest as _LimitOffsetTest,
     RowFetchTest as _RowFetchTest,
+    SimpleUpdateDeleteTest as _SimpleUpdateDeleteTest,
 )
 
 # Quotes aren't allowed in BigQuery table names.
@@ -187,3 +188,28 @@ class RowFetchTest(_RowFetchTest):
 
         eq_(row["plain_pk_id"], 1)
         eq_(row["plain_pk_data"], "d1")
+
+
+class SimpleUpdateDeleteTest(_SimpleUpdateDeleteTest):
+    """The base tests fail if operations return rows for some reason."""
+
+    def test_update(self):
+        t = self.tables.plain_pk
+        r = config.db.execute(t.update().where(t.c.id == 2), data="d2_new")
+        assert not r.is_insert
+        #assert not r.returns_rows
+
+        eq_(
+            config.db.execute(t.select().order_by(t.c.id)).fetchall(),
+            [(1, "d1"), (2, "d2_new"), (3, "d3")],
+        )
+
+    def test_delete(self):
+        t = self.tables.plain_pk
+        r = config.db.execute(t.delete().where(t.c.id == 2))
+        assert not r.is_insert
+        #assert not r.returns_rows
+        eq_(
+            config.db.execute(t.select().order_by(t.c.id)).fetchall(),
+            [(1, "d1"), (3, "d3")],
+        )
