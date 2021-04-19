@@ -33,6 +33,7 @@ from sqlalchemy.testing.suite import (
     UnicodeVarcharTest as UnicodeVarcharTest,
     InsertBehaviorTest as _InsertBehaviorTest,
     ExistsTest as _ExistsTest,
+    NumericTest as _NumericTest,
 )
 
 # Quotes aren't allowed in BigQuery table names.
@@ -42,9 +43,10 @@ del QuotedNameArgumentTest
 class BQCantGuessTypeForComplexQueries(_DateTest):
     # Like:
 
-    # SELECT `date_table`.`id` AS `date_table_id` 
-    # FROM `date_table` 
-    # WHERE CASE WHEN (@`foo` IS NOT NULL) THEN @`foo` ELSE `date_table`.`date_data` END = `date_table`.`date_data`
+    # SELECT `date_table`.`id` AS `date_table_id`
+    # FROM `date_table`
+    # WHERE CASE WHEN (@`foo` IS NOT NULL)
+    #       THEN @`foo` ELSE `date_table`.`date_data` END = `date_table`.`date_data`
 
     # bind_expression is the hook to fix this n the BQ client side.
 
@@ -116,3 +118,32 @@ class ExistsTest(_ExistsTest):
             ).fetchall(),
             [],
         )
+
+
+class NumericTest(_NumericTest):
+
+    @pytest.mark.skip()
+    def saving_values_of_slightly_wrong_type(cls):
+        """
+        These test want to save a float into a numeric column.
+
+        This should work, but the BigQuery db api interfaces sets
+        parameter types by inspecting values and sets the wrong type.
+
+        It's weird that the server can't handle this. :(
+
+        We could:
+
+        - Do a dry-run first to get the types.
+
+        - Extend the BigQuery db api to accept values with type
+          markers, because SQLAlchemy knows what the types are and
+          could pass them down the call chain.
+
+          (An arguably more elegent variation on this would be to
+          build this into the substitution syntax. Something like:
+          %(foo:Date)s, but that would be harder to plumb.)
+        """
+
+    test_numeric_as_decimal = saving_values_of_slightly_wrong_type
+    test_numeric_as_float = saving_values_of_slightly_wrong_type
