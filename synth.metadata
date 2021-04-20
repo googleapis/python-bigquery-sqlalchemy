@@ -4,14 +4,14 @@
       "git": {
         "name": ".",
         "remote": "https://github.com/googleapis/python-bigquery-sqlalchemy.git",
-        "sha": "b7c9d6f3151520a20239df197a151aa80c3ebdcd"
+        "sha": "29c7fb09b345a309bdbc7b6052e4f3f5028e2498"
       }
     },
     {
       "git": {
         "name": "synthtool",
         "remote": "https://github.com/googleapis/synthtool.git",
-        "sha": "4501974ad08b5d693311457e2ea4ce845676e329"
+        "sha": "0a071b3460344886297a304253bf924aa68ddb7e"
       }
     }
   ],
