@@ -28,13 +28,14 @@ google.cloud.bigquery.dbapi.connection.Connection.rollback = lambda self: None
 
 
 def visit_delete(self, delete_stmt, *args, **kw):
-    if delete_stmt._whereclause is None:
-        if 'teardown' in set(f.name for f in traceback.extract_stack()):
-            delete_stmt._whereclause = sqlalchemy.true()
-            return super(pybigquery.sqlalchemy_bigquery.BigQueryCompiler, self
-                         ).visit_delete(delete_stmt, *args, **kw)
-        else:
-            breakpoint()
+    if (delete_stmt._whereclause is None
+        and
+        'teardown' in set(f.name for f in traceback.extract_stack())
+        ):
+        delete_stmt._whereclause = sqlalchemy.true()
+
+    return super(pybigquery.sqlalchemy_bigquery.BigQueryCompiler, self
+                 ).visit_delete(delete_stmt, *args, **kw)
 
 
 pybigquery.sqlalchemy_bigquery.BigQueryCompiler.visit_delete = visit_delete
