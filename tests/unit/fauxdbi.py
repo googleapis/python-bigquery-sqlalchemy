@@ -1,22 +1,22 @@
 import google.api_core.exceptions
 import google.cloud.bigquery.schema
 import google.cloud.bigquery.table
+import google.cloud.bigquery.dbapi.cursor
 import contextlib
 import sqlite3
 
 
+
+
+
 class Connection:
 
-    connection = None
-
     def __init__(self, client=None, bqstorage_client=None):
-        # share a single connection:
-        if self.connection is None:
-            self.__class__.connection = sqlite3.connect(":memory:")
-        self._client = FauxClient(client, self.connection)
+        self.connection = sqlite3.connect("data.db")
+        self._client = FauxClient(client, self)
 
     def cursor(self):
-        return Cursor(self.connection)
+        return Cursor(self)
 
     def commit(self):
         pass
@@ -34,9 +34,11 @@ class Cursor:
 
     def __init__(self, connection):
         self.connection = connection
-        self.cursor = connection.cursor()
+        self.cursor = connection.connection.cursor()
 
     def execute(self, operation, parameters=None):
+        self.connection.test_data['execute'].append((operation, parameters))
+        operation, types_ = google.cloud.bigquery.dbapi.cursor._extract_types(operation)
         if parameters:
             parameters = {
                 name: "null" if value is None else repr(value)
@@ -78,7 +80,7 @@ class FauxClient:
 
     def get_table(self, table_ref):
         table_name = table_ref.table_id
-        with contextlib.closing(self.connection.cursor()) as cursor:
+        with contextlib.closing(self.connection.connection.cursor()) as cursor:
             cursor.execute(
                 f"select name from sqlite_master"
                 f" where type='table' and name='{table_name}'"
