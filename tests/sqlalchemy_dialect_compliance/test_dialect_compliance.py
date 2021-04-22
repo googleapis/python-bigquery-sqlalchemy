@@ -164,31 +164,6 @@ class LimitOffsetTest(_LimitOffsetTest):
 # This test requires features (indexes, primary keys, etc., that BigQuery doesn't have.
 del LongNameBlowoutTest
 
-class RowFetchTest(_RowFetchTest):
-    # We have to rewrite these tests, because of:
-    # https://github.com/googleapis/python-bigquery-sqlalchemy/issues/78
-
-    def test_row_with_dupe_names(self):
-        result = config.db.execute(
-            select(
-                [
-                    self.tables.plain_pk.c.data.label("data"),
-                    self.tables.plain_pk.c.data.label("data"),
-                ]
-            ).order_by(self.tables.plain_pk.c.id)
-        )
-        row = result.first()
-        eq_(result.keys(), ["data", "data"])
-        eq_(row, ("d1", "d1"))
-
-    def test_via_string(self):
-        row = config.db.execute(
-            self.tables.plain_pk.select().order_by(self.tables.plain_pk.c.id)
-        ).first()
-
-        eq_(row["plain_pk_id"], 1)
-        eq_(row["plain_pk_data"], "d1")
-
 
 class SimpleUpdateDeleteTest(_SimpleUpdateDeleteTest):
     """The base tests fail if operations return rows for some reason."""
