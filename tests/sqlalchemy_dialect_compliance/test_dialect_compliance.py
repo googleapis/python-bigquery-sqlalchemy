@@ -44,45 +44,6 @@ from sqlalchemy.testing.suite import (
 del QuotedNameArgumentTest
 
 
-class BQCantGuessTypeForComplexQueries(_DateTest):
-    # Like:
-
-    # SELECT `date_table`.`id` AS `date_table_id`
-    # FROM `date_table`
-    # WHERE CASE WHEN (@`foo` IS NOT NULL)
-    #       THEN @`foo` ELSE `date_table`.`date_data` END = `date_table`.`date_data`
-
-    # bind_expression is the hook to fix this n the BQ client side.
-
-    @pytest.mark.skip()
-    def test_null_bound_comparison(cls):
-        pass
-
-
-class DateTest(BQCantGuessTypeForComplexQueries, _DateTest):
-    pass
-
-
-class DateTimeTest(BQCantGuessTypeForComplexQueries, _DateTimeTest):
-    pass
-
-
-class TimeTest(BQCantGuessTypeForComplexQueries, TimeTest):
-    pass
-
-
-class DateTimeCoercedToDateTimeTest(BQCantGuessTypeForComplexQueries, _DateTimeCoercedToDateTimeTest):
-    pass
-
-
-class DateTimeMicrosecondsTest(BQCantGuessTypeForComplexQueries, _DateTimeMicrosecondsTest):
-    pass
-
-
-class TimeMicrosecondsTest(BQCantGuessTypeForComplexQueries, _TimeMicrosecondsTest):
-    pass
-
-
 class InsertBehaviorTest(_InsertBehaviorTest):
 
     @pytest.mark.skip()
