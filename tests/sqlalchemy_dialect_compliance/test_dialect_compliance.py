@@ -37,6 +37,7 @@ from sqlalchemy.testing.suite import (
     LimitOffsetTest as _LimitOffsetTest,
     RowFetchTest as _RowFetchTest,
     SimpleUpdateDeleteTest as _SimpleUpdateDeleteTest,
+    CTETest as _CTETest,
 )
 
 # Quotes aren't allowed in BigQuery table names.
@@ -123,35 +124,6 @@ class ExistsTest(_ExistsTest):
         )
 
 
-class NumericTest(_NumericTest):
-
-    @pytest.mark.skip()
-    def saving_values_of_slightly_wrong_type(cls):
-        """
-        These test want to save a float into a numeric column.
-
-        This should work, but the BigQuery db api interfaces sets
-        parameter types by inspecting values and sets the wrong type.
-
-        It's weird that the server can't handle this. :(
-
-        We could:
-
-        - Do a dry-run first to get the types.
-
-        - Extend the BigQuery db api to accept values with type
-          markers, because SQLAlchemy knows what the types are and
-          could pass them down the call chain.
-
-          (An arguably more elegent variation on this would be to
-          build this into the substitution syntax. Something like:
-          %(foo:Date)s, but that would be harder to plumb.)
-        """
-
-    test_numeric_as_decimal = saving_values_of_slightly_wrong_type
-    test_numeric_as_float = saving_values_of_slightly_wrong_type
-
-
 class LimitOffsetTest(_LimitOffsetTest):
 
     @pytest.mark.skip()
@@ -188,3 +160,14 @@ class SimpleUpdateDeleteTest(_SimpleUpdateDeleteTest):
             config.db.execute(t.select().order_by(t.c.id)).fetchall(),
             [(1, "d1"), (3, "d3")],
         )
+
+
+class CTETest(_CTETest):
+
+    @pytest.mark.skip("Can't use CTEs with insert")
+    def test_insert_from_select_round_trip(self):
+        pass
+
+    @pytest.mark.skip("Recusive CTEs aren't supported.")
+    def test_select_recursive_round_trip(self):
+        pass
