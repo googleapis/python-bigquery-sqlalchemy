@@ -83,3 +83,13 @@ class Requirements(sqlalchemy.testing.requirements.SuiteRequirements):
 
         """
         return supported()
+
+    @property
+    def date_coerces_from_datetime(self):
+        """target dialect accepts a datetime object as the target
+        of a date column."""
+
+        # BigQuery doesn't allow saving a datetime in a date:
+        # `TYPE_DATE`, Invalid date: '2012-10-15T12:57:18'
+
+        return unsupported()
