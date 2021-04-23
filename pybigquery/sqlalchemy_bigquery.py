@@ -22,6 +22,7 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+from decimal import Decimal
 import random
 import operator
 import uuid
@@ -41,7 +42,7 @@ from sqlalchemy.sql.compiler import (
     DDLCompiler,
     IdentifierPreparer,
 )
-from sqlalchemy.sql.sqltypes import Integer, String
+from sqlalchemy.sql.sqltypes import Integer, String, NullType, Numeric
 from sqlalchemy.engine.default import DefaultDialect, DefaultExecutionContext
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.sql.schema import Column
@@ -167,6 +168,29 @@ class BigQueryExecutionContext(DefaultExecutionContext):
         elif isinstance(column.type, String):
             return str(uuid.uuid4())
 
+    def pre_exec(self,
+                 in_sub=re.compile(
+                     r" IN UNNEST\(\[ "
+                     r"(%\([^)]+\d+\)s(, %\([^)]+_\d+\)s)+)?"  # Placeholders
+                     ":([A-Z0-9]+)"                            # Type
+                     r" \]\)").sub):
+        # If we have an in parameter, it gets expaned to 0 or more
+        # parameters and we need to move the type marker to each
+        # parameter.
+        # (The way SQLAlchemy handles this is a bit awkward for our
+        # purposes.)
+
+        def repl(m):
+            placeholders, _, type_ = m.groups()
+            if placeholders:
+                placeholders = placeholders.replace(")", f":{type_})")
+            else:
+                placeholders = ''
+            return f" IN UNNEST([ {placeholders} ])"
+
+        self.statement = in_sub(repl, self.statement)
+
+
 class BigQueryCompiler(SQLCompiler):
 
     compound_keywords = SQLCompiler.compound_keywords.copy()
@@ -252,7 +276,7 @@ class BigQueryCompiler(SQLCompiler):
     # no way to tell sqlalchemy that, so it works harder than
     # necessary and makes us do the same.
 
-    _in_expanding_bind = re.compile(r' IN \((\[EXPANDING_\w+\])\)$')
+    _in_expanding_bind = re.compile(r' IN \((\[EXPANDING_\w+\](:[A-Z0-9]+)?)\)$')
 
     def _unnestify_in_expanding_bind(self, in_text):
         return self._in_expanding_bind.sub(r' IN UNNEST([ \1 ])', in_text)
@@ -313,12 +337,55 @@ class BigQueryCompiler(SQLCompiler):
 
     ############################################################################
 
+    def visit_bindparam(
+        self,
+        bindparam,
+        within_columns_clause=False,
+        literal_binds=False,
+        skip_bind_expression=False,
+        **kwargs
+    ):
+        param = super(BigQueryCompiler, self).visit_bindparam(
+            bindparam,
+            within_columns_clause,
+            literal_binds,
+            skip_bind_expression,
+            **kwargs
+        )
+
+        type_ = bindparam.type
+        if isinstance(type_, NullType):
+            return param
+
+        if (isinstance(type_, Numeric)
+            and
+            (type_.precision is None or type_.scale is None)
+            and
+            isinstance(bindparam.value, Decimal)
+            ):
+            t = bindparam.value.as_tuple()
+
+            if type_.precision is None:
+                type_.precision = len(t.digits)
+
+            if type_.scale is None and t.exponent < 0:
+                type_.scale = -t.exponent
+
+        bq_type = self.dialect.type_compiler.process(type_)
+        if param == '%s':
+            return f'%(:{bq_type})s'
+        else:
+            return param.replace(')', f":{bq_type})")
+
 
 class BigQueryTypeCompiler(GenericTypeCompiler):
     def visit_INTEGER(self, type_, **kw):
         return "INT64"
 
     visit_BIGINT = visit_INTEGER
+
+    def visit_BOOLEAN(self, type_, **kw):
+        return "BOOL"
 
     def visit_FLOAT(self, type_, **kw):
         return "FLOAT64"
@@ -335,7 +402,10 @@ class BigQueryTypeCompiler(GenericTypeCompiler):
         return "BYTES"
 
     def visit_NUMERIC(self, type_, **kw):
-        if type_.precision > 38 or type_.scale > 9:
+        if ((type_.precision is not None and type_.precision > 38)
+            or
+            (type_.scale is not None and type_.scale > 9)
+        ):
             return "BIGNUMERIC"
         else:
             return "NUMERIC"
