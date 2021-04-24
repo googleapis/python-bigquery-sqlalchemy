@@ -17,20 +17,13 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+import mock
 import pytest
+import pytz
 from sqlalchemy import and_
 from sqlalchemy.testing.assertions import eq_
 from sqlalchemy.testing.suite import *
 from sqlalchemy.testing.suite import (
-    DateTest as _DateTest,
-    DateTimeTest as _DateTimeTest,
-    TimeTest as TimeTest,
-    DateTimeCoercedToDateTimeTest as _DateTimeCoercedToDateTimeTest,
-    DateTimeMicrosecondsTest as _DateTimeMicrosecondsTest,
-    TimeMicrosecondsTest as _TimeMicrosecondsTest,
-    TextTest as TextTest,
-    UnicodeTextTest as UnicodeTextTest,
-    UnicodeVarcharTest as UnicodeVarcharTest,
     InsertBehaviorTest as _InsertBehaviorTest,
     ExistsTest as _ExistsTest,
     NumericTest as _NumericTest,
@@ -39,6 +32,7 @@ from sqlalchemy.testing.suite import (
     SimpleUpdateDeleteTest as _SimpleUpdateDeleteTest,
     CTETest as _CTETest,
     ComponentReflectionTest as _ComponentReflectionTest,
+    TimestampMicrosecondsTest as _TimestampMicrosecondsTest,
 )
 
 # Quotes aren't allowed in BigQuery table names.
@@ -141,3 +135,19 @@ class ComponentReflectionTest(_ComponentReflectionTest):
         pass
 
     test_numeric_reflection = test_varchar_reflection = course_grained_types
+
+class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
+
+    data = datetime.datetime(2012, 10, 15, 12, 57, 18, 396, tzinfo=pytz.UTC)
+
+    def test_literal(self):
+        # The base tests doesn't set up the literal properly, because
+        # it doesn't pass its datatype to `literal`.
+
+        def literal(value):
+            assert value == self.data
+            import sqlalchemy.sql.sqltypes
+            return sqlalchemy.sql.elements.literal(value, self.datatype)
+
+        with mock.patch("sqlalchemy.testing.suite.test_types.literal", literal):
+            super(TimestampMicrosecondsTest, self).test_literal()
