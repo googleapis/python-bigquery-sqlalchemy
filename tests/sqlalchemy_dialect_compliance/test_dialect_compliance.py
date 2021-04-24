@@ -38,6 +38,7 @@ from sqlalchemy.testing.suite import (
     RowFetchTest as _RowFetchTest,
     SimpleUpdateDeleteTest as _SimpleUpdateDeleteTest,
     CTETest as _CTETest,
+    ComponentReflectionTest as _ComponentReflectionTest,
 )
 
 # Quotes aren't allowed in BigQuery table names.
@@ -132,3 +133,11 @@ class CTETest(_CTETest):
     @pytest.mark.skip("Recusive CTEs aren't supported.")
     def test_select_recursive_round_trip(self):
         pass
+
+class ComponentReflectionTest(_ComponentReflectionTest):
+
+    @pytest.mark.skip("Big query types don't track precision, length, etc.")
+    def course_grained_types():
+        pass
+
+    test_numeric_reflection = test_varchar_reflection = course_grained_types
