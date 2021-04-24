@@ -459,6 +459,17 @@ class BigQueryDDLCompiler(DDLCompiler):
         else:
             return text
 
+    def visit_set_table_comment(self, create):
+        table_name = self.preparer.format_table(create.element)
+        description = self.sql_compiler.render_literal_value(
+            create.element.comment, sqlalchemy.sql.sqltypes.String()
+        )
+        return f"ALTER TABLE {table_name} SET OPTIONS(description={description})"
+
+    def visit_drop_table_comment(self, drop):
+        table_name = self.preparer.format_table(drop.element)
+        return f"ALTER TABLE {table_name} SET OPTIONS(description=null)"
+
 
 def process_literal(value):
     if value:
