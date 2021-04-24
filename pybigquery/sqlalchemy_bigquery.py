@@ -223,7 +223,6 @@ class BigQueryCompiler(SQLCompiler):
     def visit_column(
         self, column, add_to_result_map=None, include_table=True, **kwargs
     ):
-
         name = orig_name = column.name
         if name is None:
             name = self._fallback_column_name(column)
@@ -243,16 +242,10 @@ class BigQueryCompiler(SQLCompiler):
         if table is None or not include_table or not table.named_with_column:
             return name
         else:
-            effective_schema = self.preparer.schema_for_object(table)
-
-            if effective_schema:
-                schema_prefix = self.preparer.quote_schema(effective_schema) + "."
-            else:
-                schema_prefix = ""
             tablename = table.name
             if isinstance(tablename, elements._truncated_label):
                 tablename = self._truncated_identifier("alias", tablename)
-            return schema_prefix + self.preparer.quote(tablename) + "." + name
+            return self.preparer.quote(tablename) + "." + name
 
     def visit_label(self, *args, within_group_by=False, **kwargs):
         # Use labels in GROUP BY clause.
