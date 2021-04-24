@@ -34,6 +34,8 @@ from google.cloud.bigquery.schema import SchemaField
 from google.cloud.bigquery.table import TableReference
 from google.api_core.exceptions import NotFound
 
+import sqlalchemy.sql.sqltypes
+import sqlalchemy.sql.type_api
 from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy import types, util
 from sqlalchemy.sql.compiler import (
@@ -480,6 +482,18 @@ class BQString(String):
         return process_literal
 
 
+class BQClassTaggedStr(sqlalchemy.sql.type_api.TypeEngine):
+    """Type that can get literals via str
+    """
+
+    @staticmethod
+    def process_literal_as_class_tagged_str(value):
+        return f"{value.__class__.__name__.upper()} {process_literal(str(value))}"
+
+    def literal_processor(self, dialect):
+        return self.process_literal_as_class_tagged_str
+
+
 class BigQueryDialect(DefaultDialect):
     name = "bigquery"
     driver = "bigquery"
@@ -507,6 +521,9 @@ class BigQueryDialect(DefaultDialect):
 
     colspecs = {
         String: BQString,
+        sqlalchemy.sql.sqltypes.Date: BQClassTaggedStr,
+        sqlalchemy.sql.sqltypes.DateTime: BQClassTaggedStr,
+        sqlalchemy.sql.sqltypes.Time: BQClassTaggedStr,
     }
 
     def __init__(
