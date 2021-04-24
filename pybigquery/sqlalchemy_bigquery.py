@@ -440,17 +440,44 @@ class BigQueryDDLCompiler(DDLCompiler):
     def post_create_table(self, table):
         bq_opts = table.dialect_options["bigquery"]
         opts = []
-        if "description" in bq_opts:
-            opts.append(
-                "description={}".format(self.preparer.quote(bq_opts["description"]))
-            )
+
+        if ("description" in bq_opts) or table.comment:
+            description = process_literal(bq_opts.get("description", table.comment))
+            opts.append(f"description={description}")
+
         if "friendly_name" in bq_opts:
             opts.append(
-                "friendly_name={}".format(self.preparer.quote(bq_opts["friendly_name"]))
+                "friendly_name={}".format(process_literal(bq_opts["friendly_name"]))
             )
+
         if opts:
             return "\nOPTIONS({})".format(", ".join(opts))
+
         return ""
+
+    def visit_create_column(self, create, first_pk=False):
+        text = super(BigQueryDDLCompiler, self).visit_create_column(create, first_pk)
+        comment = create.element.comment
+        if comment:
+            comment = process_literal(comment)
+            return f"{text} options(description={comment})"
+        else:
+            return text
+
+
+def process_literal(value):
+    if value:
+        value = repr(value.replace("%", "%%"))
+        if value[0] == '"':
+            value = "'" + value[1:-1].replace("'", "\'") + "'"
+
+    return value
+
+
+class BQString(String):
+
+    def literal_processor(self, dialect):
+        return process_literal
 
 
 class BigQueryDialect(DefaultDialect):
@@ -462,6 +489,8 @@ class BigQueryDialect(DefaultDialect):
     ddl_compiler = BigQueryDDLCompiler
     execution_ctx_cls = BigQueryExecutionContext
     supports_alter = False
+    supports_comments = True
+    inline_comments = True
     supports_pk_autoincrement = False
     supports_default_values = False
     supports_empty_insert = False
@@ -475,6 +504,10 @@ class BigQueryDialect(DefaultDialect):
     supports_simple_order_by_label = True
     postfetch_lastrowid = False
     preexecute_autoincrement_sequences = True
+
+    colspecs = {
+        String: BQString,
+    }
 
     def __init__(
         self,
@@ -785,5 +818,3 @@ class BigQueryDialect(DefaultDialect):
     def _check_unicode_description(self, connection):
         # requests gives back Unicode strings
         return True
-
-    from .colspecs import colspecs
