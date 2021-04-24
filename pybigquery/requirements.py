@@ -60,13 +60,7 @@ class Requirements(sqlalchemy.testing.requirements.SuiteRequirements):
     @property
     def temporary_tables(self):
         """target database supports temporary tables"""
-        return unsupported()
-
-    @property
-    def table_reflection(self):
-        # This includes round-trip type conversions, which would fail,
-        # because BigQuery has less precise types.
-        return unsupported()
+        return unsupported()  # Temporary tables require use of scripts.
 
     @property
     def duplicate_key_raises_integrity_error(self):
@@ -93,3 +87,110 @@ class Requirements(sqlalchemy.testing.requirements.SuiteRequirements):
         # `TYPE_DATE`, Invalid date: '2012-10-15T12:57:18'
 
         return unsupported()
+
+    @property
+    def window_functions(self):
+        """Target database must support window functions."""
+        return supported()  # There are no tests for this. <shrug>
+
+    @property
+    def ctes(self):
+        """Target database supports CTEs"""
+
+        return supported()
+
+    @property
+    def views(self):
+        """Target database must support VIEWs."""
+
+        return supported()
+
+    @property
+    def schemas(self):
+        """Target database must support external schemas, and have one
+        named 'test_schema'."""
+
+        return supported()
+
+    @property
+    def implicit_default_schema(self):
+        """target system has a strong concept of 'default' schema that can
+        be referred to implicitly.
+
+        basically, PostgreSQL.
+
+        """
+        return supported()
+
+    @property
+    def comment_reflection(self):
+        return supported()  # Well, probably not, but we'll try. :)
+
+    @property
+    def unicode_ddl(self):
+        """Target driver must support some degree of non-ascii symbol
+        names.
+        """
+        return supported()
+
+    @property
+    def datetime_literals(self):
+        """target dialect supports rendering of a date, time, or datetime as a
+        literal string, e.g. via the TypeEngine.literal_processor() method.
+
+        """
+
+        return supported()
+
+    @property
+    def timestamp_microseconds(self):
+        """target dialect supports representation of Python
+        datetime.datetime() with microsecond objects but only
+        if TIMESTAMP is used."""
+        return supported()
+
+    @property
+    def datetime_historic(self):
+        """target dialect supports representation of Python
+        datetime.datetime() objects with historic (pre 1970) values."""
+
+        return supported()
+
+    @property
+    def date_historic(self):
+        """target dialect supports representation of Python
+        datetime.datetime() objects with historic (pre 1970) values."""
+
+        return supported()
+
+    @property
+    def precision_numerics_enotation_small(self):
+        """target backend supports Decimal() objects using E notation
+        to represent very small values."""
+        return supported()
+
+    @property
+    def precision_numerics_enotation_large(self):
+        """target backend supports Decimal() objects using E notation
+        to represent very large values."""
+        return supported()
+
+    @property
+    def update_from(self):
+        """Target must support UPDATE..FROM syntax"""
+        return supported()
+
+    @property
+    def order_by_label_with_expression(self):
+        """target backend supports ORDER BY a column label within an
+        expression.
+
+        Basically this::
+
+            select data as foo from test order by foo || 'bar'
+
+        Lots of databases including PostgreSQL don't support this,
+        so this is off by default.
+
+        """
+        return supported()
