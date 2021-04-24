@@ -498,6 +498,18 @@ class BQClassTaggedStr(sqlalchemy.sql.type_api.TypeEngine):
         return self.process_literal_as_class_tagged_str
 
 
+class BQTimestamp(sqlalchemy.sql.type_api.TypeEngine):
+    """Type that can get literals via str
+    """
+
+    @staticmethod
+    def process_timestamp_literal(value):
+        return f"TIMESTAMP {process_literal(str(value))}"
+
+    def literal_processor(self, dialect):
+        return self.process_timestamp_literal
+
+
 class BigQueryDialect(DefaultDialect):
     name = "bigquery"
     driver = "bigquery"
@@ -528,6 +540,7 @@ class BigQueryDialect(DefaultDialect):
         sqlalchemy.sql.sqltypes.Date: BQClassTaggedStr,
         sqlalchemy.sql.sqltypes.DateTime: BQClassTaggedStr,
         sqlalchemy.sql.sqltypes.Time: BQClassTaggedStr,
+        sqlalchemy.sql.sqltypes.TIMESTAMP: BQTimestamp,
     }
 
     def __init__(
