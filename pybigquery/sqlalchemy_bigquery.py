@@ -815,3 +815,12 @@ class BigQueryDialect(DefaultDialect):
     def _check_unicode_description(self, connection):
         # requests gives back Unicode strings
         return True
+
+    def get_view_definition(self, connection, view_name, schema=None, **kw):
+        if isinstance(connection, Engine):
+            connection = connection.connect()
+        client = connection.connection._client
+        if self.dataset_id:
+            view_name = f"{self.dataset_id}.{view_name}"
+        view = client.get_table(view_name)
+        return view.view_query
