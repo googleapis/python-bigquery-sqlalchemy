@@ -6,9 +6,6 @@ import contextlib
 import sqlite3
 
 
-
-
-
 class Connection:
 
     def __init__(self, client=None, bqstorage_client=None):
