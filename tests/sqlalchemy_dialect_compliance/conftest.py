@@ -17,7 +17,7 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-from sqlalchemy.testing.plugin.pytestplugin import *
+from sqlalchemy.testing.plugin.pytestplugin import *  # noqa
 
 import google.cloud.bigquery.dbapi.connection
 import pybigquery.sqlalchemy_bigquery
