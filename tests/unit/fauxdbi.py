@@ -7,7 +7,6 @@ import sqlite3
 
 
 class Connection:
-
     def __init__(self, client=None, bqstorage_client=None):
         self.connection = sqlite3.connect("data.db")
         self._client = FauxClient(client, self)
@@ -34,7 +33,7 @@ class Cursor:
         self.cursor = connection.connection.cursor()
 
     def execute(self, operation, parameters=None):
-        self.connection.test_data['execute'].append((operation, parameters))
+        self.connection.test_data["execute"].append((operation, parameters))
         operation, types_ = google.cloud.bigquery.dbapi.cursor._extract_types(operation)
         if parameters:
             parameters = {

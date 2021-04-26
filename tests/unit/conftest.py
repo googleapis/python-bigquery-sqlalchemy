@@ -11,15 +11,17 @@ import fauxdbi
 @pytest.fixture()
 def use_temporary_directory():
     here = os.getcwd()
-    tdir = tempfile.mkdtemp('bq_sa_test')
+    tdir = tempfile.mkdtemp("bq_sa_test")
     os.chdir(tdir)
     yield
     os.chdir(here)
     shutil.rmtree(tdir)
 
+
 @pytest.fixture()
 def faux_conn(use_temporary_directory):
     test_data = dict(execute=[])
+
     def factory(*args, **kw):
         conn = fauxdbi.Connection(*args, **kw)
         conn.test_data = test_data

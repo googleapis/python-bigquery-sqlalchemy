@@ -22,20 +22,22 @@ import sqlalchemy.sql.operators
 import sqlalchemy.sql.schema
 import pybigquery.sqlalchemy_bigquery
 
+
 def _check(raw, escaped, escape=None, autoescape=True):
 
     col = sqlalchemy.sql.schema.Column()
     op = col.contains(raw, escape=escape, autoescape=autoescape)
     o2 = pybigquery.sqlalchemy_bigquery.BigQueryCompiler._maybe_reescape(op)
     assert o2.left.__dict__ == op.left.__dict__
-    assert not o2.modifiers.get('escape')
+    assert not o2.modifiers.get("escape")
 
     assert o2.right.value == escaped
+
 
 def test_like_autoescape_reescape():
 
     _check("ab%cd", "ab\\%cd")
     _check("ab%c_d", "ab\\%c\\_d")
     _check("ab%cd", "ab%cd", autoescape=False)
-    _check("ab%c_d", "ab\\%c\\_d", escape='\\')
+    _check("ab%c_d", "ab\\%c\\_d", escape="\\")
     _check("ab/%c/_/d", "ab/\\%c/\\_/d")

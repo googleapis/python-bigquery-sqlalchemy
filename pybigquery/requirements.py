@@ -4,8 +4,8 @@ import sqlalchemy.testing.exclusions
 supported = sqlalchemy.testing.exclusions.open
 unsupported = sqlalchemy.testing.exclusions.closed
 
-class Requirements(sqlalchemy.testing.requirements.SuiteRequirements):
 
+class Requirements(sqlalchemy.testing.requirements.SuiteRequirements):
     @property
     def index_reflection(self):
         return unsupported()

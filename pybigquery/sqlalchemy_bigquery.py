@@ -156,7 +156,6 @@ NUMERIC = _type_map["NUMERIC"]
 
 
 class BigQueryExecutionContext(DefaultExecutionContext):
-
     def create_cursor(self):
         # Set arraysize
         c = super(BigQueryExecutionContext, self).create_cursor()
@@ -166,16 +165,19 @@ class BigQueryExecutionContext(DefaultExecutionContext):
 
     def get_insert_default(self, column):
         if isinstance(column.type, Integer):
-            return random.randint(-9223372036854775808, 9223372036854775808) # 1<<63
+            return random.randint(-9223372036854775808, 9223372036854775808)  # 1<<63
         elif isinstance(column.type, String):
             return str(uuid.uuid4())
 
-    def pre_exec(self,
-                 in_sub=re.compile(
-                     r" IN UNNEST\(\[ "
-                     r"(%\([^)]+\d+\)s(, %\([^)]+_\d+\)s)+)?"  # Placeholders
-                     ":([A-Z0-9]+)"                            # Type
-                     r" \]\)").sub):
+    def pre_exec(
+        self,
+        in_sub=re.compile(
+            r" IN UNNEST\(\[ "
+            r"(%\([^)]+\d+\)s(, %\([^)]+_\d+\)s)+)?"  # Placeholders
+            ":([A-Z0-9]+)"  # Type
+            r" \]\)"
+        ).sub,
+    ):
         # If we have an in parameter, it gets expaned to 0 or more
         # parameters and we need to move the type marker to each
         # parameter.
@@ -187,7 +189,7 @@ class BigQueryExecutionContext(DefaultExecutionContext):
             if placeholders:
                 placeholders = placeholders.replace(")", f":{type_})")
             else:
-                placeholders = ''
+                placeholders = ""
             return f" IN UNNEST([ {placeholders} ])"
 
         self.statement = in_sub(repl, self.statement)
@@ -214,7 +216,6 @@ class BigQueryCompiler(SQLCompiler):
         # make sure this only affects insert, because I'm paranoid. :)
 
         self.inline = False
-
 
         return super(BigQueryCompiler, self).visit_insert(
             insert_stmt, asfrom=False, **kw
@@ -271,22 +272,22 @@ class BigQueryCompiler(SQLCompiler):
     # no way to tell sqlalchemy that, so it works harder than
     # necessary and makes us do the same.
 
-    _in_expanding_bind = re.compile(r' IN \((\[EXPANDING_\w+\](:[A-Z0-9]+)?)\)$')
+    _in_expanding_bind = re.compile(r" IN \((\[EXPANDING_\w+\](:[A-Z0-9]+)?)\)$")
 
     def _unnestify_in_expanding_bind(self, in_text):
-        return self._in_expanding_bind.sub(r' IN UNNEST([ \1 ])', in_text)
+        return self._in_expanding_bind.sub(r" IN UNNEST([ \1 ])", in_text)
 
     def visit_in_op_binary(self, binary, operator_, **kw):
         return self._unnestify_in_expanding_bind(
-            self._generate_generic_binary(binary, ' IN ', **kw)
+            self._generate_generic_binary(binary, " IN ", **kw)
         )
 
     def visit_empty_set_expr(self, element_types):
-        return ''
+        return ""
 
     def visit_notin_op_binary(self, binary, operator, **kw):
         return self._unnestify_in_expanding_bind(
-            self._generate_generic_binary(binary, ' NOT IN ', **kw)
+            self._generate_generic_binary(binary, " NOT IN ", **kw)
         )
 
     ############################################################################
@@ -298,37 +299,43 @@ class BigQueryCompiler(SQLCompiler):
     @staticmethod
     def _maybe_reescape(binary):
         binary = binary._clone()
-        escape = binary.modifiers.pop('escape', None)
-        if escape and escape != '\\':
+        escape = binary.modifiers.pop("escape", None)
+        if escape and escape != "\\":
             binary.right.value = escape.join(
-                v.replace(escape, '\\')
+                v.replace(escape, "\\")
                 for v in binary.right.value.split(escape + escape)
             )
         return binary
 
     def visit_contains_op_binary(self, binary, operator, **kw):
-        return super(BigQueryCompiler,self).visit_contains_op_binary(
-            self._maybe_reescape(binary), operator, **kw)
+        return super(BigQueryCompiler, self).visit_contains_op_binary(
+            self._maybe_reescape(binary), operator, **kw
+        )
 
     def visit_notcontains_op_binary(self, binary, operator, **kw):
-        return super(BigQueryCompiler,self).visit_notcontains_op_binary(
-            self._maybe_reescape(binary), operator, **kw)
+        return super(BigQueryCompiler, self).visit_notcontains_op_binary(
+            self._maybe_reescape(binary), operator, **kw
+        )
 
     def visit_startswith_op_binary(self, binary, operator, **kw):
-        return super(BigQueryCompiler,self).visit_startswith_op_binary(
-            self._maybe_reescape(binary), operator, **kw)
+        return super(BigQueryCompiler, self).visit_startswith_op_binary(
+            self._maybe_reescape(binary), operator, **kw
+        )
 
     def visit_notstartswith_op_binary(self, binary, operator, **kw):
-        return super(BigQueryCompiler,self).visit_notstartswith_op_binary(
-            self._maybe_reescape(binary), operator, **kw)
+        return super(BigQueryCompiler, self).visit_notstartswith_op_binary(
+            self._maybe_reescape(binary), operator, **kw
+        )
 
     def visit_endswith_op_binary(self, binary, operator, **kw):
-        return super(BigQueryCompiler,self).visit_endswith_op_binary(
-            self._maybe_reescape(binary), operator, **kw)
+        return super(BigQueryCompiler, self).visit_endswith_op_binary(
+            self._maybe_reescape(binary), operator, **kw
+        )
 
     def visit_notendswith_op_binary(self, binary, operator, **kw):
-        return super(BigQueryCompiler,self).visit_notendswith_op_binary(
-            self._maybe_reescape(binary), operator, **kw)
+        return super(BigQueryCompiler, self).visit_notendswith_op_binary(
+            self._maybe_reescape(binary), operator, **kw
+        )
 
     ############################################################################
 
@@ -338,26 +345,25 @@ class BigQueryCompiler(SQLCompiler):
         within_columns_clause=False,
         literal_binds=False,
         skip_bind_expression=False,
-        **kwargs
+        **kwargs,
     ):
         param = super(BigQueryCompiler, self).visit_bindparam(
             bindparam,
             within_columns_clause,
             literal_binds,
             skip_bind_expression,
-            **kwargs
+            **kwargs,
         )
 
         type_ = bindparam.type
         if isinstance(type_, NullType):
             return param
 
-        if (isinstance(type_, Numeric)
-            and
-            (type_.precision is None or type_.scale is None)
-            and
-            isinstance(bindparam.value, Decimal)
-            ):
+        if (
+            isinstance(type_, Numeric)
+            and (type_.precision is None or type_.scale is None)
+            and isinstance(bindparam.value, Decimal)
+        ):
             t = bindparam.value.as_tuple()
 
             if type_.precision is None:
@@ -367,10 +373,10 @@ class BigQueryCompiler(SQLCompiler):
                 type_.scale = -t.exponent
 
         bq_type = self.dialect.type_compiler.process(type_)
-        if param == '%s':
-            return f'%(:{bq_type})s'
+        if param == "%s":
+            return f"%(:{bq_type})s"
         else:
-            return param.replace(')', f":{bq_type})")
+            return param.replace(")", f":{bq_type})")
 
 
 class BigQueryTypeCompiler(GenericTypeCompiler):
@@ -388,7 +394,9 @@ class BigQueryTypeCompiler(GenericTypeCompiler):
     def visit_STRING(self, type_, **kw):
         return "STRING"
 
-    visit_TEXT = visit_CHAR = visit_VARCHAR = visit_NCHAR = visit_NVARCHAR = visit_STRING
+    visit_TEXT = (
+        visit_CHAR
+    ) = visit_VARCHAR = visit_NCHAR = visit_NVARCHAR = visit_STRING
 
     def visit_ARRAY(self, type_, **kw):
         return "ARRAY<{}>".format(self.process(type_.item_type, **kw))
@@ -397,9 +405,8 @@ class BigQueryTypeCompiler(GenericTypeCompiler):
         return "BYTES"
 
     def visit_NUMERIC(self, type_, **kw):
-        if ((type_.precision is not None and type_.precision > 38)
-            or
-            (type_.scale is not None and type_.scale > 9)
+        if (type_.precision is not None and type_.precision > 38) or (
+            type_.scale is not None and type_.scale > 9
         ):
             return "BIGNUMERIC"
         else:
@@ -475,13 +482,12 @@ def process_literal(value):
     if value:
         value = repr(value.replace("%", "%%"))
         if value[0] == '"':
-            value = "'" + value[1:-1].replace("'", "\'") + "'"
+            value = "'" + value[1:-1].replace("'", "'") + "'"
 
     return value
 
 
 class BQString(String):
-
     def literal_processor(self, dialect):
         return process_literal
 
@@ -550,7 +556,7 @@ class BigQueryDialect(DefaultDialect):
         location=None,
         credentials_info=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super(BigQueryDialect, self).__init__(*args, **kwargs)
         self.arraysize = arraysize

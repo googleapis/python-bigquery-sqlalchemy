@@ -40,7 +40,6 @@ del QuotedNameArgumentTest
 
 
 class InsertBehaviorTest(_InsertBehaviorTest):
-
     @pytest.mark.skip()
     def test_insert_from_select_autoinc(cls):
         """BQ has no autoinc and client-side defaults can't work for select."""
@@ -59,10 +58,7 @@ class ExistsTest(_ExistsTest):
         eq_(
             connection.execute(
                 select([stuff.c.id]).where(
-                    and_(
-                        stuff.c.id == 1,
-                        exists().where(stuff.c.data == "some data"),
-                    )
+                    and_(stuff.c.id == 1, exists().where(stuff.c.data == "some data"),)
                 )
             ).fetchall(),
             [(1,)],
@@ -72,16 +68,13 @@ class ExistsTest(_ExistsTest):
         stuff = self.tables.stuff
         eq_(
             connection.execute(
-                select([stuff.c.id]).where(
-                    exists().where(stuff.c.data == "no data")
-                )
+                select([stuff.c.id]).where(exists().where(stuff.c.data == "no data"))
             ).fetchall(),
             [],
         )
 
 
 class LimitOffsetTest(_LimitOffsetTest):
-
     @pytest.mark.skip()
     def test_simple_offset(self):
         """BigQuery doesn't allow an offset without a limit."""
@@ -100,7 +93,7 @@ class SimpleUpdateDeleteTest(_SimpleUpdateDeleteTest):
         t = self.tables.plain_pk
         r = config.db.execute(t.update().where(t.c.id == 2), data="d2_new")
         assert not r.is_insert
-        #assert not r.returns_rows
+        # assert not r.returns_rows
 
         eq_(
             config.db.execute(t.select().order_by(t.c.id)).fetchall(),
@@ -111,7 +104,7 @@ class SimpleUpdateDeleteTest(_SimpleUpdateDeleteTest):
         t = self.tables.plain_pk
         r = config.db.execute(t.delete().where(t.c.id == 2))
         assert not r.is_insert
-        #assert not r.returns_rows
+        # assert not r.returns_rows
         eq_(
             config.db.execute(t.select().order_by(t.c.id)).fetchall(),
             [(1, "d1"), (3, "d3")],
@@ -119,7 +112,6 @@ class SimpleUpdateDeleteTest(_SimpleUpdateDeleteTest):
 
 
 class CTETest(_CTETest):
-
     @pytest.mark.skip("Can't use CTEs with insert")
     def test_insert_from_select_round_trip(self):
         pass
@@ -128,13 +120,14 @@ class CTETest(_CTETest):
     def test_select_recursive_round_trip(self):
         pass
 
-class ComponentReflectionTest(_ComponentReflectionTest):
 
+class ComponentReflectionTest(_ComponentReflectionTest):
     @pytest.mark.skip("Big query types don't track precision, length, etc.")
     def course_grained_types():
         pass
 
     test_numeric_reflection = test_varchar_reflection = course_grained_types
+
 
 class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
 
@@ -147,6 +140,7 @@ class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
         def literal(value):
             assert value == self.data
             import sqlalchemy.sql.sqltypes
+
             return sqlalchemy.sql.elements.literal(value, self.datatype)
 
         with mock.patch("sqlalchemy.testing.suite.test_types.literal", literal):
