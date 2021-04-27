@@ -104,9 +104,11 @@ def test_basic(url_with_everything):
         ("labels", {"a": "b", "c": "d"}, {}),
         ("maximum_bytes_billed", 1000, None),
         ("priority", "INTERACTIVE", None),
-        ("schema_update_options",
-         ["ALLOW_FIELD_ADDITION", "ALLOW_FIELD_RELAXATION"],
-         None),
+        (
+            "schema_update_options",
+            ["ALLOW_FIELD_ADDITION", "ALLOW_FIELD_RELAXATION"],
+            None,
+        ),
         ("use_query_cache", True, None),
         ("write_disposition", "WRITE_APPEND", None),
     ],
@@ -126,6 +128,7 @@ def test_all_values(url_with_everything, param, value, default):
     url_with_nothing = make_url("bigquery://some-project/some-dataset")
     job_config = parse_url(url_with_nothing)[5]
     assert getattr(job_config, param) == default
+
 
 @pytest.mark.parametrize(
     "param, value",
@@ -223,6 +226,7 @@ def test_not_implemented(not_implemented_arg):
 
 def test_parse_boolean():
     from pybigquery.parse_url import parse_boolean
+
     assert parse_boolean("true")
     assert parse_boolean("True")
     assert parse_boolean("TRUE")
