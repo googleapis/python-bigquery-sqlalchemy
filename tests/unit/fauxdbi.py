@@ -3,12 +3,16 @@ import google.cloud.bigquery.schema
 import google.cloud.bigquery.table
 import google.cloud.bigquery.dbapi.cursor
 import contextlib
+import datetime
+import decimal
+import re
 import sqlite3
 
 
 class Connection:
-    def __init__(self, client=None, bqstorage_client=None):
-        self.connection = sqlite3.connect("data.db")
+    def __init__(self, connection, test_data, client, *args, **kw):
+        self.connection = connection
+        self.test_data = test_data
         self._client = FauxClient(client, self)
 
     def cursor(self):
@@ -36,14 +40,37 @@ class Cursor:
         self.connection.test_data["execute"].append((operation, parameters))
         operation, types_ = google.cloud.bigquery.dbapi.cursor._extract_types(operation)
         if parameters:
-            parameters = {
-                name: "null" if value is None else repr(value)
-                for name, value in parameters.items()
-            }
-            operation %= parameters
+            operation, parameters = self._convert_params(operation, parameters)
+            parameters = [
+                float(p) if isinstance(p, decimal.Decimal) else p for p in parameters
+            ]
+            parameters = [
+                str(p)
+                if isinstance(p, (datetime.date, datetime.time, datetime.datetime))
+                else p
+                for p in parameters
+            ]
+
+        for prefix in "DATETIME", "DATE", "TIMESTAMP", "TIME":
+            operation = operation.replace(prefix + " ", "")
+
+        operation = re.sub("(, |[(])b(['\"])", r"\1\2", operation)
+
         self.cursor.execute(operation, parameters)
         self.description = self.cursor.description
         self.rowcount = self.cursor.rowcount
+
+    @staticmethod
+    def _convert_params(operation, parameters):
+        ordered_parameters = []
+
+        def repl(m):
+            name = m.group(1)
+            ordered_parameters.append(parameters[name])
+            return "?"
+
+        operation = re.sub("%\((\w+)\)s", repl, operation)
+        return operation, ordered_parameters
 
     def executemany(self, operation, parameters_list):
         for parameters in parameters_list:
@@ -52,20 +79,19 @@ class Cursor:
     def close(self):
         self.cursor.close()
 
+    def _fix_binary(self, row):
+        if row is None:
+            return row
+
+        return [
+            v.encode("utf8")
+            if "BINARY" in d[0].upper() and not isinstance(v, bytes)
+            else v
+            for d, v in zip(self.description, row)
+        ]
+
     def fetchone(self):
-        return self.cursor.fetchone()
-
-    def fetchmany(self, size=None):
-        self.cursor.fetchmany(size or self.arraysize)
-
-    def fetchall(self):
-        return self.cursor.fetchall()
-
-    def setinputsizes(self, sizes):
-        pass
-
-    def setoutputsize(self, size, column=None):
-        pass
+        return self._fix_binary(self.cursor.fetchone())
 
 
 class FauxClient:
