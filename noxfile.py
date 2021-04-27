@@ -187,8 +187,8 @@ def compliance(session):
     if os.environ.get("GOOGLE_API_USE_CLIENT_CERTIFICATE", "false") == "true":
         session.install("pyopenssl")
     # Sanity check: only run tests if found.
-    if not system_test_exists and not system_test_folder_exists:
-        session.skip("System tests were not found")
+    if not os.path.exists(system_test_folder_path):
+        session.skip("Compliance tests were not found")
 
     # Use pre-release gRPC for system tests.
     session.install("--pre", "grpcio")
