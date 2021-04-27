@@ -383,7 +383,7 @@ class BigQueryTypeCompiler(GenericTypeCompiler):
     def visit_INTEGER(self, type_, **kw):
         return "INT64"
 
-    visit_BIGINT = visit_INTEGER
+    visit_BIGINT = visit_SMALLINT = visit_INTEGER
 
     def visit_BOOLEAN(self, type_, **kw):
         return "BOOL"
@@ -391,18 +391,21 @@ class BigQueryTypeCompiler(GenericTypeCompiler):
     def visit_FLOAT(self, type_, **kw):
         return "FLOAT64"
 
+    visit_REAL = visit_FLOAT
+
     def visit_STRING(self, type_, **kw):
         return "STRING"
 
-    visit_TEXT = (
-        visit_CHAR
-    ) = visit_VARCHAR = visit_NCHAR = visit_NVARCHAR = visit_STRING
+    visit_CHAR = visit_NCHAR = visit_STRING
+    visit_VARCHAR = visit_NVARCHAR = visit_TEXT = visit_STRING
 
     def visit_ARRAY(self, type_, **kw):
         return "ARRAY<{}>".format(self.process(type_.item_type, **kw))
 
     def visit_BINARY(self, type_, **kw):
         return "BYTES"
+
+    visit_VARBINARY = visit_BINARY
 
     def visit_NUMERIC(self, type_, **kw):
         if (type_.precision is not None and type_.precision > 38) or (
@@ -444,12 +447,16 @@ class BigQueryDDLCompiler(DDLCompiler):
         opts = []
 
         if ("description" in bq_opts) or table.comment:
-            description = process_literal(bq_opts.get("description", table.comment))
+            description = process_string_literal(
+                bq_opts.get("description", table.comment)
+            )
             opts.append(f"description={description}")
 
         if "friendly_name" in bq_opts:
             opts.append(
-                "friendly_name={}".format(process_literal(bq_opts["friendly_name"]))
+                "friendly_name={}".format(
+                    process_string_literal(bq_opts["friendly_name"])
+                )
             )
 
         if opts:
@@ -461,7 +468,7 @@ class BigQueryDDLCompiler(DDLCompiler):
         text = super(BigQueryDDLCompiler, self).visit_create_column(create, first_pk)
         comment = create.element.comment
         if comment:
-            comment = process_literal(comment)
+            comment = process_string_literal(comment)
             return f"{text} options(description={comment})"
         else:
             return text
@@ -478,7 +485,7 @@ class BigQueryDDLCompiler(DDLCompiler):
         return f"ALTER TABLE {table_name} SET OPTIONS(description=null)"
 
 
-def process_literal(value):
+def process_string_literal(value):
     if value:
         value = repr(value.replace("%", "%%"))
         if value[0] == '"':
@@ -489,7 +496,21 @@ def process_literal(value):
 
 class BQString(String):
     def literal_processor(self, dialect):
-        return process_literal
+        return process_string_literal
+
+
+class BQBinary(sqlalchemy.sql.sqltypes._Binary):
+    @staticmethod
+    def __process_bytes_literal(value):
+        if value:
+            value = repr(value.replace(b"%", b"%%"))
+            if value[0] == b'"':
+                value = b"'" + value[1:-1].replace(b"'", b"'") + b"'"
+
+        return value
+
+    def literal_processor(self, dialect):
+        return self.__process_bytes_literal
 
 
 class BQClassTaggedStr(sqlalchemy.sql.type_api.TypeEngine):
@@ -498,7 +519,7 @@ class BQClassTaggedStr(sqlalchemy.sql.type_api.TypeEngine):
 
     @staticmethod
     def process_literal_as_class_tagged_str(value):
-        return f"{value.__class__.__name__.upper()} {process_literal(str(value))}"
+        return f"{value.__class__.__name__.upper()} {repr(str(value))}"
 
     def literal_processor(self, dialect):
         return self.process_literal_as_class_tagged_str
@@ -510,7 +531,7 @@ class BQTimestamp(sqlalchemy.sql.type_api.TypeEngine):
 
     @staticmethod
     def process_timestamp_literal(value):
-        return f"TIMESTAMP {process_literal(str(value))}"
+        return f"TIMESTAMP {process_string_literal(str(value))}"
 
     def literal_processor(self, dialect):
         return self.process_timestamp_literal
@@ -543,6 +564,7 @@ class BigQueryDialect(DefaultDialect):
 
     colspecs = {
         String: BQString,
+        sqlalchemy.sql.sqltypes._Binary: BQBinary,
         sqlalchemy.sql.sqltypes.Date: BQClassTaggedStr,
         sqlalchemy.sql.sqltypes.DateTime: BQClassTaggedStr,
         sqlalchemy.sql.sqltypes.Time: BQClassTaggedStr,
