@@ -874,10 +874,6 @@ class BigQueryDialect(DefaultDialect):
         # requests gives back Unicode strings
         return True
 
-    def _check_unicode_description(self, connection):
-        # requests gives back Unicode strings
-        return True
-
     def get_view_definition(self, connection, view_name, schema=None, **kw):
         if isinstance(connection, Engine):
             connection = connection.connect()
