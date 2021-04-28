@@ -100,6 +100,10 @@ class FauxClient:
         self.project = client.project
         self.connection = connection
 
+    @staticmethod
+    def _row_dict(row, cursor):
+        return {d[0]: value for d, value in zip(cursor.description, row)}
+
     def get_table(self, table_ref):
         table_ref = google.cloud.bigquery.table._table_arg_to_table_ref(
             table_ref, self._client.project)
@@ -108,7 +112,7 @@ class FauxClient:
             cursor.execute(f"select * from sqlite_master where name='{table_name}'")
             rows = list(cursor)
             if rows:
-                row = {d[0]: value for d, value in zip(cursor.description, rows[0])}
+                row = self._row_dict(rows[0], cursor)
                 cursor.execute("PRAGMA table_info('{table_name}')")
                 schema = [
                     google.cloud.bigquery.schema.SchemaField(
@@ -124,3 +128,28 @@ class FauxClient:
                 return table
             else:
                 raise google.api_core.exceptions.NotFound(table_ref)
+
+    def list_datasets(self):
+        return [google.cloud.bigquery.Dataset("myproject.mydataset"),
+                google.cloud.bigquery.Dataset("myproject.yourdataset"),
+                ]
+
+    def list_tables(self, dataset):
+        with contextlib.closing(self.connection.connection.cursor()) as cursor:
+            cursor.execute(f"select * from sqlite_master")
+            return [
+                google.cloud.bigquery.table.TableListItem(
+                    dict(
+                        tableReference=dict(
+                            projectId=dataset.project,
+                            datasetId=dataset.dataset_id,
+                            tableId=row['name'],
+                            ),
+                        type=row['type'].upper(),
+                        )
+                    )
+                for row in (
+                        self._row_dict(row, cursor)
+                        for row in cursor
+                        )
+                ]
