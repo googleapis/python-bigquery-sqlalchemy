@@ -36,7 +36,7 @@ class Cursor:
         self.connection = connection
         self.cursor = connection.connection.cursor()
 
-    def execute(self, operation, parameters=None):
+    def execute(self, operation, parameters=()):
         self.connection.test_data["execute"].append((operation, parameters))
         operation, types_ = google.cloud.bigquery.dbapi.cursor._extract_types(operation)
         if parameters:
@@ -101,13 +101,14 @@ class FauxClient:
         self.connection = connection
 
     def get_table(self, table_ref):
+        table_ref = google.cloud.bigquery.table._table_arg_to_table_ref(
+            table_ref, self._client.project)
         table_name = table_ref.table_id
         with contextlib.closing(self.connection.connection.cursor()) as cursor:
-            cursor.execute(
-                f"select name from sqlite_master"
-                f" where type='table' and name='{table_name}'"
-            )
-            if list(cursor):
+            cursor.execute(f"select * from sqlite_master where name='{table_name}'")
+            rows = list(cursor)
+            if rows:
+                row = {d[0]: value for d, value in zip(cursor.description, rows[0])}
                 cursor.execute("PRAGMA table_info('{table_name}')")
                 schema = [
                     google.cloud.bigquery.schema.SchemaField(
@@ -117,6 +118,9 @@ class FauxClient:
                     )
                     for cid, name, type_, notnull, dflt_value, pk in cursor
                 ]
-                return google.cloud.bigquery.table.Table(table_ref, schema)
+                table = google.cloud.bigquery.table.Table(table_ref, schema)
+                if row['sql']:
+                    table.view_query = row['sql'][row['sql'].lower().index('select'):]
+                return table
             else:
                 raise google.api_core.exceptions.NotFound(table_ref)
