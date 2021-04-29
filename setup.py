@@ -82,7 +82,7 @@ setuptools.setup(
     install_requires=[
         "sqlalchemy>=1.1.9,<1.4.0dev",
         "google-auth>=1.14.0,<2.0dev",  # Work around pip wack.
-        "google-cloud-bigquery>=1.12.0",
+        "google-cloud-bigquery>=2.15.0",
         "google-api-core>=1.19.1",  # Work-around bug in cloud core deps.
         "future",
     ],
