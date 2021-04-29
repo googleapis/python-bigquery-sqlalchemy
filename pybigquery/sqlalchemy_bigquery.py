@@ -646,7 +646,6 @@ class BigQueryDialect(DefaultDialect):
         The DB-API layer already deserializes JSON to a dictionary, so this
         just returns the input.
         """
-        breakpoint()
         return row
 
     def _get_table_or_view_names(self, connection, table_type, schema=None):
