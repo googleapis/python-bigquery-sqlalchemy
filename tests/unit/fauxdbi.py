@@ -94,15 +94,51 @@ class Cursor:
         return self._fix_binary(self.cursor.fetchone())
 
 
+class attrdict(dict):
+    def __setattr__(self, name, val):
+        self[name] = val
+    def __getattr__(self, name):
+        if name not in self:
+            self[name] = attrdict()
+        return self[name]
+
+
 class FauxClient:
+
     def __init__(self, client, connection):
         self._client = client
         self.project = client.project
         self.connection = connection
+        self.tables = attrdict()
 
     @staticmethod
     def _row_dict(row, cursor):
-        return {d[0]: value for d, value in zip(cursor.description, row)}
+        result = {d[0]: value for d, value in zip(cursor.description, row)}
+        return result
+
+    def _get_field(
+        self, type, name=None, notnull=None, mode=None, description=None, fields=(),
+        columns=None, **_
+    ):
+        if columns:
+            custom = columns.get(name)
+            if custom:
+                return self._get_field(
+                    **dict(name=name, type=type, notnull=notnull, **custom)
+                )
+
+        if not mode:
+            mode="REQUIRED" if notnull else "NULLABLE"
+
+        field = google.cloud.bigquery.schema.SchemaField(
+            name=name,
+            field_type=type,
+            mode=mode,
+            description=description,
+            fields=tuple(self._get_field(**f) for f in fields),
+            )
+
+        return field
 
     def get_table(self, table_ref):
         table_ref = google.cloud.bigquery.table._table_arg_to_table_ref(
@@ -113,18 +149,19 @@ class FauxClient:
             rows = list(cursor)
             if rows:
                 row = self._row_dict(rows[0], cursor)
-                cursor.execute("PRAGMA table_info('{table_name}')")
+                columns = self.tables.get(row['name'], {}).get('columns', {})
+                cursor.execute(f"PRAGMA table_info('{table_name}')")
                 schema = [
-                    google.cloud.bigquery.schema.SchemaField(
-                        name=name,
-                        field_type=type_,
-                        mode="REQUIRED" if notnull else "NULLABLE",
-                    )
-                    for cid, name, type_, notnull, dflt_value, pk in cursor
+                    self._get_field(columns=columns, **self._row_dict(row, cursor))
+                    for row in cursor
                 ]
                 table = google.cloud.bigquery.table.Table(table_ref, schema)
-                if row['sql']:
+                if row['type'] == 'view' and row['sql']:
                     table.view_query = row['sql'][row['sql'].lower().index('select'):]
+
+                for aname, value in self.tables.get(row['name'], {}).items():
+                    setattr(table, aname, value)
+
                 return table
             else:
                 raise google.api_core.exceptions.NotFound(table_ref)

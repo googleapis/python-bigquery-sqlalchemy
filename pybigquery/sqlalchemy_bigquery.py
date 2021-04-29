@@ -130,8 +130,11 @@ class BigQueryIdentifierPreparer(IdentifierPreparer):
 
 _type_map = {
     "STRING": types.String,
+    "BOOL": types.Boolean,
     "BOOLEAN": types.Boolean,
+    "INT64": types.Integer,
     "INTEGER": types.Integer,
+    "FLOAT64": types.Float,
     "FLOAT": types.Float,
     "TIMESTAMP": types.TIMESTAMP,
     "DATETIME": types.DATETIME,
@@ -140,11 +143,15 @@ _type_map = {
     "TIME": types.TIME,
     "RECORD": types.JSON,
     "NUMERIC": types.DECIMAL,
+    "BIGNUMERIC": types.DECIMAL,
 }
 
 STRING = _type_map["STRING"]
+BOOL = _type_map["BOOL"]
 BOOLEAN = _type_map["BOOLEAN"]
+INT64 = _type_map["INT64"]
 INTEGER = _type_map["INTEGER"]
+FLOAT64 = _type_map["FLOAT64"]
 FLOAT = _type_map["FLOAT"]
 TIMESTAMP = _type_map["TIMESTAMP"]
 DATETIME = _type_map["DATETIME"]
@@ -153,6 +160,7 @@ BYTES = _type_map["BYTES"]
 TIME = _type_map["TIME"]
 RECORD = _type_map["RECORD"]
 NUMERIC = _type_map["NUMERIC"]
+BIGNUMERIC = _type_map["NUMERIC"]
 
 
 class BigQueryExecutionContext(DefaultExecutionContext):
@@ -638,6 +646,7 @@ class BigQueryDialect(DefaultDialect):
         The DB-API layer already deserializes JSON to a dictionary, so this
         just returns the input.
         """
+        breakpoint()
         return row
 
     def _get_table_or_view_names(self, connection, table_type, schema=None):
@@ -700,9 +709,7 @@ class BigQueryDialect(DefaultDialect):
         dataset_id_from_schema = None
         if provided_schema_name is not None:
             provided_schema_name_split = provided_schema_name.split(".")
-            if len(provided_schema_name_split) == 0:
-                pass
-            elif len(provided_schema_name_split) == 1:
+            if len(provided_schema_name_split) == 1:
                 if dataset_id_from_table:
                     project_id_from_schema = provided_schema_name_split[0]
                 else:

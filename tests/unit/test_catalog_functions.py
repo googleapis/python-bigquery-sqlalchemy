@@ -1,4 +1,5 @@
 import pytest
+import sqlalchemy.types
 
 
 
@@ -68,6 +69,7 @@ def test__table_reference_inconsistent_dataset_id(
             schema, table, faux_conn.connection._client.project
         )
 
+
 @pytest.mark.parametrize('type_', ['view', 'table'])
 def test_get_table_names(faux_conn, type_):
     cursor = faux_conn.connection.cursor()
@@ -81,3 +83,149 @@ def test_get_table_names(faux_conn, type_):
     # once more with engine:
     assert sorted(getattr(faux_conn.dialect, f"get_{type_}_names")(faux_conn.engine)
                   ) == [f"{type_}{d}" for d in "12"]
+
+
+def test_get_schema_names(faux_conn):
+    assert list(faux_conn.dialect.get_schema_names(faux_conn)
+                ) == ["mydataset", "yourdataset"]
+    # once more with engine:
+    assert list(faux_conn.dialect.get_schema_names(faux_conn.engine)
+                ) == ["mydataset", "yourdataset"]
+
+
+def test_get_indexes(faux_conn):
+    from  google.cloud.bigquery.table import TimePartitioning
+
+    cursor = faux_conn.connection.cursor()
+    cursor.execute("create table foo (x INT64)")
+    assert faux_conn.dialect.get_indexes(faux_conn, 'foo') == []
+
+    client = faux_conn.connection._client
+    client.tables.foo.time_partitioning = TimePartitioning(field='tm')
+    client.tables.foo.clustering_fields = ["user_email", "store_code"]
+
+    assert faux_conn.dialect.get_indexes(faux_conn, 'foo') == [
+        dict(name='partition',
+             column_names=['tm'],
+             unique=False,
+             ),
+        dict(name='clustering',
+             column_names=["user_email", "store_code"],
+             unique=False,
+             ),
+        ]
+
+
+def test_no_table_pk_constraint(faux_conn):
+    # BigQuery doesn't do that.
+    assert faux_conn.dialect.get_pk_constraint(faux_conn, 'foo') == (
+        dict(constrained_columns=[]))
+
+
+def test_no_table_foreign_keys(faux_conn):
+    # BigQuery doesn't do that.
+    assert faux_conn.dialect.get_foreign_keys(faux_conn, 'foo') == []
+
+
+def test_get_table_comment(faux_conn):
+    cursor = faux_conn.connection.cursor()
+    cursor.execute("create table foo (x INT64)")
+    assert faux_conn.dialect.get_table_comment(faux_conn, 'foo') == (
+        dict(text=None))
+
+    client = faux_conn.connection._client
+    client.tables.foo.description = 'special table'
+    assert faux_conn.dialect.get_table_comment(faux_conn, 'foo') == (
+        dict(text='special table'))
+
+
+@pytest.mark.parametrize(
+    'btype,atype',
+    [
+        ('STRING', sqlalchemy.types.String),
+        ('BYTES', sqlalchemy.types.BINARY),
+        ('INT64', sqlalchemy.types.Integer),
+        ('FLOAT64', sqlalchemy.types.Float),
+        ('NUMERIC', sqlalchemy.types.DECIMAL),
+        ('BIGNUMERIC', sqlalchemy.types.DECIMAL),
+        ('BOOL', sqlalchemy.types.Boolean),
+        ('TIMESTAMP', sqlalchemy.types.TIMESTAMP),
+        ('DATE', sqlalchemy.types.DATE),
+        ('TIME', sqlalchemy.types.TIME),
+        ('DATETIME', sqlalchemy.types.DATETIME),
+        ('THURSDAY', sqlalchemy.types.NullType),
+     ])
+def test_get_table_columns(faux_conn, btype, atype):
+    cursor = faux_conn.connection.cursor()
+    cursor.execute(f"create table foo (x {btype})")
+
+    assert faux_conn.dialect.get_columns(faux_conn, 'foo') == [
+        {'comment': None,
+         'default': None,
+         'name': 'x',
+         'nullable': True,
+         'type': atype,
+         }]
+
+def test_get_table_columns_special_cases(faux_conn):
+    cursor = faux_conn.connection.cursor()
+    cursor.execute("create table foo (s STRING, n INT64 not null, r RECORD)")
+    client = faux_conn.connection._client
+    client.tables.foo.columns.s.description = 'a fine column'
+    client.tables.foo.columns.s.mode = 'REPEATED'
+    client.tables.foo.columns.r.fields = (
+        dict(name='i', type='INT64'),
+        dict(name='f', type='FLOAT64'),
+    )
+
+    actual = faux_conn.dialect.get_columns(faux_conn, 'foo')
+    stype = actual[0].pop('type')
+    assert isinstance(stype, sqlalchemy.types.ARRAY)
+    assert isinstance(stype.item_type, sqlalchemy.types.String)
+    assert actual == [
+        {'comment': 'a fine column',
+         'default': None,
+         'name': 's',
+         'nullable': True,
+         },
+        {'comment': None,
+         'default': None,
+         'name': 'n',
+         'nullable': False,
+         'type': sqlalchemy.types.Integer},
+        {'comment': None,
+         'default': None,
+         'name': 'r',
+         'nullable': True,
+         'type': sqlalchemy.types.JSON},
+        {'comment': None,
+         'default': None,
+         'name': 'r.i',
+         'nullable': True,
+         'type': sqlalchemy.types.Integer},
+        {'comment': None,
+         'default': None,
+         'name': 'r.f',
+         'nullable': True,
+         'type': sqlalchemy.types.Float},
+        ]
+
+def test_has_table(faux_conn):
+    cursor = faux_conn.connection.cursor()
+    assert not faux_conn.dialect.has_table(faux_conn, 'foo')
+    cursor.execute("create table foo (s STRING)")
+    assert faux_conn.dialect.has_table(faux_conn, 'foo')
+    # once more with engine:
+    assert faux_conn.dialect.has_table(faux_conn.engine, 'foo')
+
+def test_bad_schema_argument(faux_conn):
+    # with goofy schema name, to exercise some error handling
+    with pytest.raises(ValueError,
+                       match=r"Did not understand schema: a\.b\.c"):
+        faux_conn.dialect.has_table(faux_conn.engine, 'foo', 'a.b.c')
+
+def test_bad_table_argument(faux_conn):
+    # with goofy table name, to exercise some error handling
+    with pytest.raises(ValueError,
+                       match=r"Did not understand table_name: a\.b\.c\.d"):
+        faux_conn.dialect.has_table(faux_conn.engine, 'a.b.c.d')
