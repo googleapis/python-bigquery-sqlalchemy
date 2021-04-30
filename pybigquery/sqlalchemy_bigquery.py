@@ -494,10 +494,7 @@ class BigQueryDDLCompiler(DDLCompiler):
 
 
 def process_string_literal(value):
-    if value:
-        value = repr(value.replace("%", "%%"))
-
-    return value
+    return repr(value.replace("%", "%%"))
 
 
 class BQString(String):
@@ -506,12 +503,10 @@ class BQString(String):
 
 
 class BQBinary(sqlalchemy.sql.sqltypes._Binary):
+
     @staticmethod
     def __process_bytes_literal(value):
-        if value:
-            value = repr(value.replace(b"%", b"%%"))
-
-        return value
+        return repr(value.replace(b"%", b"%%"))
 
     def literal_processor(self, dialect):
         return self.__process_bytes_literal
