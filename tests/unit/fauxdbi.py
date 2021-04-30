@@ -68,9 +68,9 @@ class Cursor:
         r"SET\s+OPTIONS\(description=(?P<comment>[^)]+)\)",
         re.I).match
     __create_table = re.compile(r"\s*create\s+table\s+`(?P<table>\w+)`", re.I).match
-    __comments = re.compile(
+    __options = re.compile(
         r"(?P<prefix>`(?P<col>\w+)`\s+\w+|\))"
-        r"\s+options\(description=(?P<comment>[^)]+)\)",
+        r"\s+options\((?P<options>[^)]+)\)",
         re.I)
 
     def __handle_comments(self, operation):
@@ -80,15 +80,25 @@ class Cursor:
 
             def repl(m):
                 col = m.group('col') or ''
-                comment = m.group('comment')
-                self.cursor.execute(
-                    f"insert into comments values(?, {comment})"
-                    f" on conflict(key) do update set comment=excluded.comment",
-                    [table_name + ',' +  col],
-                    )
+                options = {
+                    name.strip().lower(): value.strip()
+                    for name, value in (
+                        o.split('=')
+                        for o in m.group('options').split(',')
+                        )
+                    }
+
+                comment = options.get('description')
+                if comment:
+                    self.cursor.execute(
+                        f"insert into comments values(?, {comment})"
+                        f" on conflict(key) do update set comment=excluded.comment",
+                        [table_name + ',' +  col],
+                        )
+
                 return m.group('prefix')
 
-            return self.__comments.sub(repl, operation)
+            return self.__options.sub(repl, operation)
 
         m = self.__alter_table(operation)
         if m:
