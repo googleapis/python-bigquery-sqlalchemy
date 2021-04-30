@@ -31,10 +31,14 @@ def faux_conn():
                 conn.test_data = test_data
 
                 def ex(sql, *args, **kw):
-                    with contextlib.closing(conn.connection.connection.cursor()) as cursor:
+                    with contextlib.closing(conn.connection.connection.connection.cursor()
+                                            ) as cursor:
                         cursor.execute(sql, *args, **kw)
 
                 conn.ex = ex
+
+                ex("create table comments"
+                   " (key string primary key, comment string)")
 
                 yield conn
                 conn.close()

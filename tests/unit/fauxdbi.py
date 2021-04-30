@@ -57,9 +57,48 @@ class Cursor:
 
         operation = re.sub("(, |[(])b(['\"])", r"\1\2", operation)
 
+        operation = self.__handle_comments(operation)
+
         self.cursor.execute(operation, parameters)
         self.description = self.cursor.description
         self.rowcount = self.cursor.rowcount
+
+    __alter_table = re.compile(
+        r"\s*ALTER\s+TABLE\s+`(?P<table>\w+)`\s+"
+        r"SET\s+OPTIONS\(description=(?P<comment>[^)]+)\)",
+        re.I).match
+    __create_table = re.compile(r"\s*create\s+table\s+`(?P<table>\w+)`", re.I).match
+    __comments = re.compile(
+        r"(?P<prefix>`(?P<col>\w+)`\s+\w+|\))"
+        r"\s+options\(description=(?P<comment>[^)]+)\)",
+        re.I)
+
+    def __handle_comments(self, operation):
+        m = self.__create_table(operation)
+        if m:
+            table_name = m.group('table')
+
+            def repl(m):
+                col = m.group('col') or ''
+                comment = m.group('comment')
+                self.cursor.execute(
+                    f"insert into comments values(?, {comment})"
+                    f" on conflict(key) do update set comment=excluded.comment",
+                    [table_name + ',' +  col],
+                    )
+                return m.group('prefix')
+
+            return self.__comments.sub(repl, operation)
+
+        m = self.__alter_table(operation)
+        if m:
+            table_name = m.group('table')
+            comment = m.group('comment')
+            return (f"insert into comments values({repr(table_name + ',')}, {comment})"
+                    f" on conflict(key) do update set comment=excluded.comment"
+                    )
+
+        return operation
 
     @staticmethod
     def _convert_params(operation, parameters):
@@ -115,7 +154,10 @@ class FauxClient:
         ):
 
         if project is None:
-            project = default_query_job_config.default_dataset.project
+            if default_query_job_config is not None:
+                project = default_query_job_config.default_dataset.project
+            else:
+                project = 'authproj'  # we would still have gotten it from auth.
 
         self.project = project
         self.tables = attrdict()
@@ -149,6 +191,13 @@ class FauxClient:
 
         return field
 
+    def __get_comments(self, cursor, table_name):
+        cursor.execute(
+            f"select key, comment"
+            f" from comments where key like {repr(table_name + '%')}")
+
+        return {key.split(',')[1]: comment for key, comment in cursor}
+
     def get_table(self, table_ref):
         table_ref = google.cloud.bigquery.table._table_arg_to_table_ref(
             table_ref, self.project)
@@ -157,18 +206,26 @@ class FauxClient:
             cursor.execute(f"select * from sqlite_master where name='{table_name}'")
             rows = list(cursor)
             if rows:
-                row = self._row_dict(rows[0], cursor)
-                columns = self.tables.get(row['name'], {}).get('columns', {})
+                table_data = self._row_dict(rows[0], cursor)
+
+                comments = self.__get_comments(cursor, table_name)
+                table_comment = comments.pop('', None)
+                columns = getattr(self.tables, table_name).columns
+                for col, comment in comments.items():
+                    getattr(columns, col).description = comment
+
                 cursor.execute(f"PRAGMA table_info('{table_name}')")
                 schema = [
                     self._get_field(columns=columns, **self._row_dict(row, cursor))
                     for row in cursor
                 ]
                 table = google.cloud.bigquery.table.Table(table_ref, schema)
-                if row['type'] == 'view' and row['sql']:
-                    table.view_query = row['sql'][row['sql'].lower().index('select'):]
+                table.description = table_comment
+                if table_data['type'] == 'view' and table_data['sql']:
+                    table.view_query = table_data['sql'][
+                        table_data['sql'].lower().index('select'):]
 
-                for aname, value in self.tables.get(row['name'], {}).items():
+                for aname, value in self.tables.get(table_name, {}).items():
                     setattr(table, aname, value)
 
                 return table
@@ -198,4 +255,5 @@ class FauxClient:
                         self._row_dict(row, cursor)
                         for row in cursor
                         )
+                if row['name'] != 'comments'
                 ]
