@@ -115,3 +115,15 @@ def test_typed_parameters(faux_conn, type_, val, btype, vrep):
         val = float(val)
 
     assert list(map(list, faux_conn.execute(sqlalchemy.select([table])))) == [[val]] * 2
+
+def test_select_json(faux_conn):
+    metadata = sqlalchemy.MetaData()
+    table = sqlalchemy.Table("t", metadata, sqlalchemy.Column("x", sqlalchemy.JSON))
+
+    faux_conn.ex("create table t (x RECORD)")
+    faux_conn.ex("""insert into t values ('{"y": 1}')""")
+
+    row = list(faux_conn.execute(sqlalchemy.select([table])))[0]
+    # We expect the raw string, because sqlite3, unlike BigQuery
+    # doesn't deserialize for us.
+    assert row.x == '{"y": 1}'
