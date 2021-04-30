@@ -496,8 +496,6 @@ class BigQueryDDLCompiler(DDLCompiler):
 def process_string_literal(value):
     if value:
         value = repr(value.replace("%", "%%"))
-        if value[0] == '"':
-            value = "'" + value[1:-1].replace("'", "'") + "'"
 
     return value
 
@@ -512,8 +510,6 @@ class BQBinary(sqlalchemy.sql.sqltypes._Binary):
     def __process_bytes_literal(value):
         if value:
             value = repr(value.replace(b"%", b"%%"))
-            if value[0] == b'"':
-                value = b"'" + value[1:-1].replace(b"'", b"'") + b"'"
 
         return value
 
