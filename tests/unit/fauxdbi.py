@@ -13,7 +13,8 @@ class Connection:
     def __init__(self, connection, test_data, client, *args, **kw):
         self.connection = connection
         self.test_data = test_data
-        self._client = FauxClient(client, self)
+        self._client = client
+        client.connection = self
 
     def cursor(self):
         return Cursor(self)
@@ -105,10 +106,18 @@ class attrdict(dict):
 
 class FauxClient:
 
-    def __init__(self, client, connection):
-        self._client = client
-        self.project = client.project
-        self.connection = connection
+    def __init__(
+        self,
+        project=None,
+        default_query_job_config=None,
+        *args,
+        **kw
+        ):
+
+        if project is None:
+            project = default_query_job_config.default_dataset.project
+
+        self.project = project
         self.tables = attrdict()
 
     @staticmethod
@@ -142,7 +151,7 @@ class FauxClient:
 
     def get_table(self, table_ref):
         table_ref = google.cloud.bigquery.table._table_arg_to_table_ref(
-            table_ref, self._client.project)
+            table_ref, self.project)
         table_name = table_ref.table_id
         with contextlib.closing(self.connection.connection.cursor()) as cursor:
             cursor.execute(f"select * from sqlite_master where name='{table_name}'")
