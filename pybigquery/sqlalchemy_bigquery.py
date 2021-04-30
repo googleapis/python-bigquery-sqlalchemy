@@ -444,9 +444,9 @@ class BigQueryDDLCompiler(DDLCompiler):
         colspec = super(BigQueryDDLCompiler, self).get_column_specification(
             column, **kwargs
         )
-        if column.doc is not None:
+        if column.comment is not None:
             colspec = "{} OPTIONS(description={})".format(
-                colspec, self.preparer.quote(column.doc)
+                colspec, process_string_literal(column.comment)
             )
         return colspec
 
@@ -471,15 +471,6 @@ class BigQueryDDLCompiler(DDLCompiler):
             return "\nOPTIONS({})".format(", ".join(opts))
 
         return ""
-
-    def visit_create_column(self, create, first_pk=False):
-        text = super(BigQueryDDLCompiler, self).visit_create_column(create, first_pk)
-        comment = create.element.comment
-        if comment:
-            comment = process_string_literal(comment)
-            return f"{text} options(description={comment})"
-        else:
-            return text
 
     def visit_set_table_comment(self, create):
         table_name = self.preparer.format_table(create.element)
