@@ -164,6 +164,7 @@ BIGNUMERIC = _type_map["NUMERIC"]
 
 
 class BigQueryExecutionContext(DefaultExecutionContext):
+
     def create_cursor(self):
         # Set arraysize
         c = super(BigQueryExecutionContext, self).create_cursor()
@@ -171,7 +172,8 @@ class BigQueryExecutionContext(DefaultExecutionContext):
             c.arraysize = self.dialect.arraysize
         return c
 
-    def get_insert_default(self, column):
+    def get_insert_default(self, column):  # pragma: no cover
+        # Only used by compliance tests
         if isinstance(column.type, Integer):
             return random.randint(-9223372036854775808, 9223372036854775808)  # 1<<63
         elif isinstance(column.type, String):
@@ -566,7 +568,7 @@ class BigQueryDialect(DefaultDialect):
     supports_native_boolean = True
     supports_simple_order_by_label = True
     postfetch_lastrowid = False
-    preexecute_autoincrement_sequences = True
+    preexecute_autoincrement_sequences = False
 
     colspecs = {
         String: BQString,
