@@ -1,4 +1,3 @@
-
 def test_view_definition(faux_conn):
     cursor = faux_conn.connection.cursor()
     cursor.execute("create view foo as select 1")
@@ -11,4 +10,6 @@ def test_view_definition(faux_conn):
 
     # remove dataset id from dialect:
     faux_conn.dialect.dataset_id = None
-    assert faux_conn.dialect.get_view_definition(faux_conn, "mydataset.foo") == "select 1"
+    assert (
+        faux_conn.dialect.get_view_definition(faux_conn, "mydataset.foo") == "select 1"
+    )

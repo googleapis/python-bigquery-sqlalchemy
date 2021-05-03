@@ -79,12 +79,16 @@ def dtrepr(v):
         (sqlalchemy.VARBINARY, b"myVARBINARY", "BYTES", repr),
         (sqlalchemy.BOOLEAN, False, "BOOL", "false"),
         (sqlalchemy.ARRAY(sqlalchemy.Integer), [1, 2, 3], "ARRAY<INT64>", repr),
-        (sqlalchemy.ARRAY(sqlalchemy.DATETIME),
-         [datetime.datetime(2021, 2, 3, 4, 5, 6),
-          datetime.datetime(2021, 2, 3, 4, 5, 7, 123456),
-          datetime.datetime(2021, 2, 3, 4, 5, 8, 123456)],
-         "ARRAY<DATETIME>",
-         lambda a: '[' + ', '.join(dtrepr(v) for v in a) + ']'),
+        (
+            sqlalchemy.ARRAY(sqlalchemy.DATETIME),
+            [
+                datetime.datetime(2021, 2, 3, 4, 5, 6),
+                datetime.datetime(2021, 2, 3, 4, 5, 7, 123456),
+                datetime.datetime(2021, 2, 3, 4, 5, 8, 123456),
+            ],
+            "ARRAY<DATETIME>",
+            lambda a: "[" + ", ".join(dtrepr(v) for v in a) + "]",
+        ),
     ],
 )
 def test_typed_parameters(faux_conn, type_, val, btype, vrep):
@@ -99,7 +103,7 @@ def test_typed_parameters(faux_conn, type_, val, btype, vrep):
 
     faux_conn.execute(table.insert().values(**{col_name: val}))
 
-    if btype.startswith('ARRAY<'):
+    if btype.startswith("ARRAY<"):
         btype = btype[6:-1]
 
     assert faux_conn.test_data["execute"][-1] == (
@@ -123,6 +127,7 @@ def test_typed_parameters(faux_conn, type_, val, btype, vrep):
     assert actual == (f"INSERT INTO `some_table` (`{col_name}`) VALUES ({vrep})", {})
 
     assert list(map(list, faux_conn.execute(sqlalchemy.select([table])))) == [[val]] * 2
+
 
 def test_select_json(faux_conn):
     metadata = sqlalchemy.MetaData()

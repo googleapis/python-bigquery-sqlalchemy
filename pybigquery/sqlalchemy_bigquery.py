@@ -381,7 +381,7 @@ class BigQueryCompiler(SQLCompiler):
                 type_.scale = -t.exponent
 
         bq_type = self.dialect.type_compiler.process(type_)
-        if bq_type[-1] == '>' and bq_type.startswith("ARRAY<"):
+        if bq_type[-1] == ">" and bq_type.startswith("ARRAY<"):
             # Values get arrayified at a lower level.
             bq_type = bq_type[6:-1]
 
@@ -498,7 +498,6 @@ class BQString(String):
 
 
 class BQBinary(sqlalchemy.sql.sqltypes._Binary):
-
     @staticmethod
     def __process_bytes_literal(value):
         return repr(value.replace(b"%", b"%%"))
@@ -532,7 +531,6 @@ class BQTimestamp(sqlalchemy.sql.type_api.TypeEngine):
 
 
 class BQArray(sqlalchemy.sql.sqltypes.ARRAY):
-
     def literal_processor(self, dialect):
 
         item_processor = self.item_type._cached_literal_processor(dialect)
@@ -542,7 +540,7 @@ class BQArray(sqlalchemy.sql.sqltypes.ARRAY):
             )
 
         def process_array_literal(value):
-            return '[' + ', '.join(item_processor(v) for v in value) + ']'
+            return "[" + ", ".join(item_processor(v) for v in value) + "]"
 
         return process_array_literal
 
