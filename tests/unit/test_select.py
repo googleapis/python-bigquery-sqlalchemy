@@ -123,10 +123,14 @@ def test_typed_parameters(faux_conn, type_, val, btype, vrep):
     if not isinstance(vrep, str):
         vrep = vrep(val)
 
-    actual = faux_conn.test_data["execute"].pop()
-    assert actual == (f"INSERT INTO `some_table` (`{col_name}`) VALUES ({vrep})", {})
+    assert faux_conn.test_data["execute"][-1] == (
+        f"INSERT INTO `some_table` (`{col_name}`) VALUES ({vrep})", {})
 
     assert list(map(list, faux_conn.execute(sqlalchemy.select([table])))) == [[val]] * 2
+    assert faux_conn.test_data["execute"][-1][0] == 'SELECT `some_table`.`foo` \nFROM `some_table`'
+
+    assert list(map(list, faux_conn.execute(sqlalchemy.select([table.c.foo])))) == [[val]] * 2
+    assert faux_conn.test_data["execute"][-1][0] == 'SELECT `some_table`.`foo` \nFROM `some_table`'
 
 
 def test_select_json(faux_conn):
