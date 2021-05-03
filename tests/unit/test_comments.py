@@ -3,7 +3,7 @@ import sqlalchemy
 
 def test_inline_comments(faux_conn):
     metadata = sqlalchemy.MetaData()
-    table = sqlalchemy.Table(
+    sqlalchemy.Table(
         "some_table",
         metadata,
         sqlalchemy.Column("id", sqlalchemy.Integer, comment="identifier"),
@@ -40,7 +40,7 @@ def test_set_drop_table_comment(faux_conn):
 
 def test_table_description_dialect_option(faux_conn):
     metadata = sqlalchemy.MetaData()
-    table = sqlalchemy.Table(
+    sqlalchemy.Table(
         "some_table",
         metadata,
         sqlalchemy.Column("id", sqlalchemy.Integer),
@@ -55,7 +55,7 @@ def test_table_description_dialect_option(faux_conn):
 
 def test_table_friendly_name_dialect_option(faux_conn):
     metadata = sqlalchemy.MetaData()
-    table = sqlalchemy.Table(
+    sqlalchemy.Table(
         "some_table",
         metadata,
         sqlalchemy.Column("id", sqlalchemy.Integer),
@@ -70,7 +70,7 @@ def test_table_friendly_name_dialect_option(faux_conn):
 
 def test_table_friendly_name_description_dialect_option(faux_conn):
     metadata = sqlalchemy.MetaData()
-    table = sqlalchemy.Table(
+    sqlalchemy.Table(
         "some_table",
         metadata,
         sqlalchemy.Column("id", sqlalchemy.Integer),

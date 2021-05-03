@@ -5,11 +5,11 @@ def test_constraints_are_ignored(faux_conn):
 
     metadata = sqlalchemy.MetaData()
 
-    table = sqlalchemy.Table(
+    sqlalchemy.Table(
         "ref", metadata, sqlalchemy.Column("id", sqlalchemy.Integer),
     )
 
-    table = sqlalchemy.Table(
+    sqlalchemy.Table(
         "some_table",
         metadata,
         sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),

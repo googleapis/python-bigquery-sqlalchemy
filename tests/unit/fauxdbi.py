@@ -4,8 +4,6 @@ import datetime
 import decimal
 import pickle
 import re
-import sqlite3
-
 import google.api_core.exceptions
 import google.cloud.bigquery.schema
 import google.cloud.bigquery.table
@@ -63,7 +61,7 @@ class Cursor:
             ordered_parameters.append(value)
             return "?"
 
-        operation = re.sub("%\((\w+)\)s", repl, operation)
+        operation = re.sub(r"%\((\w+)\)s", repl, operation)
         return operation, ordered_parameters
 
     __alter_table = re.compile(
@@ -342,7 +340,7 @@ class FauxClient:
 
     def list_tables(self, dataset):
         with contextlib.closing(self.connection.connection.cursor()) as cursor:
-            cursor.execute(f"select * from sqlite_master")
+            cursor.execute("select * from sqlite_master")
             return [
                 google.cloud.bigquery.table.TableListItem(
                     dict(

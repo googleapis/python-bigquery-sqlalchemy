@@ -1,9 +1,6 @@
 import contextlib
 import mock
-import os
-import shutil
 import sqlite3
-import tempfile
 
 import pytest
 import sqlalchemy

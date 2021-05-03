@@ -31,7 +31,7 @@ def test__table_reference(faux_conn, table, schema, expect):
 
 @pytest.mark.parametrize(
     "table,table_project,schema,schema_project",
-    [("p.s.t", "p", "q.s", "q"), ("p.s.t", "p", "q", "q"),],
+    [("p.s.t", "p", "q.s", "q"), ("p.s.t", "p", "q", "q")],
 )
 def test__table_reference_inconsistent_project(
     faux_conn, table, table_project, schema, schema_project
@@ -50,7 +50,7 @@ def test__table_reference_inconsistent_project(
 
 @pytest.mark.parametrize(
     "table,table_dataset,schema,schema_dataset",
-    [("s.t", "s", "p.q", "q"), ("p.s.t", "s", "p.q", "q"),],
+    [("s.t", "s", "p.q", "q"), ("p.s.t", "s", "p.q", "q")],
 )
 def test__table_reference_inconsistent_dataset_id(
     faux_conn, table, table_dataset, schema, schema_dataset
@@ -187,7 +187,7 @@ def test_get_table_columns_special_cases(faux_conn):
     assert isinstance(stype, sqlalchemy.types.ARRAY)
     assert isinstance(stype.item_type, sqlalchemy.types.String)
     assert actual == [
-        {"comment": "a fine column", "default": None, "name": "s", "nullable": True,},
+        {"comment": "a fine column", "default": None, "name": "s", "nullable": True},
         {
             "comment": None,
             "default": None,
