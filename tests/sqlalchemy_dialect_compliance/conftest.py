@@ -24,6 +24,7 @@ import pybigquery.sqlalchemy_bigquery
 import sqlalchemy
 import traceback
 
+pybigquery.sqlalchemy_bigquery.BigQueryDialect.preexecute_autoincrement_sequences = True
 google.cloud.bigquery.dbapi.connection.Connection.rollback = lambda self: None
 
 
