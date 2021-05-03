@@ -45,7 +45,13 @@ def dtrepr(v):
         (sqlalchemy.REAL, 1.42, "FLOAT64", repr),
         (sqlalchemy.FLOAT, 0.42, "FLOAT64", repr),
         (sqlalchemy.NUMERIC, Decimal(4.25), "NUMERIC", str),
+        (sqlalchemy.NUMERIC(39), Decimal(4.25), "BIGNUMERIC", str),
+        (sqlalchemy.NUMERIC(30, 10), Decimal(4.25), "BIGNUMERIC", str),
+        (sqlalchemy.NUMERIC(39, 10), Decimal(4.25), "BIGNUMERIC", str),
         (sqlalchemy.DECIMAL, Decimal(0.25), "NUMERIC", str),
+        (sqlalchemy.DECIMAL(39), Decimal(4.25), "BIGNUMERIC", str),
+        (sqlalchemy.DECIMAL(30, 10), Decimal(4.25), "BIGNUMERIC", str),
+        (sqlalchemy.DECIMAL(39, 10), Decimal(4.25), "BIGNUMERIC", str),
         (sqlalchemy.INTEGER, 434343, "INT64", repr),
         (sqlalchemy.INT, 444444, "INT64", repr),
         (sqlalchemy.SMALLINT, 43, "INT64", repr),
@@ -76,8 +82,7 @@ def dtrepr(v):
 )
 def test_typed_parameters(faux_conn, type_, val, btype, vrep):
     metadata = sqlalchemy.MetaData()
-    type_name = type_.__name__
-    col_name = "my" + type_name
+    col_name = "foo"
     table = sqlalchemy.Table("some_table", metadata, sqlalchemy.Column(col_name, type_))
     metadata.create_all(faux_conn.engine)
 
