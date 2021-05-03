@@ -1,12 +1,15 @@
+import base64
+import contextlib
+import datetime
+import decimal
+import pickle
+import re
+import sqlite3
+
 import google.api_core.exceptions
 import google.cloud.bigquery.schema
 import google.cloud.bigquery.table
 import google.cloud.bigquery.dbapi.cursor
-import contextlib
-import datetime
-import decimal
-import re
-import sqlite3
 
 
 class Connection:
@@ -32,38 +35,30 @@ class Connection:
 class Cursor:
 
     arraysize = 1
-    TEST_BINARY = '__test_binary__'
 
     def __init__(self, connection):
         self.connection = connection
         self.cursor = connection.connection.cursor()
 
-    def execute(self, operation, parameters=()):
-        self.connection.test_data["execute"].append((operation, parameters))
-        operation, types_ = google.cloud.bigquery.dbapi.cursor._extract_types(operation)
-        if parameters:
-            operation, parameters = self._convert_params(operation, parameters)
-            parameters = [
-                float(p) if isinstance(p, decimal.Decimal) else p for p in parameters
-            ]
-            parameters = [
-                str(p)
-                if isinstance(p, (datetime.date, datetime.time, datetime.datetime))
-                else p
-                for p in parameters
-            ]
+    _need_to_be_pickled = (list, dict, decimal.Decimal, bool,
+                            datetime.datetime, datetime.date, datetime.time,
+                            )
 
-        for prefix in "DATETIME", "DATE", "TIMESTAMP", "TIME":
-            operation = operation.replace(prefix + " ", "")
+    _need_to_be_pickled_literal = _need_to_be_pickled + (bytes,)
 
-        # No binary literals in sqlite, so test hack!  See _fix_binary
-        operation = re.sub("(, |[(])b(['\"])", r"\1\2" + self.TEST_BINARY, operation)
+    def __convert_params(self, operation, parameters):
+        ordered_parameters = []
 
-        operation = self.__handle_comments(operation)
+        def repl(m):
+            name = m.group(1)
+            value = parameters[name]
+            if isinstance(value, self._need_to_be_pickled):
+                value = pickle.dumps(value).decode('latin1')
+            ordered_parameters.append(value)
+            return "?"
 
-        self.cursor.execute(operation, parameters)
-        self.description = self.cursor.description
-        self.rowcount = self.cursor.rowcount
+        operation = re.sub("%\((\w+)\)s", repl, operation)
+        return operation, ordered_parameters
 
     __alter_table = re.compile(
         r"\s*ALTER\s+TABLE\s+`(?P<table>\w+)`\s+"
@@ -112,17 +107,93 @@ class Cursor:
 
         return operation
 
+    __array_type = re.compile(r"(?<=[(,])"
+                              r"\s*`\w+`\s+\w+<\w+>\s*"
+                              r"(?=[,)])", re.I)
+
+    def __handle_array_types(self, operation):
+        if self.__create_table(operation):
+
+            def repl(m):
+                return m.group(0).replace('<', '_').replace('>', '_')
+
+            return self.__array_type.sub(repl, operation)
+        else:
+            return operation
+
+
+    __literal_insert_values = re.compile(
+        r"\s*(insert\s+into\s+.+\s+values\s*)"
+        r"(\([^)]+\))"
+        r"\s*$", re.I).match
+
+    __bq_dateish = re.compile(r"(?<=[(,])\s*"
+                              r"(?P<type>date(?:time)?|time(?:stamp)?) (?P<val>'[^']+')"
+                              r"\s*(?=[),])",
+                              re.I)
+
     @staticmethod
-    def _convert_params(operation, parameters):
-        ordered_parameters = []
+    def __parse_dateish(type_, value):
+        type_ = type_.lower()
+        if type_ == 'timestamp':
+            type_ = 'datetime'
 
-        def repl(m):
-            name = m.group(1)
-            ordered_parameters.append(parameters[name])
-            return "?"
+        if type_ == 'datetime':
+            return datetime.datetime.strptime(
+                value,
+                "%Y-%m-%d %H:%M:%S.%f" if '.' in value else "%Y-%m-%d %H:%M:%S",
+                )
+        elif type_ == 'date':
+            return datetime.date(*map(int, value.split('-')))
+        elif type_ == 'time':
+            if '.' in value:
+                value, micro = value.split('.')
+                micro = [micro]
+            else:
+                micro = []
 
-        operation = re.sub("%\((\w+)\)s", repl, operation)
-        return operation, ordered_parameters
+            return datetime.time(*map(int, value.split(':') + micro))
+        else:
+            raise AssertionError(type_)
+
+    def __handle_problematic_literal_inserts(self, operation):
+        if '?' in operation:
+            return operation
+        m = self.__literal_insert_values(operation)
+        if m:
+            prefix, values = m.groups()
+            safe_globals = {'__builtins__': {'parse_datish': self.__parse_dateish,
+                                             'true': True,
+                                             'false': False,
+                                             }}
+
+            values = self.__bq_dateish.sub(r"parse_datish('\1', \2)", values)
+            values = eval(values[:-1] + ',)', safe_globals)
+            values = ','.join(
+                map(repr,
+                    ((base64.b16encode(pickle.dumps(v)).decode()
+                      if isinstance(v, self._need_to_be_pickled_literal)
+                      else v)
+                     for v in values)
+                )
+            )
+            return f"{prefix}({values})"
+        else:
+            return operation
+
+    def execute(self, operation, parameters=()):
+        self.connection.test_data["execute"].append((operation, parameters))
+        operation, types_ = google.cloud.bigquery.dbapi.cursor._extract_types(operation)
+        if parameters:
+            operation, parameters = self.__convert_params(operation, parameters)
+
+        operation = self.__handle_comments(operation)
+        operation = self.__handle_array_types(operation)
+        operation = self.__handle_problematic_literal_inserts(operation)
+
+        self.cursor.execute(operation, parameters)
+        self.description = self.cursor.description
+        self.rowcount = self.cursor.rowcount
 
     def executemany(self, operation, parameters_list):
         for parameters in parameters_list:
@@ -131,19 +202,24 @@ class Cursor:
     def close(self):
         self.cursor.close()
 
-    def _fix_binary(self, row):
+    def _fix_pickled(self, row):
         if row is None:
             return row
 
         return [
-            v[len(self.TEST_BINARY):].encode("utf8")
-            if isinstance(v, str) and v.startswith(self.TEST_BINARY)
-            else v
+            (pickle.loads(v.encode('latin1'))
+             if isinstance(v, str) and v[:2] == '\x80\x04' and v[-1] == '.'
+             else
+             pickle.loads(base64.b16decode(v))
+             if isinstance(v, str) and v[:4] == '8004' and v[-2:] == '2E'
+             else
+             v
+             )
             for d, v in zip(self.description, row)
         ]
 
     def fetchone(self):
-        return self._fix_binary(self.cursor.fetchone())
+        return self._fix_pickled(self.cursor.fetchone())
 
 
 class attrdict(dict):
