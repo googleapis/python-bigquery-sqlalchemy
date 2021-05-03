@@ -32,6 +32,7 @@ class Connection:
 class Cursor:
 
     arraysize = 1
+    TEST_BINARY = '__test_binary__'
 
     def __init__(self, connection):
         self.connection = connection
@@ -55,7 +56,8 @@ class Cursor:
         for prefix in "DATETIME", "DATE", "TIMESTAMP", "TIME":
             operation = operation.replace(prefix + " ", "")
 
-        operation = re.sub("(, |[(])b(['\"])", r"\1\2", operation)
+        # No binary literals in sqlite, so test hack!  See _fix_binary
+        operation = re.sub("(, |[(])b(['\"])", r"\1\2" + self.TEST_BINARY, operation)
 
         operation = self.__handle_comments(operation)
 
@@ -134,8 +136,8 @@ class Cursor:
             return row
 
         return [
-            v.encode("utf8")
-            if "BINARY" in d[0].upper() and not isinstance(v, bytes)
+            v[len(self.TEST_BINARY):].encode("utf8")
+            if isinstance(v, str) and v.startswith(self.TEST_BINARY)
             else v
             for d, v in zip(self.description, row)
         ]
