@@ -385,10 +385,8 @@ class BigQueryCompiler(SQLCompiler):
             # Values get arrayified at a lower level.
             bq_type = bq_type[6:-1]
 
-        if param == "%s":
-            return f"%(:{bq_type})s"
-        else:
-            return param.replace(")", f":{bq_type})")
+        assert param != "%s"
+        return param.replace(")", f":{bq_type})")
 
 
 class BigQueryTypeCompiler(GenericTypeCompiler):
@@ -536,7 +534,7 @@ class BQArray(sqlalchemy.sql.sqltypes.ARRAY):
         item_processor = self.item_type._cached_literal_processor(dialect)
         if not item_processor:
             raise NotImplementedError(
-                f"Don't know how to literal-quote values of type {item_type}"
+                f"Don't know how to literal-quote values of type {self.item_type}"
             )
 
         def process_array_literal(value):
