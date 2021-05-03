@@ -381,6 +381,10 @@ class BigQueryCompiler(SQLCompiler):
                 type_.scale = -t.exponent
 
         bq_type = self.dialect.type_compiler.process(type_)
+        if bq_type[-1] == '>' and bq_type.startswith("ARRAY<"):
+            # Values get arrayified at a lower level.
+            bq_type = bq_type[6:-1]
+
         if param == "%s":
             return f"%(:{bq_type})s"
         else:
@@ -527,6 +531,22 @@ class BQTimestamp(sqlalchemy.sql.type_api.TypeEngine):
         return self.process_timestamp_literal
 
 
+class BQArray(sqlalchemy.sql.sqltypes.ARRAY):
+
+    def literal_processor(self, dialect):
+
+        item_processor = self.item_type._cached_literal_processor(dialect)
+        if not item_processor:
+            raise NotImplementedError(
+                f"Don't know how to literal-quote values of type {item_type}"
+            )
+
+        def process_array_literal(value):
+            return '[' + ', '.join(item_processor(v) for v in value) + ']'
+
+        return process_array_literal
+
+
 class BigQueryDialect(DefaultDialect):
     name = "bigquery"
     driver = "bigquery"
@@ -559,6 +579,7 @@ class BigQueryDialect(DefaultDialect):
         sqlalchemy.sql.sqltypes.DateTime: BQClassTaggedStr,
         sqlalchemy.sql.sqltypes.Time: BQClassTaggedStr,
         sqlalchemy.sql.sqltypes.TIMESTAMP: BQTimestamp,
+        sqlalchemy.sql.sqltypes.ARRAY: BQArray,
     }
 
     def __init__(

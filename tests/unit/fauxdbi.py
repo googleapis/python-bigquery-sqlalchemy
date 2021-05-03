@@ -127,9 +127,9 @@ class Cursor:
         r"(\([^)]+\))"
         r"\s*$", re.I).match
 
-    __bq_dateish = re.compile(r"(?<=[(,])\s*"
+    __bq_dateish = re.compile(r"(?<=[[(,])\s*"
                               r"(?P<type>date(?:time)?|time(?:stamp)?) (?P<val>'[^']+')"
-                              r"\s*(?=[),])",
+                              r"\s*(?=[]),])",
                               re.I)
 
     @staticmethod

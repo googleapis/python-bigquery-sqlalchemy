@@ -78,6 +78,13 @@ def dtrepr(v):
         (sqlalchemy.BINARY, b"myBINARY", "BYTES", repr),
         (sqlalchemy.VARBINARY, b"myVARBINARY", "BYTES", repr),
         (sqlalchemy.BOOLEAN, False, "BOOL", "false"),
+        (sqlalchemy.ARRAY(sqlalchemy.Integer), [1, 2, 3], "ARRAY<INT64>", repr),
+        (sqlalchemy.ARRAY(sqlalchemy.DATETIME),
+         [datetime.datetime(2021, 2, 3, 4, 5, 6),
+          datetime.datetime(2021, 2, 3, 4, 5, 7, 123456),
+          datetime.datetime(2021, 2, 3, 4, 5, 8, 123456)],
+         "ARRAY<DATETIME>",
+         lambda a: '[' + ', '.join(dtrepr(v) for v in a) + ']'),
     ],
 )
 def test_typed_parameters(faux_conn, type_, val, btype, vrep):
@@ -92,8 +99,10 @@ def test_typed_parameters(faux_conn, type_, val, btype, vrep):
 
     faux_conn.execute(table.insert().values(**{col_name: val}))
 
-    x = faux_conn.test_data["execute"].pop()
-    assert x == (
+    if btype.startswith('ARRAY<'):
+        btype = btype[6:-1]
+
+    assert faux_conn.test_data["execute"][-1] == (
         f"INSERT INTO `some_table` (`{col_name}`) VALUES (%({col_name}:{btype})s)",
         {col_name: val},
     )
@@ -112,12 +121,6 @@ def test_typed_parameters(faux_conn, type_, val, btype, vrep):
 
     actual = faux_conn.test_data["execute"].pop()
     assert actual == (f"INSERT INTO `some_table` (`{col_name}`) VALUES ({vrep})", {})
-
-    # We're using sqlite3 as a stub.  It can't store these types:
-    if btype in ("DATETIME", "DATE", "TIME", "TIMESTAMP"):
-        val = str(val)
-    elif btype == "NUMERIC":
-        val = float(val)
 
     assert list(map(list, faux_conn.execute(sqlalchemy.select([table])))) == [[val]] * 2
 
