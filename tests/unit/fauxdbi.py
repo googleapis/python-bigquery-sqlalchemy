@@ -32,8 +32,6 @@ class Connection:
 
 class Cursor:
 
-    arraysize = 1
-
     def __init__(self, connection):
         self.connection = connection
         self.cursor = connection.connection.cursor()
@@ -49,6 +47,17 @@ class Cursor:
     )
 
     _need_to_be_pickled_literal = _need_to_be_pickled + (bytes,)
+
+    __arraysize = 1
+
+    @property
+    def arraysize(self):
+        return self.__arraysize
+
+    @arraysize.setter
+    def arraysize(self, v):
+        self.__arraysize = v
+        self.connection.test_data['arraysize'] = v
 
     def __convert_params(self, operation, parameters):
         ordered_parameters = []
