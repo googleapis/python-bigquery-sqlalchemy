@@ -134,10 +134,6 @@ class Cursor:
         else:
             return operation
 
-    __literal_insert_values = re.compile(
-        r"\s*(insert\s+into\s+.+\s+values\s*)" r"(\([^)]+\))" r"\s*$", re.I
-    ).match
-
     __bq_dateish = re.compile(
         r"(?<=[[(,])\s*"
         r"(?P<type>date(?:time)?|time(?:stamp)?) (?P<val>'[^']+')"
@@ -168,7 +164,14 @@ class Cursor:
         else:
             raise AssertionError(type_)
 
-    def __handle_problematic_literal_inserts(self, operation):
+    __literal_insert_values = re.compile(
+        r"\s*(insert\s+into\s+.+\s+values\s*)" r"(\([^)]+\))" r"\s*$", re.I
+    ).match
+
+    def __handle_problematic_literal_inserts(
+        self,
+        operation,
+        ):
         if "?" in operation:
             return operation
         m = self.__literal_insert_values(operation)
@@ -201,6 +204,13 @@ class Cursor:
         else:
             return operation
 
+    def __handle_unnest(
+        self,
+        operation,
+        unnest=re.compile(r"UNNEST\(\[ ([^\]]+)? \]\)", re.I),
+        ):
+        return unnest.sub(r"(\1)", operation)
+
     def execute(self, operation, parameters=()):
         self.connection.test_data["execute"].append((operation, parameters))
         operation, types_ = google.cloud.bigquery.dbapi.cursor._extract_types(operation)
@@ -212,6 +222,7 @@ class Cursor:
         operation = self.__handle_comments(operation)
         operation = self.__handle_array_types(operation)
         operation = self.__handle_problematic_literal_inserts(operation)
+        operation = self.__handle_unnest(operation)
 
         self.cursor.execute(operation, parameters)
         self.description = self.cursor.description
