@@ -17,6 +17,7 @@ Ported compliance tests.
 Mainly to get better unit test coverage.
 """
 
+import pytest
 import sqlalchemy
 from sqlalchemy import Column, Integer, literal_column, select, String, Table, union
 from sqlalchemy.testing.assertions import eq_, in_
@@ -120,3 +121,51 @@ def test_null_in_empty_set_is_false(faux_conn):
         ]
     )
     in_(faux_conn.execute(stmt).fetchone()[0], (False, 0))
+
+
+@pytest.mark.parametrize(
+    "meth,arg,expected",
+    [("contains",   "b%cde", {1, 2, 3, 4, 5, 6, 7, 8, 9}),
+     ("startswith", "ab%c",  {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}),
+     ("endswith",   "e%fg",  {1, 2, 3, 4, 5, 6, 7, 8, 9}),
+     ])
+def test_likish(faux_conn, meth, arg, expected):
+    # See sqlalchemy.testing.suite.test_select.LikeFunctionsTest
+    table = setup_table(
+        faux_conn,
+        "t",
+        Column("id", Integer, primary_key=True),
+        Column("data", String(50)),
+        initial_data = [
+            {"id": 1, "data": "abcdefg"},
+            {"id": 2, "data": "ab/cdefg"},
+            {"id": 3, "data": "ab%cdefg"},
+            {"id": 4, "data": "ab_cdefg"},
+            {"id": 5, "data": "abcde/fg"},
+            {"id": 6, "data": "abcde%fg"},
+            {"id": 7, "data": "ab#cdefg"},
+            {"id": 8, "data": "ab9cdefg"},
+            {"id": 9, "data": "abcde#fg"},
+            {"id": 10, "data": "abcd9fg"},
+            ],
+        )
+    expr = getattr(table.c.data, meth)(arg)
+    rows = {
+        value
+        for value, in faux_conn.execute(
+            select([table.c.id]).where(expr)
+            )
+        }
+    eq_(rows, expected)
+
+    all = {i for i in range(1, 11)}
+    expr = sqlalchemy.not_(expr)
+    rows = {
+        value
+        for value, in faux_conn.execute(
+            select([table.c.id]).where(expr)
+            )
+        }
+    eq_(rows, all - expected)
+
+
