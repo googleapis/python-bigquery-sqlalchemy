@@ -143,12 +143,10 @@ def test_select_json(faux_conn, metadata):
     assert row.x == '{"y": 1}'
 
 
-def test_select_label_starts_w_digit(faux_conn, metadata):
+def test_select_label_starts_w_digit(faux_conn):
     # Make sure label names are legal identifiers
-    table = sqlalchemy.Table("some_table", metadata, sqlalchemy.Column("foo", sqlalchemy.Integer))
-    metadata.create_all(faux_conn.engine)
-    faux_conn.execute(sqlalchemy.select([table.c.foo.label("2foo")]))
-    assert faux_conn.test_data["execute"][-1][0] == 'SELECT `some_table`.`foo` AS `_2foo` \nFROM `some_table`'
+    faux_conn.execute(sqlalchemy.select([sqlalchemy.literal(1).label("2foo")]))
+    assert faux_conn.test_data["execute"][-1][0] == 'SELECT %(param_1:INT64)s AS `_2foo`'
 
 
 def test_disable_quote(faux_conn, metadata):
