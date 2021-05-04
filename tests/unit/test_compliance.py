@@ -169,3 +169,25 @@ def test_likish(faux_conn, meth, arg, expected):
     eq_(rows, all - expected)
 
 
+def test_group_by_composed(faux_conn):
+    table = setup_table(
+        faux_conn,
+        "t",
+        Column("id", Integer, primary_key=True),
+        Column("x", Integer),
+        Column("y", Integer),
+        Column("q", String(50)),
+        Column("p", String(50)),
+        initial_data=[
+                {"id": 1, "x": 1, "y": 2, "q": "q1", "p": "p3"},
+                {"id": 2, "x": 2, "y": 3, "q": "q2", "p": "p2"},
+                {"id": 3, "x": 3, "y": 4, "q": "q3", "p": "p1"},
+            ])
+
+    expr = (table.c.x + table.c.y).label("lx")
+    stmt = (
+        select([sqlalchemy.func.count(table.c.id), expr])
+        .group_by(expr)
+        .order_by(expr)
+    )
+    assert_result(faux_conn, stmt, [(1, 3), (1, 5), (1, 7)])
