@@ -149,6 +149,19 @@ def test_select_label_starts_w_digit(faux_conn):
     assert faux_conn.test_data["execute"][-1][0] == 'SELECT %(param_1:INT64)s AS `_2foo`'
 
 
+def test_force_quote(faux_conn, metadata):
+    from  sqlalchemy.sql.elements import quoted_name
+    table = sqlalchemy.Table(
+        "some_table",
+        metadata,
+        sqlalchemy.Column(quoted_name("foo", True), sqlalchemy.Integer),
+        )
+    metadata.create_all(faux_conn.engine)
+    faux_conn.execute(sqlalchemy.select([table]))
+    assert faux_conn.test_data["execute"][-1][0] == (
+        'SELECT `some_table`.`foo` \nFROM `some_table`')
+
+
 def test_disable_quote(faux_conn, metadata):
     from  sqlalchemy.sql.elements import quoted_name
     table = sqlalchemy.Table(
