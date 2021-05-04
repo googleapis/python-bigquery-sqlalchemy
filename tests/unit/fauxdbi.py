@@ -63,14 +63,16 @@ class Cursor:
         ordered_parameters = []
 
         def repl(m):
-            name = m.group(1)
+            prefix, name = m.groups()
+            if len(prefix) % 2:
+                return m.group(0)
             value = parameters[name]
             if isinstance(value, self._need_to_be_pickled):
                 value = pickle.dumps(value).decode("latin1")
             ordered_parameters.append(value)
             return "?"
 
-        operation = re.sub(r"%\((\w+)\)s", repl, operation)
+        operation = re.sub(r"(%*)%\((\w+)\)s", repl, operation)
         return operation, ordered_parameters
 
     __alter_table = re.compile(
@@ -204,6 +206,8 @@ class Cursor:
         operation, types_ = google.cloud.bigquery.dbapi.cursor._extract_types(operation)
         if parameters:
             operation, parameters = self.__convert_params(operation, parameters)
+        else:
+            operation = operation.replace('%%', '%')
 
         operation = self.__handle_comments(operation)
         operation = self.__handle_array_types(operation)
