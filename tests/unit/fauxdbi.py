@@ -229,6 +229,9 @@ class Cursor:
     def fetchone(self):
         return self._fix_pickled(self.cursor.fetchone())
 
+    def fetchall(self):
+        return map(self._fix_pickled, self.cursor)
+
 
 class attrdict(dict):
     def __setattr__(self, name, val):
