@@ -7,8 +7,7 @@ import sqlalchemy
 import pybigquery.sqlalchemy_bigquery
 
 
-def test_labels_not_forced(faux_conn):
-    metadata = sqlalchemy.MetaData()
+def test_labels_not_forced(faux_conn, metadata):
     table = sqlalchemy.Table(
         "some_table", metadata, sqlalchemy.Column("id", sqlalchemy.Integer)
     )
@@ -91,8 +90,7 @@ def dtrepr(v):
         ),
     ],
 )
-def test_typed_parameters(faux_conn, type_, val, btype, vrep):
-    metadata = sqlalchemy.MetaData()
+def test_typed_parameters(faux_conn, metadata, type_, val, btype, vrep):
     col_name = "foo"
     table = sqlalchemy.Table("some_table", metadata, sqlalchemy.Column(col_name, type_))
     metadata.create_all(faux_conn.engine)
@@ -133,8 +131,7 @@ def test_typed_parameters(faux_conn, type_, val, btype, vrep):
     assert faux_conn.test_data["execute"][-1][0] == 'SELECT `some_table`.`foo` AS `some_table_foo` \nFROM `some_table`'
 
 
-def test_select_json(faux_conn):
-    metadata = sqlalchemy.MetaData()
+def test_select_json(faux_conn, metadata):
     table = sqlalchemy.Table("t", metadata, sqlalchemy.Column("x", sqlalchemy.JSON))
 
     faux_conn.ex("create table t (x RECORD)")
@@ -144,3 +141,11 @@ def test_select_json(faux_conn):
     # We expect the raw string, because sqlite3, unlike BigQuery
     # doesn't deserialize for us.
     assert row.x == '{"y": 1}'
+
+
+def test_select_label_starts_w_digit(faux_conn, metadata):
+    # Make sure label names are legal identifiers
+    table = sqlalchemy.Table("some_table", metadata, sqlalchemy.Column("foo", sqlalchemy.Integer))
+    metadata.create_all(faux_conn.engine)
+    faux_conn.execute(sqlalchemy.select([table.c.foo.label("2foo")]))
+    assert faux_conn.test_data["execute"][-1][0] == 'SELECT `some_table`.`foo` AS `_2foo` \nFROM `some_table`'
