@@ -8,11 +8,8 @@ import pybigquery.sqlalchemy_bigquery
 
 from conftest import setup_table
 
-def test_labels_not_forced(faux_conn, metadata):
-    table = sqlalchemy.Table(
-        "some_table", metadata, sqlalchemy.Column("id", sqlalchemy.Integer)
-    )
-    metadata.create_all(faux_conn.engine)
+def test_labels_not_forced(faux_conn):
+    table = setup_table(faux_conn, "t", sqlalchemy.Column("id", sqlalchemy.Integer))
     result = faux_conn.execute(sqlalchemy.select([table.c.id]))
     assert result.keys() == ["id"]  # Look! Just the column name!
 
@@ -91,13 +88,12 @@ def dtrepr(v):
         ),
     ],
 )
-def test_typed_parameters(faux_conn, metadata, type_, val, btype, vrep):
+def test_typed_parameters(faux_conn, type_, val, btype, vrep):
     col_name = "foo"
-    table = sqlalchemy.Table("some_table", metadata, sqlalchemy.Column(col_name, type_))
-    metadata.create_all(faux_conn.engine)
+    table = setup_table(faux_conn, "t", sqlalchemy.Column(col_name, type_))
 
     assert faux_conn.test_data["execute"].pop()[0].strip() == (
-        f"CREATE TABLE `some_table` (\n" f"\t`{col_name}` {btype}\n" f")"
+        f"CREATE TABLE `t` (\n" f"\t`{col_name}` {btype}\n" f")"
     )
 
     faux_conn.execute(table.insert().values(**{col_name: val}))
@@ -106,7 +102,7 @@ def test_typed_parameters(faux_conn, metadata, type_, val, btype, vrep):
         btype = btype[6:-1]
 
     assert faux_conn.test_data["execute"][-1] == (
-        f"INSERT INTO `some_table` (`{col_name}`) VALUES (%({col_name}:{btype})s)",
+        f"INSERT INTO `t` (`{col_name}`) VALUES (%({col_name}:{btype})s)",
         {col_name: val},
     )
 
@@ -123,13 +119,17 @@ def test_typed_parameters(faux_conn, metadata, type_, val, btype, vrep):
         vrep = vrep(val)
 
     assert faux_conn.test_data["execute"][-1] == (
-        f"INSERT INTO `some_table` (`{col_name}`) VALUES ({vrep})", {})
+        f"INSERT INTO `t` (`{col_name}`) VALUES ({vrep})", {})
 
     assert list(map(list, faux_conn.execute(sqlalchemy.select([table])))) == [[val]] * 2
-    assert faux_conn.test_data["execute"][-1][0] == 'SELECT `some_table`.`foo` \nFROM `some_table`'
+    assert faux_conn.test_data["execute"][-1][0] == 'SELECT `t`.`foo` \nFROM `t`'
 
-    assert list(map(list, faux_conn.execute(sqlalchemy.select([table.c.foo], use_labels=True)))) == [[val]] * 2
-    assert faux_conn.test_data["execute"][-1][0] == 'SELECT `some_table`.`foo` AS `some_table_foo` \nFROM `some_table`'
+    assert list(map(list,
+                    faux_conn.execute(
+                        sqlalchemy.select([table.c.foo], use_labels=True)))
+                ) == [[val]] * 2
+    assert faux_conn.test_data["execute"][-1][0] == (
+        'SELECT `t`.`foo` AS `t_foo` \nFROM `t`')
 
 
 def test_select_json(faux_conn, metadata):
@@ -150,30 +150,28 @@ def test_select_label_starts_w_digit(faux_conn):
     assert faux_conn.test_data["execute"][-1][0] == 'SELECT %(param_1:INT64)s AS `_2foo`'
 
 
-def test_force_quote(faux_conn, metadata):
+def test_force_quote(faux_conn):
     from  sqlalchemy.sql.elements import quoted_name
-    table = sqlalchemy.Table(
-        "some_table",
-        metadata,
+    table = setup_table(
+        faux_conn,
+        "t",
         sqlalchemy.Column(quoted_name("foo", True), sqlalchemy.Integer),
         )
-    metadata.create_all(faux_conn.engine)
     faux_conn.execute(sqlalchemy.select([table]))
     assert faux_conn.test_data["execute"][-1][0] == (
-        'SELECT `some_table`.`foo` \nFROM `some_table`')
+        'SELECT `t`.`foo` \nFROM `t`')
 
 
-def test_disable_quote(faux_conn, metadata):
+def test_disable_quote(faux_conn):
     from  sqlalchemy.sql.elements import quoted_name
-    table = sqlalchemy.Table(
-        "some_table",
-        metadata,
+    table = setup_table(
+        faux_conn,
+        "t",
         sqlalchemy.Column(quoted_name("foo", False), sqlalchemy.Integer),
         )
-    metadata.create_all(faux_conn.engine)
     faux_conn.execute(sqlalchemy.select([table]))
     assert faux_conn.test_data["execute"][-1][0] == (
-        'SELECT `some_table`.foo \nFROM `some_table`')
+        'SELECT `t`.foo \nFROM `t`')
 
 
 def test_select_in_lit(faux_conn):
