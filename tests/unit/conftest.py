@@ -39,3 +39,7 @@ def faux_conn():
 
                 yield conn
                 conn.close()
+
+@pytest.fixture()
+def metadata():
+    return sqlalchemy.MetaData()
