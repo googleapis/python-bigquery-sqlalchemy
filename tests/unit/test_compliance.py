@@ -19,7 +19,7 @@ Mainly to get better unit test coverage.
 
 import sqlalchemy
 from sqlalchemy import Column, Integer, literal_column, select, String, Table, union
-from sqlalchemy.testing.assertions import eq_
+from sqlalchemy.testing.assertions import eq_, in_
 
 from conftest import setup_table
 
@@ -101,3 +101,22 @@ def test_percent_sign_round_trip(faux_conn, metadata):
             ),
         "some %% other value",
         )
+
+
+def test_null_in_empty_set_is_false(faux_conn):
+    stmt = select(
+        [
+            sqlalchemy.case(
+                [
+                    (
+                        sqlalchemy.null().in_(
+                            sqlalchemy.bindparam("foo", value=(), expanding=True)
+                        ),
+                        sqlalchemy.true(),
+                    )
+                ],
+                else_=sqlalchemy.false(),
+            )
+        ]
+    )
+    in_(faux_conn.execute(stmt).fetchone()[0], (False, 0))
