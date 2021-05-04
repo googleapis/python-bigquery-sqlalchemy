@@ -43,3 +43,12 @@ def faux_conn():
 @pytest.fixture()
 def metadata():
     return sqlalchemy.MetaData()
+
+
+def setup_table(connection, name, *columns, initial_data=(), **kw):
+    metadata = sqlalchemy.MetaData()
+    table = sqlalchemy.Table(name, metadata, *columns, **kw)
+    metadata.create_all(connection.engine)
+    if initial_data:
+        connection.execute(table.insert(), initial_data)
+    return table

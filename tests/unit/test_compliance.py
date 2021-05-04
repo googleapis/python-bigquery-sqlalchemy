@@ -21,13 +21,8 @@ import sqlalchemy
 from sqlalchemy import Column, Integer, literal_column, select, String, Table, union
 from sqlalchemy.testing.assertions import eq_
 
-def setup_table(connection, name, *columns, initial_data=(), **kw):
-    metadata = sqlalchemy.MetaData()
-    table = Table(name, metadata, *columns, **kw)
-    metadata.create_all(connection.engine)
-    if initial_data:
-        connection.execute(table.insert(), initial_data)
-    return table
+from conftest import setup_table
+
 
 def assert_result(connection, sel, expected):
     eq_(connection.execute(sel).fetchall(), expected)
