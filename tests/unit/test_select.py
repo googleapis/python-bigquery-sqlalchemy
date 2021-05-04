@@ -6,6 +6,7 @@ import sqlalchemy
 
 import pybigquery.sqlalchemy_bigquery
 
+from conftest import setup_table
 
 def test_labels_not_forced(faux_conn, metadata):
     table = sqlalchemy.Table(
@@ -173,3 +174,73 @@ def test_disable_quote(faux_conn, metadata):
     faux_conn.execute(sqlalchemy.select([table]))
     assert faux_conn.test_data["execute"][-1][0] == (
         'SELECT `some_table`.foo \nFROM `some_table`')
+
+
+def test_select_in_lit(faux_conn):
+    [[isin]] = faux_conn.execute(sqlalchemy.select([sqlalchemy.literal(1).in_([1,2,3])]))
+    assert isin
+    assert faux_conn.test_data["execute"][-1] == (
+        "SELECT %(param_1:INT64)s IN "
+        "(%(param_2:INT64)s, %(param_3:INT64)s, %(param_4:INT64)s) AS `anon_1`",
+        {'param_1': 1, 'param_2': 1, 'param_3': 2, 'param_4': 3},
+        )
+
+
+def test_select_in_param(faux_conn):
+    [[isin]] = faux_conn.execute(sqlalchemy.select([
+        sqlalchemy.literal(1).in_(sqlalchemy.bindparam("q", expanding=True))
+        ]), dict(q=[1,2,3]))
+    assert isin
+    assert faux_conn.test_data["execute"][-1] == (
+        "SELECT %(param_1:INT64)s IN UNNEST("
+        "[ %(q_1:INT64)s, %(q_2:INT64)s, %(q_3:INT64)s ]"
+        ") AS `anon_1`",
+        {'param_1': 1, 'q_1': 1, 'q_2': 2, 'q_3': 3})
+
+
+def test_select_in_param_empty(faux_conn):
+    [[isin]] = faux_conn.execute(sqlalchemy.select([
+        sqlalchemy.literal(1).in_(sqlalchemy.bindparam("q", expanding=True))
+        ]), dict(q=[]))
+    assert not isin
+    assert faux_conn.test_data["execute"][-1] == (
+        "SELECT %(param_1:INT64)s IN UNNEST("
+        "[  ]"
+        ") AS `anon_1`",
+        {'param_1': 1})
+
+
+def test_select_notin_lit(faux_conn):
+    [[isnotin]] = faux_conn.execute(sqlalchemy.select([
+        sqlalchemy.literal(0).notin_([1, 2,3])
+        ]))
+    assert isnotin
+    assert faux_conn.test_data["execute"][-1] == (
+        "SELECT %(param_1:INT64)s NOT IN "
+        "(%(param_2:INT64)s, %(param_3:INT64)s, %(param_4:INT64)s) AS `anon_1`",
+        {'param_1': 0, 'param_2': 1, 'param_3': 2, 'param_4': 3},
+        )
+
+
+def test_select_notin_param(faux_conn):
+    [[isnotin]] = faux_conn.execute(sqlalchemy.select([
+        sqlalchemy.literal(1).notin_(sqlalchemy.bindparam("q", expanding=True))
+        ]), dict(q=[1,2,3]))
+    assert not isnotin
+    assert faux_conn.test_data["execute"][-1] == (
+        "SELECT %(param_1:INT64)s NOT IN UNNEST("
+        "[ %(q_1:INT64)s, %(q_2:INT64)s, %(q_3:INT64)s ]"
+        ") AS `anon_1`",
+        {'param_1': 1, 'q_1': 1, 'q_2': 2, 'q_3': 3})
+
+
+def test_select_notin_param_empty(faux_conn):
+    [[isnotin]] = faux_conn.execute(sqlalchemy.select([
+        sqlalchemy.literal(1).notin_(sqlalchemy.bindparam("q", expanding=True))
+        ]), dict(q=[]))
+    assert isnotin
+    assert faux_conn.test_data["execute"][-1] == (
+        "SELECT %(param_1:INT64)s NOT IN UNNEST("
+        "[  ]"
+        ") AS `anon_1`",
+        {'param_1': 1})
