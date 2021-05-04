@@ -36,18 +36,6 @@ class Cursor:
         self.connection = connection
         self.cursor = connection.connection.cursor()
 
-    _need_to_be_pickled = (
-        list,
-        dict,
-        decimal.Decimal,
-        bool,
-        datetime.datetime,
-        datetime.date,
-        datetime.time,
-    )
-
-    _need_to_be_pickled_literal = _need_to_be_pickled + (bytes,)
-
     __arraysize = 1
 
     @property
@@ -58,6 +46,16 @@ class Cursor:
     def arraysize(self, v):
         self.__arraysize = v
         self.connection.test_data['arraysize'] = v
+
+    _need_to_be_pickled = (
+        list,
+        dict,
+        decimal.Decimal,
+        bool,
+        datetime.datetime,
+        datetime.date,
+        datetime.time,
+    )
 
     def __convert_params(self, operation, parameters):
         ordered_parameters = []
@@ -75,17 +73,20 @@ class Cursor:
         operation = re.sub(r"(%*)%\((\w+)\)s", repl, operation)
         return operation, ordered_parameters
 
-    __alter_table = re.compile(
-        r"\s*ALTER\s+TABLE\s+`(?P<table>\w+)`\s+"
-        r"SET\s+OPTIONS\(description=(?P<comment>[^)]+)\)",
-        re.I,
-    ).match
     __create_table = re.compile(r"\s*create\s+table\s+`(?P<table>\w+)`", re.I).match
-    __options = re.compile(
-        r"(?P<prefix>`(?P<col>\w+)`\s+\w+|\))" r"\s+options\((?P<options>[^)]+)\)", re.I
-    )
 
-    def __handle_comments(self, operation):
+    def __handle_comments(
+        self,
+        operation,
+        alter_table=re.compile(
+            r"\s*ALTER\s+TABLE\s+`(?P<table>\w+)`\s+"
+            r"SET\s+OPTIONS\(description=(?P<comment>[^)]+)\)",
+            re.I,
+            ).match,
+        options=re.compile(
+            r"(?P<prefix>`(?P<col>\w+)`\s+\w+|\))" r"\s+options\((?P<options>[^)]+)\)", re.I
+            )
+        ):
         m = self.__create_table(operation)
         if m:
             table_name = m.group("table")
@@ -109,9 +110,9 @@ class Cursor:
 
                 return m.group("prefix")
 
-            return self.__options.sub(repl, operation)
+            return options.sub(repl, operation)
 
-        m = self.__alter_table(operation)
+        m = alter_table(operation)
         if m:
             table_name = m.group("table")
             comment = m.group("comment")
@@ -122,24 +123,19 @@ class Cursor:
 
         return operation
 
-    __array_type = re.compile(r"(?<=[(,])" r"\s*`\w+`\s+\w+<\w+>\s*" r"(?=[,)])", re.I)
-
-    def __handle_array_types(self, operation):
+    def __handle_array_types(
+        self,
+        operation,
+        array_type=re.compile(r"(?<=[(,])" r"\s*`\w+`\s+\w+<\w+>\s*" r"(?=[,)])", re.I),
+        ):
         if self.__create_table(operation):
 
             def repl(m):
                 return m.group(0).replace("<", "_").replace(">", "_")
 
-            return self.__array_type.sub(repl, operation)
+            return array_type.sub(repl, operation)
         else:
             return operation
-
-    __bq_dateish = re.compile(
-        r"(?<=[[(,])\s*"
-        r"(?P<type>date(?:time)?|time(?:stamp)?) (?P<val>'[^']+')"
-        r"\s*(?=[]),])",
-        re.I,
-    )
 
     @staticmethod
     def __parse_dateish(type_, value):
@@ -164,17 +160,23 @@ class Cursor:
         else:
             raise AssertionError(type_)
 
-    __literal_insert_values = re.compile(
-        r"\s*(insert\s+into\s+.+\s+values\s*)" r"(\([^)]+\))" r"\s*$", re.I
-    ).match
-
     def __handle_problematic_literal_inserts(
         self,
         operation,
+        literal_insert_values=re.compile(
+            r"\s*(insert\s+into\s+.+\s+values\s*)" r"(\([^)]+\))" r"\s*$", re.I
+            ).match,
+        bq_dateish=re.compile(
+            r"(?<=[[(,])\s*"
+            r"(?P<type>date(?:time)?|time(?:stamp)?) (?P<val>'[^']+')"
+            r"\s*(?=[]),])",
+            re.I,
+            ),
+        need_to_be_pickled_literal=_need_to_be_pickled + (bytes,),
         ):
         if "?" in operation:
             return operation
-        m = self.__literal_insert_values(operation)
+        m = literal_insert_values(operation)
         if m:
             prefix, values = m.groups()
             safe_globals = {
@@ -185,7 +187,7 @@ class Cursor:
                 }
             }
 
-            values = self.__bq_dateish.sub(r"parse_datish('\1', \2)", values)
+            values = bq_dateish.sub(r"parse_datish('\1', \2)", values)
             values = eval(values[:-1] + ",)", safe_globals)
             values = ",".join(
                 map(
@@ -193,7 +195,7 @@ class Cursor:
                     (
                         (
                             base64.b16encode(pickle.dumps(v)).decode()
-                            if isinstance(v, self._need_to_be_pickled_literal)
+                            if isinstance(v, need_to_be_pickled_literal)
                             else v
                         )
                         for v in values
