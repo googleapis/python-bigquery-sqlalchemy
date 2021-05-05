@@ -25,7 +25,6 @@ class Connection:
 
 
 class Cursor:
-
     def __init__(self, connection):
         self.connection = connection
         self.cursor = connection.connection.cursor()
@@ -40,7 +39,7 @@ class Cursor:
     @arraysize.setter
     def arraysize(self, v):
         self.__arraysize = v
-        self.connection.test_data['arraysize'] = v
+        self.connection.test_data["arraysize"] = v
 
     _need_to_be_pickled = (
         list,
@@ -53,7 +52,10 @@ class Cursor:
     )
 
     def __convert_params(
-        self, operation, parameters, placeholder=re.compile(r"%\((\w+)\)s", re.I)
+        self,
+        operation,
+        parameters,
+        placeholder=re.compile(r"%\((\w+)\)s", re.IGNORECASE),
     ):
         ordered_parameters = []
 
@@ -68,7 +70,9 @@ class Cursor:
         operation = placeholder.sub(repl, operation)
         return operation, ordered_parameters
 
-    __create_table = re.compile(r"\s*create\s+table\s+`(?P<table>\w+)`", re.I).match
+    __create_table = re.compile(
+        r"\s*create\s+table\s+`(?P<table>\w+)`", re.IGNORECASE
+    ).match
 
     def __handle_comments(
         self,
@@ -76,12 +80,13 @@ class Cursor:
         alter_table=re.compile(
             r"\s*ALTER\s+TABLE\s+`(?P<table>\w+)`\s+"
             r"SET\s+OPTIONS\(description=(?P<comment>[^)]+)\)",
-            re.I,
-            ).match,
+            re.IGNORECASE,
+        ).match,
         options=re.compile(
-            r"(?P<prefix>`(?P<col>\w+)`\s+\w+|\))" r"\s+options\((?P<options>[^)]+)\)", re.I
-            )
-        ):
+            r"(?P<prefix>`(?P<col>\w+)`\s+\w+|\))" r"\s+options\((?P<options>[^)]+)\)",
+            re.IGNORECASE,
+        ),
+    ):
         m = self.__create_table(operation)
         if m:
             table_name = m.group("table")
@@ -121,8 +126,10 @@ class Cursor:
     def __handle_array_types(
         self,
         operation,
-        array_type=re.compile(r"(?<=[(,])" r"\s*`\w+`\s+\w+<\w+>\s*" r"(?=[,)])", re.I),
-        ):
+        array_type=re.compile(
+            r"(?<=[(,])" r"\s*`\w+`\s+\w+<\w+>\s*" r"(?=[,)])", re.IGNORECASE
+        ),
+    ):
         if self.__create_table(operation):
 
             def repl(m):
@@ -159,16 +166,16 @@ class Cursor:
         self,
         operation,
         literal_insert_values=re.compile(
-            r"\s*(insert\s+into\s+.+\s+values\s*)" r"(\([^)]+\))" r"\s*$", re.I
-            ).match,
+            r"\s*(insert\s+into\s+.+\s+values\s*)" r"(\([^)]+\))" r"\s*$", re.IGNORECASE
+        ).match,
         bq_dateish=re.compile(
             r"(?<=[[(,])\s*"
             r"(?P<type>date(?:time)?|time(?:stamp)?) (?P<val>'[^']+')"
             r"\s*(?=[]),])",
-            re.I,
-            ),
+            re.IGNORECASE,
+        ),
         need_to_be_pickled_literal=_need_to_be_pickled + (bytes,),
-        ):
+    ):
         if "?" in operation:
             return operation
         m = literal_insert_values(operation)
@@ -202,10 +209,8 @@ class Cursor:
             return operation
 
     def __handle_unnest(
-        self,
-        operation,
-        unnest=re.compile(r"UNNEST\(\[ ([^\]]+)? \]\)", re.I),
-        ):
+        self, operation, unnest=re.compile(r"UNNEST\(\[ ([^\]]+)? \]\)", re.IGNORECASE),
+    ):
         return unnest.sub(r"(\1)", operation)
 
     def execute(self, operation, parameters=()):
@@ -214,7 +219,7 @@ class Cursor:
         if parameters:
             operation, parameters = self.__convert_params(operation, parameters)
         else:
-            operation = operation.replace('%%', '%')
+            operation = operation.replace("%%", "%")
 
         operation = self.__handle_comments(operation)
         operation = self.__handle_array_types(operation)

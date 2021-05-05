@@ -41,8 +41,9 @@ def some_table(connection):
             {"id": 2, "x": 2, "y": 3},
             {"id": 3, "x": 3, "y": 4},
             {"id": 4, "x": 4, "y": 5},
-            ]
-        )
+        ],
+    )
+
 
 def test_distinct_selectable_in_unions(faux_conn):
     table = some_table(faux_conn)
@@ -87,21 +88,19 @@ def test_percent_sign_round_trip(faux_conn, metadata):
     faux_conn.execute(t.insert(), dict(data="some %% other value"))
     eq_(
         faux_conn.scalar(
-            select([t.c.data]).where(
-                t.c.data == literal_column("'some % value'")
-                )
-            ),
+            select([t.c.data]).where(t.c.data == literal_column("'some % value'"))
+        ),
         "some % value",
-        )
+    )
 
     eq_(
         faux_conn.scalar(
             select([t.c.data]).where(
                 t.c.data == literal_column("'some %% other value'")
-                )
-            ),
+            )
+        ),
         "some %% other value",
-        )
+    )
 
 
 @sqlalchemy_1_3_or_higher
@@ -126,10 +125,12 @@ def test_null_in_empty_set_is_false(faux_conn):
 
 @pytest.mark.parametrize(
     "meth,arg,expected",
-    [("contains",   "b%cde", {1, 2, 3, 4, 5, 6, 7, 8, 9}),
-     ("startswith", "ab%c",  {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}),
-     ("endswith",   "e%fg",  {1, 2, 3, 4, 5, 6, 7, 8, 9}),
-     ])
+    [
+        ("contains", "b%cde", {1, 2, 3, 4, 5, 6, 7, 8, 9}),
+        ("startswith", "ab%c", {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}),
+        ("endswith", "e%fg", {1, 2, 3, 4, 5, 6, 7, 8, 9}),
+    ],
+)
 def test_likish(faux_conn, meth, arg, expected):
     # See sqlalchemy.testing.suite.test_select.LikeFunctionsTest
     table = setup_table(
@@ -137,7 +138,7 @@ def test_likish(faux_conn, meth, arg, expected):
         "t",
         Column("id", Integer, primary_key=True),
         Column("data", String(50)),
-        initial_data = [
+        initial_data=[
             {"id": 1, "data": "abcdefg"},
             {"id": 2, "data": "ab/cdefg"},
             {"id": 3, "data": "ab%cdefg"},
@@ -148,25 +149,15 @@ def test_likish(faux_conn, meth, arg, expected):
             {"id": 8, "data": "ab9cdefg"},
             {"id": 9, "data": "abcde#fg"},
             {"id": 10, "data": "abcd9fg"},
-            ],
-        )
+        ],
+    )
     expr = getattr(table.c.data, meth)(arg)
-    rows = {
-        value
-        for value, in faux_conn.execute(
-            select([table.c.id]).where(expr)
-            )
-        }
+    rows = {value for value, in faux_conn.execute(select([table.c.id]).where(expr))}
     eq_(rows, expected)
 
     all = {i for i in range(1, 11)}
     expr = sqlalchemy.not_(expr)
-    rows = {
-        value
-        for value, in faux_conn.execute(
-            select([table.c.id]).where(expr)
-            )
-        }
+    rows = {value for value, in faux_conn.execute(select([table.c.id]).where(expr))}
     eq_(rows, all - expected)
 
 
@@ -180,15 +171,14 @@ def test_group_by_composed(faux_conn):
         Column("q", String(50)),
         Column("p", String(50)),
         initial_data=[
-                {"id": 1, "x": 1, "y": 2, "q": "q1", "p": "p3"},
-                {"id": 2, "x": 2, "y": 3, "q": "q2", "p": "p2"},
-                {"id": 3, "x": 3, "y": 4, "q": "q3", "p": "p1"},
-            ])
+            {"id": 1, "x": 1, "y": 2, "q": "q1", "p": "p3"},
+            {"id": 2, "x": 2, "y": 3, "q": "q2", "p": "p2"},
+            {"id": 3, "x": 3, "y": 4, "q": "q3", "p": "p1"},
+        ],
+    )
 
     expr = (table.c.x + table.c.y).label("lx")
     stmt = (
-        select([sqlalchemy.func.count(table.c.id), expr])
-        .group_by(expr)
-        .order_by(expr)
+        select([sqlalchemy.func.count(table.c.id), expr]).group_by(expr).order_by(expr)
     )
     assert_result(faux_conn, stmt, [(1, 3), (1, 5), (1, 7)])

@@ -7,10 +7,11 @@ import sqlalchemy
 
 import fauxdbi
 
-sqlalchemy_version_info = tuple(map(int, sqlalchemy.__version__.split('.')))
+sqlalchemy_version_info = tuple(map(int, sqlalchemy.__version__.split(".")))
 sqlalchemy_1_3_or_higher = pytest.mark.skipif(
-    sqlalchemy_version_info < (1, 3),
-    reason="requires sqlalchemy 1.3 or higher")
+    sqlalchemy_version_info < (1, 3), reason="requires sqlalchemy 1.3 or higher"
+)
+
 
 @pytest.fixture()
 def faux_conn():
@@ -43,6 +44,7 @@ def faux_conn():
 
                 yield conn
                 conn.close()
+
 
 @pytest.fixture()
 def metadata():

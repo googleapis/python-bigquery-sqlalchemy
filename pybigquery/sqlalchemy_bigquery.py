@@ -138,7 +138,6 @@ BIGNUMERIC = _type_map["NUMERIC"]
 
 
 class BigQueryExecutionContext(DefaultExecutionContext):
-
     def create_cursor(self):
         # Set arraysize
         c = super(BigQueryExecutionContext, self).create_cursor()
