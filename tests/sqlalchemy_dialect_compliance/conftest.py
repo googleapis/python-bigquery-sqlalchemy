@@ -18,6 +18,9 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 from sqlalchemy.testing.plugin.pytestplugin import *  # noqa
+from sqlalchemy.testing.plugin.pytestplugin import (
+    pytest_sessionstart as _pytest_sessionstart,
+)
 
 import google.cloud.bigquery.dbapi.connection
 import pybigquery.sqlalchemy_bigquery
@@ -40,3 +43,18 @@ def visit_delete(self, delete_stmt, *args, **kw):
 
 
 pybigquery.sqlalchemy_bigquery.BigQueryCompiler.visit_delete = visit_delete
+
+
+# Clean up test schemas so we don't get spurious errors when the tests
+# try to create tables that already exist.
+def pytest_sessionstart(session):
+    client = google.cloud.bigquery.Client()
+    for schema in "test_schema", "test_pybigquery_sqla":
+        for table_item in client.list_tables(f"{client.project}.{schema}"):
+            table_id = table_item.table_id
+            client.query(
+                f"drop {'view' if table_id.endswith('_v') else 'table'}"
+                f" {schema}.{table_id}"
+            )
+    client.close()
+    _pytest_sessionstart(session)
