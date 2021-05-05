@@ -245,7 +245,10 @@ class Cursor:
         operation = self.__handle_problematic_literal_inserts(operation)
         operation = self.__handle_unnest(operation)
 
-        self.cursor.execute(operation, parameters)
+        try:
+            self.cursor.execute(operation, parameters)
+        except sqlite3.OperationalError as e:
+            raise sqlite3.OperationalError(*((operation,) + e + (sqlite3.sqlite_version,)))
         self.description = self.cursor.description
         self.rowcount = self.cursor.rowcount
 
