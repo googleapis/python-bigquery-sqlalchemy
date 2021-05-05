@@ -23,18 +23,13 @@ class Connection:
     def commit(self):
         pass
 
-    def rollback(self):
-        pass
-
-    def close(self):
-        self.connection.close()
-
 
 class Cursor:
 
     def __init__(self, connection):
         self.connection = connection
         self.cursor = connection.connection.cursor()
+        assert self.arraysize == 1
 
     __arraysize = 1
 
@@ -57,20 +52,20 @@ class Cursor:
         datetime.time,
     )
 
-    def __convert_params(self, operation, parameters):
+    def __convert_params(
+        self, operation, parameters, placeholder=re.compile(r"%\((\w+)\)s", re.I)
+    ):
         ordered_parameters = []
 
         def repl(m):
-            prefix, name = m.groups()
-            if len(prefix) % 2:
-                return m.group(0)
+            name = m.group(1)
             value = parameters[name]
             if isinstance(value, self._need_to_be_pickled):
                 value = pickle.dumps(value).decode("latin1")
             ordered_parameters.append(value)
             return "?"
 
-        operation = re.sub(r"(%*)%\((\w+)\)s", repl, operation)
+        operation = placeholder.sub(repl, operation)
         return operation, ordered_parameters
 
     __create_table = re.compile(r"\s*create\s+table\s+`(?P<table>\w+)`", re.I).match
@@ -158,7 +153,7 @@ class Cursor:
 
             return datetime.time(*map(int, value.split(":") + micro))
         else:
-            raise AssertionError(type_)
+            raise AssertionError(type_)  # pragma: NO COVER
 
     def __handle_problematic_literal_inserts(
         self,
@@ -270,15 +265,15 @@ class attrdict(dict):
 
 
 class FauxClient:
-    def __init__(self, project=None, default_query_job_config=None, *args, **kw):
+    def __init__(self, project_id=None, default_query_job_config=None, *args, **kw):
 
-        if project is None:
+        if project_id is None:
             if default_query_job_config is not None:
-                project = default_query_job_config.default_dataset.project
+                project_id = default_query_job_config.default_dataset.project
             else:
-                project = "authproj"  # we would still have gotten it from auth.
+                project_id = "authproj"  # we would still have gotten it from auth.
 
-        self.project = project
+        self.project = project_id
         self.tables = attrdict()
 
     @staticmethod

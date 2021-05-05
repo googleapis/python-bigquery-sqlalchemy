@@ -67,6 +67,7 @@ def dtrepr(v):
         ),
         (sqlalchemy.DATE, datetime.date(2021, 2, 4), "DATE", dtrepr),
         (sqlalchemy.TIME, datetime.time(4, 5, 7, 123456), "TIME", dtrepr),
+        (sqlalchemy.TIME, datetime.time(4, 5, 7), "TIME", dtrepr),
         (sqlalchemy.TEXT, "myTEXT", "STRING", repr),
         (sqlalchemy.VARCHAR, "myVARCHAR", "STRING", repr),
         (sqlalchemy.NVARCHAR, "myNVARCHAR", "STRING", repr),
