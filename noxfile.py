@@ -28,7 +28,7 @@ BLACK_VERSION = "black==19.10b0"
 BLACK_PATHS = ["docs", "pybigquery", "tests", "noxfile.py", "setup.py"]
 
 DEFAULT_PYTHON_VERSION = "3.8"
-SYSTEM_TEST_PYTHON_VERSIONS = ["3.8"]
+SYSTEM_TEST_PYTHON_VERSIONS = ["3.9"]
 UNIT_TEST_PYTHON_VERSIONS = ["3.6", "3.7", "3.8", "3.9"]
 
 CURRENT_DIRECTORY = pathlib.Path(__file__).parent.absolute()
@@ -36,8 +36,9 @@ CURRENT_DIRECTORY = pathlib.Path(__file__).parent.absolute()
 # 'docfx' is excluded since it only needs to run in 'docs-presubmit'
 nox.options.sessions = [
     "unit",
-    "system",
     "cover",
+    "system",
+    "compliance",
     "lint",
     "lint_setup_py",
     "blacken",
@@ -207,7 +208,7 @@ def compliance(session):
 
     session.run(
         "py.test",
-        "--quiet",
+        "-vv",
         f"--junitxml=compliance_{session.python}_sponge_log.xml",
         "--reruns=3",
         "--reruns-delay=60",
