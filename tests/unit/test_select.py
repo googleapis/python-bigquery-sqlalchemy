@@ -6,7 +6,8 @@ import sqlalchemy
 
 import pybigquery.sqlalchemy_bigquery
 
-from conftest import setup_table
+from conftest import setup_table, sqlalchemy_1_3_or_higher
+
 
 def test_labels_not_forced(faux_conn):
     table = setup_table(faux_conn, "t", sqlalchemy.Column("id", sqlalchemy.Integer))
@@ -197,6 +198,7 @@ def test_select_in_param(faux_conn):
         {'param_1': 1, 'q_1': 1, 'q_2': 2, 'q_3': 3})
 
 
+@sqlalchemy_1_3_or_higher
 def test_select_in_param_empty(faux_conn):
     [[isin]] = faux_conn.execute(sqlalchemy.select([
         sqlalchemy.literal(1).in_(sqlalchemy.bindparam("q", expanding=True))
@@ -233,6 +235,7 @@ def test_select_notin_param(faux_conn):
         {'param_1': 1, 'q_1': 1, 'q_2': 2, 'q_3': 3})
 
 
+@sqlalchemy_1_3_or_higher
 def test_select_notin_param_empty(faux_conn):
     [[isnotin]] = faux_conn.execute(sqlalchemy.select([
         sqlalchemy.literal(1).notin_(sqlalchemy.bindparam("q", expanding=True))
