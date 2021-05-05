@@ -61,7 +61,7 @@ class Cursor:
             name = m.group(1)
             value = parameters[name]
             if isinstance(value, self._need_to_be_pickled):
-                value = pickle.dumps(value).decode("latin1")
+                value = pickle.dumps(value, 4).decode("latin1")
             ordered_parameters.append(value)
             return "?"
 
@@ -189,7 +189,7 @@ class Cursor:
                     repr,
                     (
                         (
-                            base64.b16encode(pickle.dumps(v)).decode()
+                            base64.b16encode(pickle.dumps(v, 4)).decode()
                             if isinstance(v, need_to_be_pickled_literal)
                             else v
                         )
