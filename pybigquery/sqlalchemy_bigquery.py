@@ -57,23 +57,11 @@ from pybigquery import _helpers
 FIELD_ILLEGAL_CHARACTERS = re.compile(r"[^\w]+")
 
 
-class UniversalSet(object):
-    """
-    Set containing everything
-    https://github.com/dropbox/PyHive/blob/master/pyhive/common.py
-    """
-
-    def __contains__(self, item):
-        return True
-
-
 class BigQueryIdentifierPreparer(IdentifierPreparer):
     """
     Set containing everything
     https://github.com/dropbox/PyHive/blob/master/pyhive/sqlalchemy_presto.py
     """
-
-    reserved_words = UniversalSet()
 
     def __init__(self, dialect):
         super(BigQueryIdentifierPreparer, self).__init__(
@@ -95,21 +83,7 @@ class BigQueryIdentifierPreparer(IdentifierPreparer):
         """
 
         force = getattr(ident, "quote", None)
-
-        if force is None:
-            if ident in self._strings:
-                return self._strings[ident]
-            else:
-                if self._requires_quotes(ident):
-                    self._strings[ident] = (
-                        self.quote_column(ident)
-                        if column
-                        else self.quote_identifier(ident)
-                    )
-                else:
-                    self._strings[ident] = ident
-                return self._strings[ident]
-        elif force:
+        if force is None or force:
             return self.quote_column(ident) if column else self.quote_identifier(ident)
         else:
             return ident
@@ -172,7 +146,7 @@ class BigQueryExecutionContext(DefaultExecutionContext):
             c.arraysize = self.dialect.arraysize
         return c
 
-    def get_insert_default(self, column):  # pragma: no cover
+    def get_insert_default(self, column):  # pragma: NO COVER
         # Only used by compliance tests
         if isinstance(column.type, Integer):
             return random.randint(-9223372036854775808, 9223372036854775808)  # 1<<63
