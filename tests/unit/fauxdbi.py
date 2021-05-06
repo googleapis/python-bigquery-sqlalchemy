@@ -92,7 +92,7 @@ class Cursor:
         return operation, ordered_parameters
 
     def __update_comment(self, table, col, comment):
-        key = table + ',' + col
+        key = table + "," + col
         self.cursor.execute("delete from comments where key=?", [key])
         self.cursor.execute(f"insert into comments values(?, {comment})", [key])
 
@@ -138,8 +138,8 @@ class Cursor:
         if m:
             table_name = m.group("table")
             comment = m.group("comment")
-            self.__update_comment(table_name, '', comment)
-            return ''
+            self.__update_comment(table_name, "", comment)
+            return ""
 
         return operation
 
@@ -236,7 +236,7 @@ class Cursor:
     def __handle_true_false(self, operation):
         # Older sqlite versions, like those used on the CI servers
         # don't support true and false (as aliases for 1 and 0).
-        return operation.replace(' true', ' 1').replace(' false', ' 0')
+        return operation.replace(" true", " 1").replace(" false", " 0")
 
     def execute(self, operation, parameters=()):
         self.connection.test_data["execute"].append((operation, parameters))
