@@ -255,7 +255,9 @@ class Cursor:
         if operation:
             try:
                 self.cursor.execute(operation, parameters)
-            except sqlite3.OperationalError as e:
+            except sqlite3.OperationalError as e:  # pragma: NO COVER
+                # Help diagnose errors that shouldn't happen.
+                # When they do, it's likely due to sqlite versions (environment).
                 raise sqlite3.OperationalError(
                     *((operation,) + e.args + (sqlite3.sqlite_version,))
                 )
