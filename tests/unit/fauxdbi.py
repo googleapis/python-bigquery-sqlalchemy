@@ -91,6 +91,11 @@ class Cursor:
         operation = placeholder.sub(repl, operation)
         return operation, ordered_parameters
 
+    def __update_comment(self, table, col, comment):
+        key = table + ',' + col
+        self.cursor.execute("delete from comments where key=?", [key])
+        self.cursor.execute(f"insert into comments values(?, {comment})", [key])
+
     __create_table = re.compile(
         r"\s*create\s+table\s+`(?P<table>\w+)`", re.IGNORECASE
     ).match
@@ -123,11 +128,7 @@ class Cursor:
 
                 comment = options.get("description")
                 if comment:
-                    self.cursor.execute(
-                        f"insert into comments values(?, {comment})"
-                        f" on conflict(key) do update set comment=excluded.comment",
-                        [table_name + "," + col],
-                    )
+                    self.__update_comment(table_name, col, comment)
 
                 return m.group("prefix")
 
@@ -137,10 +138,8 @@ class Cursor:
         if m:
             table_name = m.group("table")
             comment = m.group("comment")
-            return (
-                f"insert into comments values({repr(table_name + ',')}, {comment})"
-                f" on conflict(key) do update set comment=excluded.comment"
-            )
+            self.__update_comment(table_name, '', comment)
+            return ''
 
         return operation
 
@@ -247,12 +246,14 @@ class Cursor:
         operation = self.__handle_problematic_literal_inserts(operation)
         operation = self.__handle_unnest(operation)
 
-        try:
-            self.cursor.execute(operation, parameters)
-        except sqlite3.OperationalError as e:
-            raise sqlite3.OperationalError(
-                *((operation,) + e.args + (sqlite3.sqlite_version,))
-            )
+        if operation:
+            try:
+                self.cursor.execute(operation, parameters)
+            except sqlite3.OperationalError as e:
+                raise sqlite3.OperationalError(
+                    *((operation,) + e.args + (sqlite3.sqlite_version,))
+                )
+
         self.description = self.cursor.description
         self.rowcount = self.cursor.rowcount
 
