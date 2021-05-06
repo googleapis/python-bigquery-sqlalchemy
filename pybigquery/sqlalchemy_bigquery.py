@@ -534,7 +534,6 @@ class BigQueryDialect(DefaultDialect):
     supports_unicode_statements = True
     supports_unicode_binds = True
     supports_native_decimal = True
-    returns_unicode_strings = True
     description_encoding = None
     supports_native_boolean = True
     supports_simple_order_by_label = True
