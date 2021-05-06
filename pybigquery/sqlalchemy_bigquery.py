@@ -256,7 +256,8 @@ class BigQueryCompiler(SQLCompiler):
     __in_expanding_bind = re.compile(
         fr" IN \((\["
         fr"{'EXPANDING' if sqlalchemy.__version__ < '1.4' else 'POSTCOMPILE'}"
-        fr"_\w+\](:[A-Z0-9]+)?)\)$")
+        fr"_\w+\](:[A-Z0-9]+)?)\)$"
+    )
 
     def __unnestify_in_expanding_bind(self, in_text):
         return self.__in_expanding_bind.sub(r" IN UNNEST([ \1 ])", in_text)

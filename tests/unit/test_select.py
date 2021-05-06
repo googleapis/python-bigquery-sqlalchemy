@@ -29,7 +29,8 @@ from conftest import (
     setup_table,
     sqlalchemy_1_3_or_higher,
     sqlalchemy_1_4_or_higher,
-    sqlalchemy_before_1_4)
+    sqlalchemy_before_1_4,
+)
 
 
 def test_labels_not_forced(faux_conn):
@@ -211,11 +212,8 @@ def _normalize_in_params(query, params):
     # We have to normalize parameter names, because they
     # change with sqlalchemy versions.
     newnames = sorted(
-        ((p, f"p_{i}")
-         for i, p in enumerate(sorted(params))
-         ),
-        key=lambda i: -len(i[0])
-        )
+        ((p, f"p_{i}") for i, p in enumerate(sorted(params))), key=lambda i: -len(i[0])
+    )
     for old, new in newnames:
         query = query.replace(old, new)
 
@@ -234,6 +232,7 @@ def test_select_in_lit_13(faux_conn):
         {"param_1": 1, "param_2": 1, "param_3": 2, "param_4": 3},
     )
 
+
 @sqlalchemy_1_4_or_higher
 def test_select_in_lit(faux_conn):
     [[isin]] = faux_conn.execute(
@@ -241,9 +240,10 @@ def test_select_in_lit(faux_conn):
     )
     assert isin
     assert _normalize_in_params(*faux_conn.test_data["execute"][-1]) == (
-        'SELECT %(p_0:INT64)s IN '
-        'UNNEST([ %(p_1:INT64)s, %(p_2:INT64)s, %(p_3:INT64)s ]) AS `anon_1`',
-        {'p_1': 1, 'p_2': 2, 'p_3': 3, 'p_0': 1})
+        "SELECT %(p_0:INT64)s IN "
+        "UNNEST([ %(p_1:INT64)s, %(p_2:INT64)s, %(p_3:INT64)s ]) AS `anon_1`",
+        {"p_1": 1, "p_2": 2, "p_3": 3, "p_0": 1},
+    )
 
 
 def test_select_in_param(faux_conn):
@@ -298,9 +298,10 @@ def test_select_notin_lit(faux_conn):
     assert isnotin
 
     assert _normalize_in_params(*faux_conn.test_data["execute"][-1]) == (
-        'SELECT %(p_0:INT64)s NOT IN '
-         'UNNEST([ %(p_1:INT64)s, %(p_2:INT64)s, %(p_3:INT64)s ]) AS `anon_1`',
-        {'p_0': 0, 'p_1': 1, 'p_2': 2, 'p_3': 3})
+        "SELECT %(p_0:INT64)s NOT IN "
+        "UNNEST([ %(p_1:INT64)s, %(p_2:INT64)s, %(p_3:INT64)s ]) AS `anon_1`",
+        {"p_0": 0, "p_1": 1, "p_2": 2, "p_3": 3},
+    )
 
 
 def test_select_notin_param(faux_conn):

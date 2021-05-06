@@ -116,7 +116,8 @@ def test_basic(url_with_everything):
 def test_all_values(url_with_everything, param, value, default):
     url_with_this_one = make_url(
         f"bigquery://some-project/some-dataset"
-        f"?{param}={url_with_everything.query[param]}")
+        f"?{param}={url_with_everything.query[param]}"
+    )
 
     for url in url_with_everything, url_with_this_one:
         job_config = parse_url(url)[5]
