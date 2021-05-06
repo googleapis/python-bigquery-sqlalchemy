@@ -183,12 +183,10 @@ class BigQueryCompiler(SQLCompiler):
     compound_keywords = SQLCompiler.compound_keywords.copy()
     compound_keywords[selectable.CompoundSelect.UNION] = "UNION ALL"
 
-    def __init__(self, dialect, statement, column_keys=None, inline=False, **kwargs):
+    def __init__(self, dialect, statement, *args, **kwargs):
         if isinstance(statement, Column):
             kwargs["compile_kwargs"] = util.immutabledict({"include_table": False})
-        super(BigQueryCompiler, self).__init__(
-            dialect, statement, column_keys, inline, **kwargs
-        )
+        super(BigQueryCompiler, self).__init__(dialect, statement, *args, **kwargs)
 
     def visit_insert(self, insert_stmt, asfrom=False, **kw):
         # The (internal) documentation for `inline` is confusing, but
