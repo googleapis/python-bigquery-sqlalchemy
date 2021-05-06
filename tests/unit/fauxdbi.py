@@ -23,6 +23,8 @@ import datetime
 import decimal
 import pickle
 import re
+import sqlite3
+
 import google.api_core.exceptions
 import google.cloud.bigquery.schema
 import google.cloud.bigquery.table
@@ -248,7 +250,9 @@ class Cursor:
         try:
             self.cursor.execute(operation, parameters)
         except sqlite3.OperationalError as e:
-            raise sqlite3.OperationalError(*((operation,) + e + (sqlite3.sqlite_version,)))
+            raise sqlite3.OperationalError(
+                *((operation,) + e.args + (sqlite3.sqlite_version,))
+            )
         self.description = self.cursor.description
         self.rowcount = self.cursor.rowcount
 
