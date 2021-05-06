@@ -253,23 +253,28 @@ class BigQueryCompiler(SQLCompiler):
     # no way to tell sqlalchemy that, so it works harder than
     # necessary and makes us do the same.
 
-    _in_expanding_bind = re.compile(r" IN \((\[EXPANDING_\w+\](:[A-Z0-9]+)?)\)$")
+    __in_expanding_bind = re.compile(
+        fr" IN \((\["
+        fr"{'EXPANDING' if sqlalchemy.__version__ < '1.4' else 'POSTCOMPILE'}"
+        fr"_\w+\](:[A-Z0-9]+)?)\)$")
 
-    def _unnestify_in_expanding_bind(self, in_text):
-        return self._in_expanding_bind.sub(r" IN UNNEST([ \1 ])", in_text)
+    def __unnestify_in_expanding_bind(self, in_text):
+        return self.__in_expanding_bind.sub(r" IN UNNEST([ \1 ])", in_text)
 
     def visit_in_op_binary(self, binary, operator_, **kw):
-        return self._unnestify_in_expanding_bind(
+        return self.__unnestify_in_expanding_bind(
             self._generate_generic_binary(binary, " IN ", **kw)
         )
 
     def visit_empty_set_expr(self, element_types):
         return ""
 
-    def visit_notin_op_binary(self, binary, operator, **kw):
-        return self._unnestify_in_expanding_bind(
+    def visit_not_in_op_binary(self, binary, operator, **kw):
+        return self.__unnestify_in_expanding_bind(
             self._generate_generic_binary(binary, " NOT IN ", **kw)
         )
+
+    visit_notin_op_binary = visit_not_in_op_binary  # before 1.4
 
     ############################################################################
 
