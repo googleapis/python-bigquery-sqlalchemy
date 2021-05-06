@@ -233,6 +233,11 @@ class Cursor:
     ):
         return unnest.sub(r"(\1)", operation)
 
+    def __handle_true_false(self, operation):
+        # Older sqlite versions, like those used on the CI servers
+        # don't support true and false (as aliases for 1 and 0).
+        return operation.replace(' true', ' 1').replace(' false', ' 0')
+
     def execute(self, operation, parameters=()):
         self.connection.test_data["execute"].append((operation, parameters))
         operation, types_ = google.cloud.bigquery.dbapi.cursor._extract_types(operation)
@@ -245,6 +250,7 @@ class Cursor:
         operation = self.__handle_array_types(operation)
         operation = self.__handle_problematic_literal_inserts(operation)
         operation = self.__handle_unnest(operation)
+        operation = self.__handle_true_false(operation)
 
         if operation:
             try:
