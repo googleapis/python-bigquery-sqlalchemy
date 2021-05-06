@@ -275,7 +275,7 @@ class Cursor:
         return self._fix_pickled(self.cursor.fetchone())
 
     def fetchall(self):
-        return map(self._fix_pickled, self.cursor)
+        return list(map(self._fix_pickled, self.cursor))
 
 
 class attrdict(dict):
