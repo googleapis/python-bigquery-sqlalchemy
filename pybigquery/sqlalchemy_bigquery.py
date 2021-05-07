@@ -365,7 +365,17 @@ class BigQueryCompiler(SQLCompiler):
             bq_type = bq_type[6:-1]
 
         assert param != "%s"
-        return param.replace(")", f":{bq_type})")
+
+        def replace_placeholder(m):
+            name, type_ = m.groups()
+            if name == bindparam.key and type_ is None:
+                return f"%({name}:{bq_type})s"
+            else:
+                return m.group(0)
+
+        return self.__placeholder.sub(replace_placeholder, param)
+
+    __placeholder = re.compile(r"%\(([^\]:]+)(:[^\]:]+)\)s")
 
 
 class BigQueryTypeCompiler(GenericTypeCompiler):
