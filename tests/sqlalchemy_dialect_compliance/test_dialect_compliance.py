@@ -21,6 +21,7 @@ import datetime
 import mock
 import pytest
 import pytz
+import sqlalchemy
 from sqlalchemy import and_
 from sqlalchemy.testing.assertions import eq_
 from sqlalchemy.testing.suite import config, select, exists
@@ -30,21 +31,50 @@ from sqlalchemy.testing.suite import (
     CTETest as _CTETest,
     ExistsTest as _ExistsTest,
     InsertBehaviorTest as _InsertBehaviorTest,
-    LimitOffsetTest as _LimitOffsetTest,
     LongNameBlowoutTest,
     QuotedNameArgumentTest,
     SimpleUpdateDeleteTest as _SimpleUpdateDeleteTest,
     TimestampMicrosecondsTest as _TimestampMicrosecondsTest,
 )
 
+
+if sqlalchemy.__version__ < '1.4':
+    from sqlalchemy.testing.suite import LimitOffsetTest as _LimitOffsetTest
+
+
+    class LimitOffsetTest(_LimitOffsetTest):
+        @pytest.mark.skip()
+        def test_simple_offset(self):
+            """BigQuery doesn't allow an offset without a limit."""
+
+        test_bound_offset = test_simple_offset
+else:
+    del DifficultParametersTest  # exercises column names illegal in BQ
+    del DistinctOnTest  # expects unquoted table names.
+
+    from sqlalchemy.testing.suite import (
+        ComponentReflectionTestExtra as _ComponentReflectionTestExtra,
+        )
+
+
+    class ComponentReflectionTestExtra(_ComponentReflectionTestExtra):
+
+        @pytest.mark.skip("BQ types don't have parameters like precision and length")
+        def test_numeric_reflection(self):
+            pass
+
+        test_varchar_reflection = test_numeric_reflection
+
+
 # Quotes aren't allowed in BigQuery table names.
 del QuotedNameArgumentTest
 
 
 class InsertBehaviorTest(_InsertBehaviorTest):
-    @pytest.mark.skip()
+
+    @pytest.mark.skip("BQ has no autoinc and client-side defaults can't work for select.")
     def test_insert_from_select_autoinc(cls):
-        """BQ has no autoinc and client-side defaults can't work for select."""
+        pass
 
 
 class ExistsTest(_ExistsTest):
@@ -76,12 +106,6 @@ class ExistsTest(_ExistsTest):
         )
 
 
-class LimitOffsetTest(_LimitOffsetTest):
-    @pytest.mark.skip()
-    def test_simple_offset(self):
-        """BigQuery doesn't allow an offset without a limit."""
-
-    test_bound_offset = test_simple_offset
 
 
 # This test requires features (indexes, primary keys, etc., that BigQuery doesn't have.
@@ -129,6 +153,11 @@ class ComponentReflectionTest(_ComponentReflectionTest):
         pass
 
     test_numeric_reflection = test_varchar_reflection = course_grained_types
+
+
+    @pytest.mark.skip("BQ doesn't have indexes (in the way these tests expect).")
+    def test_get_indexes(self):
+        pass
 
 
 class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
