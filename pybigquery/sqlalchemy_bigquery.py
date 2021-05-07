@@ -256,14 +256,20 @@ class BigQueryCompiler(SQLCompiler):
     __in_expanding_bind = re.compile(
         fr" IN \((\["
         fr"{'EXPANDING' if sqlalchemy.__version__ < '1.4' else 'POSTCOMPILE'}"
-        fr"_\w+\](:[A-Z0-9]+)?)\)$"
+        fr"_[^\]]+\](:[A-Z0-9]+)?)\)$"
     )
 
-    def __unnestify_in_expanding_bind(self, in_text):
-        return self.__in_expanding_bind.sub(r" IN UNNEST([ \1 ])", in_text)
+    __in_nonexpanding_bind = re.compile(r" IN (.+)$")
+
+    def __fixup_in_param(self, binary, in_text):
+        if binary.right.expanding:
+            return self.__in_expanding_bind.sub(r" IN UNNEST([ \1 ])", in_text)
+        else:
+            return self.__in_nonexpanding_bind.sub(r" IN UNNEST(\1)", in_text)
 
     def visit_in_op_binary(self, binary, operator_, **kw):
-        return self.__unnestify_in_expanding_bind(
+        return self.__fixup_in_param(
+            binary,
             self._generate_generic_binary(binary, " IN ", **kw)
         )
 
@@ -271,7 +277,8 @@ class BigQueryCompiler(SQLCompiler):
         return ""
 
     def visit_not_in_op_binary(self, binary, operator, **kw):
-        return self.__unnestify_in_expanding_bind(
+        return self.__fixup_in_param(
+            binary,
             self._generate_generic_binary(binary, " NOT IN ", **kw)
         )
 
@@ -366,16 +373,29 @@ class BigQueryCompiler(SQLCompiler):
 
         assert param != "%s"
 
-        def replace_placeholder(m):
-            name, type_ = m.groups()
-            if name == bindparam.key and type_ is None:
-                return f"%({name}:{bq_type})s"
-            else:
-                return m.group(0)
+        if bindparam.expanding:
 
-        return self.__placeholder.sub(replace_placeholder, param)
+            if self.__expanded_param(param):
+                param = param.replace(")", f":{bq_type})")
 
-    __placeholder = re.compile(r"%\(([^\]:]+)(:[^\]:]+)\)s")
+        else:
+            def replace_placeholder(m):
+                name, type_ = m.groups()
+                if name == bindparam.key and type_ is None:
+                    return f"%({name}:{bq_type})s"
+                else:
+                    return m.group(0)
+
+            param = self.__placeholder.sub(replace_placeholder, param)
+
+        return param
+
+    __placeholder = re.compile(r"%\(([^\]:]+)(:[^\]:]+)?\)s")
+
+    __expanded_param = re.compile(
+        fr"\(\["
+        fr"{'EXPANDING' if sqlalchemy.__version__ < '1.4' else 'POSTCOMPILE'}"
+        fr"_[^\]]+\]\)$").match
 
 
 class BigQueryTypeCompiler(GenericTypeCompiler):
