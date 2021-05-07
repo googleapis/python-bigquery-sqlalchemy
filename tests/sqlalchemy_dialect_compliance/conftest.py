@@ -17,6 +17,10 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+import re
+import traceback
+
+import sqlalchemy
 from sqlalchemy.testing.plugin.pytestplugin import *  # noqa
 from sqlalchemy.testing.plugin.pytestplugin import (
     pytest_sessionstart as _pytest_sessionstart,
@@ -24,23 +28,24 @@ from sqlalchemy.testing.plugin.pytestplugin import (
 
 import google.cloud.bigquery.dbapi.connection
 import pybigquery.sqlalchemy_bigquery
-import sqlalchemy
-import traceback
 
 pybigquery.sqlalchemy_bigquery.BigQueryDialect.preexecute_autoincrement_sequences = True
 google.cloud.bigquery.dbapi.connection.Connection.rollback = lambda self: None
 
+_where = re.compile(r'\s+WHERE\s+', re.IGNORECASE).search
+
 
 def visit_delete(self, delete_stmt, *args, **kw):
-    if delete_stmt._whereclause is None and "teardown" in set(
-        f.name for f in traceback.extract_stack()
-    ):
-        delete_stmt._whereclause = sqlalchemy.true()
+    text = super(pybigquery.sqlalchemy_bigquery.BigQueryCompiler, self).visit_delete(
+        delete_stmt, *args, **kw)
 
-    return super(pybigquery.sqlalchemy_bigquery.BigQueryCompiler, self).visit_delete(
-        delete_stmt, *args, **kw
-    )
+    if (not _where(text)
+        and
+        any("teardown" in f.name.lower() for f in traceback.extract_stack())
+        ):
+        text += ' WHERE true'
 
+    return text
 
 pybigquery.sqlalchemy_bigquery.BigQueryCompiler.visit_delete = visit_delete
 
