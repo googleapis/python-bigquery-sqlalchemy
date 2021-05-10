@@ -62,6 +62,19 @@ class Cursor:
         self.__arraysize = v
         self.connection.test_data["arraysize"] = v
 
+    # A Note on the use of pickle here
+    # ================================
+    #
+    # BigQuery supports types that sqlite doesn't.  We compensate by
+    # pickling unhandled types and saving the pickles as
+    # strings. Bonus: literals require extra handling.
+    #
+    # Note that this only needs to be robust enough for tests. :) So
+    # when reading data, we simply look for pickle protocol 4
+    # prefixes, because we don't have to worry about prople providing
+    # non-pickle string values with those prefixes, because we control
+    # the inputs in the tests and we choose not to do that.
+
     _need_to_be_pickled = (
         list,
         dict,
