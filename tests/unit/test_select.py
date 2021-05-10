@@ -240,10 +240,8 @@ def test_select_in_param1(faux_conn):
     )
     assert isin
     assert faux_conn.test_data["execute"][-1] == (
-        "SELECT %(param_1:INT64)s IN UNNEST("
-        "[ %(q_1:INT64)s ]"
-        ") AS `anon_1`",
-        {"param_1": 1, 'q_1': 1},
+        "SELECT %(param_1:INT64)s IN UNNEST(" "[ %(q_1:INT64)s ]" ") AS `anon_1`",
+        {"param_1": 1, "q_1": 1},
     )
 
 
