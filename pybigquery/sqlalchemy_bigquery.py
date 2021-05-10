@@ -156,7 +156,7 @@ class BigQueryExecutionContext(DefaultExecutionContext):
         self,
         in_sub=re.compile(
             r" IN UNNEST\(\[ "
-            r"(%\([^)]+_\d+\)s(, %\([^)]+_\d+\)s)*)?"  # Placeholders. See below.
+            r"(%\([^)]+_\d+\)s(?:, %\([^)]+_\d+\)s)*)?"  # Placeholders. See below.
             r":([A-Z0-9]+)"  # Type
             r" \]\)"
         ).sub,
@@ -173,7 +173,7 @@ class BigQueryExecutionContext(DefaultExecutionContext):
         # `%(foo)s` gets expaneded to `%(foo_0)s, `%(foo_1)s, ...`.
 
         def repl(m):
-            placeholders, _, type_ = m.groups()
+            placeholders, type_ = m.groups()
             if placeholders:
                 placeholders = placeholders.replace(")", f":{type_})")
             else:
