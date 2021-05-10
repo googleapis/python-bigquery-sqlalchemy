@@ -231,6 +231,22 @@ def test_select_in_param(faux_conn):
     )
 
 
+def test_select_in_param1(faux_conn):
+    [[isin]] = faux_conn.execute(
+        sqlalchemy.select(
+            [sqlalchemy.literal(1).in_(sqlalchemy.bindparam("q", expanding=True))]
+        ),
+        dict(q=[1]),
+    )
+    assert isin
+    assert faux_conn.test_data["execute"][-1] == (
+        "SELECT %(param_1:INT64)s IN UNNEST("
+        "[ %(q_1:INT64)s ]"
+        ") AS `anon_1`",
+        {"param_1": 1, 'q_1': 1},
+    )
+
+
 @sqlalchemy_1_3_or_higher
 def test_select_in_param_empty(faux_conn):
     [[isin]] = faux_conn.execute(
