@@ -156,16 +156,21 @@ class BigQueryExecutionContext(DefaultExecutionContext):
         self,
         in_sub=re.compile(
             r" IN UNNEST\(\[ "
-            r"(%\([^)]+\d+\)s(, %\([^)]+_\d+\)s)+)?"  # Placeholders
+            r"(%\([^)]+_\d+\)s(, %\([^)]+_\d+\)s)+)?"  # Placeholders. See below.
             ":([A-Z0-9]+)"  # Type
             r" \]\)"
         ).sub,
     ):
-        # If we have an in parameter, it gets expaned to 0 or more
+        # If we have an in parameter, it sometimes gets expaned to 0 or more
         # parameters and we need to move the type marker to each
         # parameter.
         # (The way SQLAlchemy handles this is a bit awkward for our
         # purposes.)
+
+        # In the placeholder part of the regex above, the `_\d+
+        # suffixes refect that when an array parameter is expanded,
+        # numeric suffixes are added.  For example, a placeholder like
+        # `%(foo)s` gets expaneded to `%(foo_0)s, `%(foo_1)s, ...`.
 
         def repl(m):
             placeholders, _, type_ = m.groups()
