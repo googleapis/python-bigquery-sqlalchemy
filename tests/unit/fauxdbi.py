@@ -71,7 +71,7 @@ class Cursor:
     #
     # Note that this only needs to be robust enough for tests. :) So
     # when reading data, we simply look for pickle protocol 4
-    # prefixes, because we don't have to worry about prople providing
+    # prefixes, because we don't have to worry about people providing
     # non-pickle string values with those prefixes, because we control
     # the inputs in the tests and we choose not to do that.
 
