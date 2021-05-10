@@ -218,3 +218,12 @@ class Requirements(sqlalchemy.testing.requirements.SuiteRequirements):
 
         """
         return supported()
+
+    @property
+    def sql_expression_limit_offset(self):
+        """target database can render LIMIT and/or OFFSET with a complete
+        SQL expression, such as one that uses the addition operator.
+        parameter
+        """
+
+        return unsupported()
