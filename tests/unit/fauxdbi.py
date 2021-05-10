@@ -329,13 +329,16 @@ class FauxClient:
         mode=None,
         description=None,
         fields=(),
-        columns=None,
-        **_,
+        columns=None,  # Custom column data provided by tests.
+        **_,  # Ignore sqlite PRAGMA data we don't care about.
     ):
         if columns:
             custom = columns.get(name)
             if custom:
                 return self._get_field(
+                    # We express the kwargs this way to allow custom
+                    # values to overrise name, type and nonnull, if
+                    # necessary.
                     **dict(name=name, type=type, notnull=notnull, **custom)
                 )
 
