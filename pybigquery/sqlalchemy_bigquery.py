@@ -181,7 +181,8 @@ class BigQueryExecutionContext(DefaultExecutionContext):
 class BigQueryCompiler(SQLCompiler):
 
     compound_keywords = SQLCompiler.compound_keywords.copy()
-    compound_keywords[selectable.CompoundSelect.UNION] = "UNION ALL"
+    compound_keywords[selectable.CompoundSelect.UNION] = "UNION DISTINCT"
+    compound_keywords[selectable.CompoundSelect.UNION_ALL] = "UNION ALL"
 
     def __init__(self, dialect, statement, *args, **kwargs):
         if isinstance(statement, Column):
@@ -267,7 +268,23 @@ class BigQueryCompiler(SQLCompiler):
         else:
             return self.__in_nonexpanding_bind.sub(r" IN UNNEST(\1)", in_text)
 
+    def __maybe_expand_in_binary_right(self, binary):
+        param = binary.right
+        if (not param.expanding
+            and
+            isinstance(param.type, NullType)
+            and
+            param.value is not None
+            and
+            not param.value
+        ):
+            # BQ isn't going to be able to determine the type.
+            # If we expand, then we'll end up without a parameter
+            # and BQ won't have a type to determine.
+            param.expanding = True
+
     def visit_in_op_binary(self, binary, operator_, **kw):
+        self.__maybe_expand_in_binary_right(binary)
         return self.__fixup_in_param(
             binary,
             self._generate_generic_binary(binary, " IN ", **kw)
@@ -277,6 +294,7 @@ class BigQueryCompiler(SQLCompiler):
         return ""
 
     def visit_not_in_op_binary(self, binary, operator, **kw):
+        self.__maybe_expand_in_binary_right(binary)
         return self.__fixup_in_param(
             binary,
             self._generate_generic_binary(binary, " NOT IN ", **kw)
