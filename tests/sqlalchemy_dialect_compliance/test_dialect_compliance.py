@@ -43,14 +43,51 @@ if sqlalchemy.__version__ < '1.4':
 
 
     class LimitOffsetTest(_LimitOffsetTest):
-        @pytest.mark.skip()
+        @pytest.mark.skip("BigQuery doesn't allow an offset without a limit.")
         def test_simple_offset(self):
-            """BigQuery doesn't allow an offset without a limit."""
+            pass
 
         test_bound_offset = test_simple_offset
 else:
+    from sqlalchemy.testing.suite import FetchLimitOffsetTest as _FetchLimitOffsetTest
+
+
+    class FetchLimitOffsetTest(_FetchLimitOffsetTest):
+
+        @pytest.mark.skip("BigQuery doesn't allow an offset without a limit.")
+        def test_simple_offset(self):
+            pass
+
+        test_bound_offset = test_simple_offset
+        test_expr_offset = test_simple_offset_zero = test_simple_offset
+
+        # The original test is missing an order by.
+
+        # Also, note that sqlalchemy union is a union distinct, not a
+        # union all. This test caught that were were getting that wrong.
+        def test_limit_render_multiple_times(self, connection):
+            table = self.tables.some_table
+            stmt = select(table.c.id).order_by(table.c.id).limit(1).scalar_subquery()
+
+            u = union(select(stmt), select(stmt)).subquery().select()
+
+            self._assert_result(
+                connection,
+                u,
+                [
+                    (1,),
+                ],
+            )
+
+
     del DifficultParametersTest  # exercises column names illegal in BQ
     del DistinctOnTest  # expects unquoted table names.
+    del HasIndexTest  # BQ doesn't do the indexes that SQLA is loooking for.
+    del IdentityAutoincrementTest  # BQ doesn't do autoincrement
+
+    # This test makes makes assertions about generated sql and trips
+    # over the backquotes that we add everywhere. XXX Why do we do that?
+    del PostCompileParamsTest
 
     from sqlalchemy.testing.suite import (
         ComponentReflectionTestExtra as _ComponentReflectionTestExtra,
