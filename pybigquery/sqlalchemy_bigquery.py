@@ -156,8 +156,8 @@ class BigQueryExecutionContext(DefaultExecutionContext):
         self,
         in_sub=re.compile(
             r" IN UNNEST\(\[ "
-            r"(%\([^)]+_\d+\)s(, %\([^)]+_\d+\)s)+)?"  # Placeholders. See below.
-            ":([A-Z0-9]+)"  # Type
+            r"(%\([^)]+_\d+\)s(, %\([^)]+_\d+\)s)*)?"  # Placeholders. See below.
+            r":([A-Z0-9]+)"  # Type
             r" \]\)"
         ).sub,
     ):
