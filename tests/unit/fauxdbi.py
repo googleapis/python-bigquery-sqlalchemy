@@ -279,8 +279,10 @@ class Cursor:
         return [
             (
                 pickle.loads(v.encode("latin1"))
+                # \x80\x04 is latin-1 encoded prefix for Pickle protocol 4.
                 if isinstance(v, str) and v[:2] == "\x80\x04" and v[-1] == "."
                 else pickle.loads(base64.b16decode(v))
+                # 8004 is base64 encoded prefix for Pickle protocol 4.
                 if isinstance(v, str) and v[:4] == "8004" and v[-2:] == "2E"
                 else v
             )
