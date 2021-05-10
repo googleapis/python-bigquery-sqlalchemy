@@ -17,9 +17,12 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+import time
+
 from sqlalchemy.testing.plugin.pytestplugin import *  # noqa
 from sqlalchemy.testing.plugin.pytestplugin import (
     pytest_sessionstart as _pytest_sessionstart,
+    pytest_runtest_teardown as _pytest_runtest_teardown,
 )
 
 import google.cloud.bigquery.dbapi.connection
@@ -64,3 +67,8 @@ def pytest_sessionstart(session):
             )
     client.close()
     _pytest_sessionstart(session)
+
+
+def pytest_runtest_teardown(item):
+    time.sleep(1)
+    _pytest_runtest_teardown(item)
