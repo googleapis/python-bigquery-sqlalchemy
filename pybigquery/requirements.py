@@ -225,5 +225,9 @@ class Requirements(sqlalchemy.testing.requirements.SuiteRequirements):
         SQL expression, such as one that uses the addition operator.
         parameter
         """
+        return unsupported()
 
+    @property
+    def sane_multi_rowcount(self):
+        """See https://github.com/googleapis/python-bigquery/issues/659"""
         return unsupported()

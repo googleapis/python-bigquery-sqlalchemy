@@ -35,6 +35,7 @@ from sqlalchemy.testing.suite import (
     QuotedNameArgumentTest,
     SimpleUpdateDeleteTest as _SimpleUpdateDeleteTest,
     TimestampMicrosecondsTest as _TimestampMicrosecondsTest,
+    RowCountTest as _RowCountTest,
 )
 
 
@@ -213,3 +214,27 @@ class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
 
         with mock.patch("sqlalchemy.testing.suite.test_types.literal", literal):
             super(TimestampMicrosecondsTest, self).test_literal()
+
+
+class RowCountTest(_RowCountTest):
+
+    @classmethod
+    def insert_data(cls, connection):
+        cls.data = data = [
+            ("Angela", "A"),
+            ("Andrew", "A"),
+            ("Anand", "A"),
+            ("Bob", "B"),
+            ("Bobette", "B"),
+            ("Buffy", "B"),
+            ("Charlie", "C"),
+            ("Cynthia", "C"),
+            ("Chris", "C"),
+        ]
+
+        employees_table = cls.tables.employees
+        connection.execute(
+            employees_table.insert(),
+            [{"employee_id": i, "name": n, "department": d}
+             for i, (n, d) in enumerate(data)],
+        )
