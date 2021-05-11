@@ -215,7 +215,7 @@ def compliance(session):
         "--only-rerun="
         "403 Exceeded rate limits|"
         "409 Already Exists|"
-        "404 Not found: Table .+ was not found",
+        "404 Not found",
         system_test_folder_path,
         *session.posargs,
     )
