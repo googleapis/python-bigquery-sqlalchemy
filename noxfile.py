@@ -215,7 +215,8 @@ def compliance(session):
         "--only-rerun="
         "403 Exceeded rate limits|"
         "409 Already Exists|"
-        "404 Not found",
+        "404 Not found|"
+        "400 Cannot execute DML over a non-existent table",
         system_test_folder_path,
         *session.posargs,
     )
