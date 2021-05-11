@@ -22,7 +22,6 @@ import time
 from sqlalchemy.testing.plugin.pytestplugin import *  # noqa
 from sqlalchemy.testing.plugin.pytestplugin import (
     pytest_sessionstart as _pytest_sessionstart,
-    pytest_runtest_teardown as _pytest_runtest_teardown,
 )
 
 import google.cloud.bigquery.dbapi.connection
@@ -67,8 +66,3 @@ def pytest_sessionstart(session):
                 ).result())
     client.close()
     _pytest_sessionstart(session)
-
-
-def pytest_runtest_teardown(item):
-    #time.sleep(0)
-    _pytest_runtest_teardown(item)
