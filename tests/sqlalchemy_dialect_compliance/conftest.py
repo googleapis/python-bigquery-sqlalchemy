@@ -60,9 +60,11 @@ def pytest_sessionstart(session):
     for schema in "test_schema", "test_pybigquery_sqla":
         for table_item in client.list_tables(f"{client.project}.{schema}"):
             table_id = table_item.table_id
-            list(client.query(
-                f"drop {'view' if table_id.endswith('_v') else 'table'}"
-                f" {schema}.{table_id}"
-                ).result())
+            list(
+                client.query(
+                    f"drop {'view' if table_id.endswith('_v') else 'table'}"
+                    f" {schema}.{table_id}"
+                ).result()
+            )
     client.close()
     _pytest_sessionstart(session)
