@@ -70,5 +70,5 @@ def pytest_sessionstart(session):
 
 
 def pytest_runtest_teardown(item):
-    time.sleep(1)
+    time.sleep(9)
     _pytest_runtest_teardown(item)
