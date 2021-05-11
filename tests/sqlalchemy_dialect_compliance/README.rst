@@ -6,7 +6,7 @@ work prooerly.  This directory applies these tests to the BigQuery
 SQLAlchemy dialect.
 
 These are "system" tests, meaning that they run against a real
-BigQuety account.  To run the tests, you need a BigQuery account with
+BigQuery account. To run the tests, you need a BigQuery account with
 empty `test_pybigquery_sqla` and `test_schema` schemas. You need to
 have the `GOOGLE_APPLICATION_CREDENTIALS` environment variable set to
 the path of a Google Cloud authentication file.
