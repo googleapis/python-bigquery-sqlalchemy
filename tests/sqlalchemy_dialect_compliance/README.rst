@@ -2,7 +2,7 @@ SQLAlchemy Dialog Compliance Tests
 ==================================
 
 SQLAlchemy provides reusable tests that test that SQLAlchemy dialects
-work prooerly.  This directory applies these tests to the BigQuery
+work properly. This directory applies these tests to the BigQuery
 SQLAlchemy dialect.
 
 These are "system" tests, meaning that they run against a real
