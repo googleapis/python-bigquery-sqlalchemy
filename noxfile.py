@@ -212,7 +212,10 @@ def compliance(session):
         f"--junitxml=compliance_{session.python}_sponge_log.xml",
         "--reruns=3",
         "--reruns-delay=60",
-        "--only-rerun=403 Exceeded rate limits|409 Already Exists",
+        "--only-rerun="
+        "403 Exceeded rate limits|"
+        "409 Already Exists|"
+        "404 Not found: Table .+ was not found",
         system_test_folder_path,
         *session.posargs,
     )
