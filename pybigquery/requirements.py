@@ -134,7 +134,7 @@ class Requirements(sqlalchemy.testing.requirements.SuiteRequirements):
         """Target database must support external schemas, and have one
         named 'test_schema'."""
 
-        return unsupported()
+        return supported()
 
     @property
     def implicit_default_schema(self):

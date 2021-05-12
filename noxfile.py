@@ -35,11 +35,11 @@ CURRENT_DIRECTORY = pathlib.Path(__file__).parent.absolute()
 
 # 'docfx' is excluded since it only needs to run in 'docs-presubmit'
 nox.options.sessions = [
+    "lint",
     "unit",
     "cover",
     "system",
     "compliance",
-    "lint",
     "lint_setup_py",
     "blacken",
     "docs",
@@ -212,7 +212,11 @@ def compliance(session):
         f"--junitxml=compliance_{session.python}_sponge_log.xml",
         "--reruns=3",
         "--reruns-delay=60",
-        "--only-rerun=403 Exceeded rate limits|409 Already Exists",
+        "--only-rerun="
+        "403 Exceeded rate limits|"
+        "409 Already Exists|"
+        "404 Not found|"
+        "400 Cannot execute DML over a non-existent table",
         system_test_folder_path,
         *session.posargs,
     )

@@ -23,6 +23,8 @@ import datetime
 import decimal
 import pickle
 import re
+import sqlite3
+
 import google.api_core.exceptions
 import google.cloud.bigquery.schema
 import google.cloud.bigquery.table
@@ -60,6 +62,19 @@ class Cursor:
         self.__arraysize = v
         self.connection.test_data["arraysize"] = v
 
+    # A Note on the use of pickle here
+    # ================================
+    #
+    # BigQuery supports types that sqlite doesn't.  We compensate by
+    # pickling unhandled types and saving the pickles as
+    # strings. Bonus: literals require extra handling.
+    #
+    # Note that this only needs to be robust enough for tests. :) So
+    # when reading data, we simply look for pickle protocol 4
+    # prefixes, because we don't have to worry about people providing
+    # non-pickle string values with those prefixes, because we control
+    # the inputs in the tests and we choose not to do that.
+
     _need_to_be_pickled = (
         list,
         dict,
@@ -88,6 +103,11 @@ class Cursor:
 
         operation = placeholder.sub(repl, operation)
         return operation, ordered_parameters
+
+    def __update_comment(self, table, col, comment):
+        key = table + "," + col
+        self.cursor.execute("delete from comments where key=?", [key])
+        self.cursor.execute(f"insert into comments values(?, {comment})", [key])
 
     __create_table = re.compile(
         r"\s*create\s+table\s+`(?P<table>\w+)`", re.IGNORECASE
@@ -121,11 +141,7 @@ class Cursor:
 
                 comment = options.get("description")
                 if comment:
-                    self.cursor.execute(
-                        f"insert into comments values(?, {comment})"
-                        f" on conflict(key) do update set comment=excluded.comment",
-                        [table_name + "," + col],
-                    )
+                    self.__update_comment(table_name, col, comment)
 
                 return m.group("prefix")
 
@@ -135,10 +151,8 @@ class Cursor:
         if m:
             table_name = m.group("table")
             comment = m.group("comment")
-            return (
-                f"insert into comments values({repr(table_name + ',')}, {comment})"
-                f" on conflict(key) do update set comment=excluded.comment"
-            )
+            self.__update_comment(table_name, "", comment)
+            return ""
 
         return operation
 
@@ -232,6 +246,11 @@ class Cursor:
     ):
         return unnest.sub(r"(\1)", operation)
 
+    def __handle_true_false(self, operation):
+        # Older sqlite versions, like those used on the CI servers
+        # don't support true and false (as aliases for 1 and 0).
+        return operation.replace(" true", " 1").replace(" false", " 0")
+
     def execute(self, operation, parameters=()):
         self.connection.test_data["execute"].append((operation, parameters))
         operation, types_ = google.cloud.bigquery.dbapi.cursor._extract_types(operation)
@@ -244,8 +263,18 @@ class Cursor:
         operation = self.__handle_array_types(operation)
         operation = self.__handle_problematic_literal_inserts(operation)
         operation = self.__handle_unnest(operation)
+        operation = self.__handle_true_false(operation)
 
-        self.cursor.execute(operation, parameters)
+        if operation:
+            try:
+                self.cursor.execute(operation, parameters)
+            except sqlite3.OperationalError as e:  # pragma: NO COVER
+                # Help diagnose errors that shouldn't happen.
+                # When they do, it's likely due to sqlite versions (environment).
+                raise sqlite3.OperationalError(
+                    *((operation,) + e.args + (sqlite3.sqlite_version,))
+                )
+
         self.description = self.cursor.description
         self.rowcount = self.cursor.rowcount
 
@@ -263,8 +292,10 @@ class Cursor:
         return [
             (
                 pickle.loads(v.encode("latin1"))
+                # \x80\x04 is latin-1 encoded prefix for Pickle protocol 4.
                 if isinstance(v, str) and v[:2] == "\x80\x04" and v[-1] == "."
                 else pickle.loads(base64.b16decode(v))
+                # 8004 is base64 encoded prefix for Pickle protocol 4.
                 if isinstance(v, str) and v[:4] == "8004" and v[-2:] == "2E"
                 else v
             )
@@ -313,15 +344,13 @@ class FauxClient:
         mode=None,
         description=None,
         fields=(),
-        columns=None,
-        **_,
+        columns=None,  # Custom column data provided by tests.
+        **_,  # Ignore sqlite PRAGMA data we don't care about.
     ):
         if columns:
             custom = columns.get(name)
             if custom:
-                return self._get_field(
-                    **dict(name=name, type=type, notnull=notnull, **custom)
-                )
+                return self._get_field(name=name, type=type, notnull=notnull, **custom)
 
         if not mode:
             mode = "REQUIRED" if notnull else "NULLABLE"

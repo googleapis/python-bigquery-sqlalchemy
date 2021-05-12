@@ -156,19 +156,24 @@ class BigQueryExecutionContext(DefaultExecutionContext):
         self,
         in_sub=re.compile(
             r" IN UNNEST\(\[ "
-            r"(%\([^)]+\d+\)s(, %\([^)]+_\d+\)s)+)?"  # Placeholders
-            ":([A-Z0-9]+)"  # Type
+            r"(%\([^)]+_\d+\)s(?:, %\([^)]+_\d+\)s)*)?"  # Placeholders. See below.
+            r":([A-Z0-9]+)"  # Type
             r" \]\)"
         ).sub,
     ):
-        # If we have an in parameter, it gets expaned to 0 or more
+        # If we have an in parameter, it sometimes gets expaned to 0 or more
         # parameters and we need to move the type marker to each
         # parameter.
         # (The way SQLAlchemy handles this is a bit awkward for our
         # purposes.)
 
+        # In the placeholder part of the regex above, the `_\d+
+        # suffixes refect that when an array parameter is expanded,
+        # numeric suffixes are added.  For example, a placeholder like
+        # `%(foo)s` gets expaneded to `%(foo_0)s, `%(foo_1)s, ...`.
+
         def repl(m):
-            placeholders, _, type_ = m.groups()
+            placeholders, type_ = m.groups()
             if placeholders:
                 placeholders = placeholders.replace(")", f":{type_})")
             else:
@@ -188,6 +193,20 @@ class BigQueryCompiler(SQLCompiler):
         if isinstance(statement, Column):
             kwargs["compile_kwargs"] = util.immutabledict({"include_table": False})
         super(BigQueryCompiler, self).__init__(dialect, statement, *args, **kwargs)
+
+    def visit_insert(self, insert_stmt, asfrom=False, **kw):
+        # The (internal) documentation for `inline` is confusing, but
+        # having `inline` be true prevents us from generating default
+        # primary-key values when we're doing executemany, which seem broken.
+
+        # We can probably do this in the constructor, but I want to
+        # make sure this only affects insert, because I'm paranoid. :)
+
+        self.inline = False
+
+        return super(BigQueryCompiler, self).visit_insert(
+            insert_stmt, asfrom=False, **kw
+        )
 
     def visit_insert(self, insert_stmt, asfrom=False, **kw):
         # The (internal) documentation for `inline` is confusing, but

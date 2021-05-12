@@ -144,8 +144,6 @@ class ExistsTest(_ExistsTest):
         )
 
 
-
-
 # This test requires features (indexes, primary keys, etc., that BigQuery doesn't have.
 del LongNameBlowoutTest
 
@@ -191,7 +189,6 @@ class ComponentReflectionTest(_ComponentReflectionTest):
         pass
 
     test_numeric_reflection = test_varchar_reflection = course_grained_types
-
 
     @pytest.mark.skip("BQ doesn't have indexes (in the way these tests expect).")
     def test_get_indexes(self):

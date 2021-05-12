@@ -34,6 +34,12 @@ google.cloud.bigquery.dbapi.connection.Connection.rollback = lambda self: None
 
 _where = re.compile(r'\s+WHERE\s+', re.IGNORECASE).search
 
+# BigQuery requires delete statements to have where clauses. Other
+# databases don't and sqlalchemy doesn't include where clauses when
+# cleaning up test data.  So we add one when we see a delete without a
+# where clause when tearing down tests.  We only do this during tear
+# down, by inspecting the stack, because we don't want to hide bugs
+# outside of test house-keeping.
 
 def visit_delete(self, delete_stmt, *args, **kw):
     text = super(pybigquery.sqlalchemy_bigquery.BigQueryCompiler, self).visit_delete(
@@ -47,6 +53,7 @@ def visit_delete(self, delete_stmt, *args, **kw):
 
     return text
 
+
 pybigquery.sqlalchemy_bigquery.BigQueryCompiler.visit_delete = visit_delete
 
 
@@ -57,9 +64,11 @@ def pytest_sessionstart(session):
     for schema in "test_schema", "test_pybigquery_sqla":
         for table_item in client.list_tables(f"{client.project}.{schema}"):
             table_id = table_item.table_id
-            client.query(
-                f"drop {'view' if table_id.endswith('_v') else 'table'}"
-                f" {schema}.{table_id}"
+            list(
+                client.query(
+                    f"drop {'view' if table_id.endswith('_v') else 'table'}"
+                    f" {schema}.{table_id}"
+                ).result()
             )
     client.close()
     _pytest_sessionstart(session)
