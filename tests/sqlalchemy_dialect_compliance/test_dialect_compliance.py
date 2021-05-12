@@ -23,6 +23,9 @@ import pytest
 import pytz
 import sqlalchemy
 from sqlalchemy import and_
+
+import sqlalchemy.testing.suite.test_types
+from sqlalchemy.testing import util
 from sqlalchemy.testing.assertions import eq_
 from sqlalchemy.testing.suite import config, select, exists
 from sqlalchemy.testing.suite import *  # noqa
@@ -69,10 +72,10 @@ else:
             table = self.tables.some_table
             stmt = select(table.c.id).order_by(table.c.id).limit(1).scalar_subquery()
 
-            u = union(select(stmt), select(stmt)).subquery().select()
+            u = sqlalchemy.union(select(stmt), select(stmt)).subquery().select()
 
             self._assert_result(
-                connection, u, [(1,),],
+                connection, u, [(1,)],
             )
 
     del DifficultParametersTest  # exercises column names illegal in BQ
@@ -204,9 +207,6 @@ class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
 
         with mock.patch("sqlalchemy.testing.suite.test_types.literal", literal):
             super(TimestampMicrosecondsTest, self).test_literal(literal_round_trip)
-
-
-import sqlalchemy.testing.suite.test_types
 
 
 def test_round_trip_executemany(self, connection):
