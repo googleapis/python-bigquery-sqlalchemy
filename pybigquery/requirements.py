@@ -236,4 +236,14 @@ class Requirements(sqlalchemy.testing.requirements.SuiteRequirements):
     @property
     def sane_multi_rowcount(self):
         """See https://github.com/googleapis/python-bigquery/issues/659"""
+
+class NoSchemas(Requirements):
+    """
+    Option to run without schema tests
+
+    because the `test_schema` name can't be overridden.
+    """
+
+    @property
+    def schemas(self):
         return unsupported()
