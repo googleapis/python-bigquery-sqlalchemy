@@ -264,6 +264,7 @@ class Cursor:
         operation = self.__handle_problematic_literal_inserts(operation)
         operation = self.__handle_unnest(operation)
         operation = self.__handle_true_false(operation)
+        operation = operation.replace(' UNION DISTINCT ', ' UNION ')
 
         if operation:
             try:
