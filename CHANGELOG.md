@@ -4,6 +4,18 @@
 
 [1]: https://pypi.org/project/pybigquery/#history
 
+## [0.7.0](https://www.github.com/googleapis/python-bigquery-sqlalchemy/compare/v0.6.1...v0.7.0) (2021-05-12)
+
+
+### Features
+
+* Comment/description support, bug fixes and better test coverage ([#138](https://www.github.com/googleapis/python-bigquery-sqlalchemy/issues/138)) ([fb7c188](https://www.github.com/googleapis/python-bigquery-sqlalchemy/commit/fb7c188fd1d61f2bb2b99742f62042576bff02a9))
+
+
+### Bug Fixes
+
+* Select expressions no-longer force use of labels ([#129](https://www.github.com/googleapis/python-bigquery-sqlalchemy/issues/129)) ([669b301](https://www.github.com/googleapis/python-bigquery-sqlalchemy/commit/669b301359f9f37c5c7286a245080b8af2567186))
+
 ### [0.6.1](https://www.github.com/googleapis/python-bigquery-sqlalchemy/compare/v0.6.0...v0.6.1) (2021-04-12)
 
 
