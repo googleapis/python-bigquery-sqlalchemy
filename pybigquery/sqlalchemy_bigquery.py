@@ -208,20 +208,6 @@ class BigQueryCompiler(SQLCompiler):
             insert_stmt, asfrom=False, **kw
         )
 
-    def visit_insert(self, insert_stmt, asfrom=False, **kw):
-        # The (internal) documentation for `inline` is confusing, but
-        # having `inline` be true prevents us from generating default
-        # primary-key values when we're doing executemany, which seem broken.
-
-        # We can probably do this in the constructor, but I want to
-        # make sure this only affects insert, because I'm paranoid. :)
-
-        self.inline = False
-
-        return super(BigQueryCompiler, self).visit_insert(
-            insert_stmt, asfrom=False, **kw
-        )
-
     def visit_column(
         self, column, add_to_result_map=None, include_table=True, **kwargs
     ):
