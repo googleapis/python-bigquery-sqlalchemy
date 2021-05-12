@@ -29,7 +29,7 @@ import pybigquery.sqlalchemy_bigquery
 pybigquery.sqlalchemy_bigquery.BigQueryDialect.preexecute_autoincrement_sequences = True
 google.cloud.bigquery.dbapi.connection.Connection.rollback = lambda self: None
 
-_where = re.compile(r'\s+WHERE\s+', re.IGNORECASE).search
+_where = re.compile(r"\s+WHERE\s+", re.IGNORECASE).search
 
 # BigQuery requires delete statements to have where clauses. Other
 # databases don't and sqlalchemy doesn't include where clauses when
@@ -38,15 +38,16 @@ _where = re.compile(r'\s+WHERE\s+', re.IGNORECASE).search
 # down, by inspecting the stack, because we don't want to hide bugs
 # outside of test house-keeping.
 
+
 def visit_delete(self, delete_stmt, *args, **kw):
     text = super(pybigquery.sqlalchemy_bigquery.BigQueryCompiler, self).visit_delete(
-        delete_stmt, *args, **kw)
+        delete_stmt, *args, **kw
+    )
 
-    if (not _where(text)
-        and
-        any("teardown" in f.name.lower() for f in traceback.extract_stack())
-        ):
-        text += ' WHERE true'
+    if not _where(text) and any(
+        "teardown" in f.name.lower() for f in traceback.extract_stack()
+    ):
+        text += " WHERE true"
 
     return text
 

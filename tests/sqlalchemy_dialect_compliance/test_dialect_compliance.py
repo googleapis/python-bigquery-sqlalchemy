@@ -39,9 +39,8 @@ from sqlalchemy.testing.suite import (
 )
 
 
-if sqlalchemy.__version__ < '1.4':
+if sqlalchemy.__version__ < "1.4":
     from sqlalchemy.testing.suite import LimitOffsetTest as _LimitOffsetTest
-
 
     class LimitOffsetTest(_LimitOffsetTest):
         @pytest.mark.skip("BigQuery doesn't allow an offset without a limit.")
@@ -49,12 +48,12 @@ if sqlalchemy.__version__ < '1.4':
             pass
 
         test_bound_offset = test_simple_offset
+
+
 else:
     from sqlalchemy.testing.suite import FetchLimitOffsetTest as _FetchLimitOffsetTest
 
-
     class FetchLimitOffsetTest(_FetchLimitOffsetTest):
-
         @pytest.mark.skip("BigQuery doesn't allow an offset without a limit.")
         def test_simple_offset(self):
             pass
@@ -73,13 +72,8 @@ else:
             u = union(select(stmt), select(stmt)).subquery().select()
 
             self._assert_result(
-                connection,
-                u,
-                [
-                    (1,),
-                ],
+                connection, u, [(1,),],
             )
-
 
     del DifficultParametersTest  # exercises column names illegal in BQ
     del DistinctOnTest  # expects unquoted table names.
@@ -92,11 +86,9 @@ else:
 
     from sqlalchemy.testing.suite import (
         ComponentReflectionTestExtra as _ComponentReflectionTestExtra,
-        )
-
+    )
 
     class ComponentReflectionTestExtra(_ComponentReflectionTestExtra):
-
         @pytest.mark.skip("BQ types don't have parameters like precision and length")
         def test_numeric_reflection(self):
             pass
@@ -109,8 +101,9 @@ del QuotedNameArgumentTest
 
 
 class InsertBehaviorTest(_InsertBehaviorTest):
-
-    @pytest.mark.skip("BQ has no autoinc and client-side defaults can't work for select.")
+    @pytest.mark.skip(
+        "BQ has no autoinc and client-side defaults can't work for select."
+    )
     def test_insert_from_select_autoinc(cls):
         pass
 
@@ -215,6 +208,7 @@ class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
 
 import sqlalchemy.testing.suite.test_types
 
+
 def test_round_trip_executemany(self, connection):
     unicode_table = self.tables.unicode_table
     connection.execute(
@@ -222,18 +216,18 @@ def test_round_trip_executemany(self, connection):
         [{"id": i, "unicode_data": self.data} for i in range(3)],
     )
 
-    rows = connection.execute(
-        select(unicode_table.c.unicode_data)
-    ).fetchall()
+    rows = connection.execute(select(unicode_table.c.unicode_data)).fetchall()
     eq_(rows, [(self.data,) for i in range(3)])
     for row in rows:
         assert isinstance(row[0], util.text_type)
 
-sqlalchemy.testing.suite.test_types._UnicodeFixture.test_round_trip_executemany = test_round_trip_executemany
+
+sqlalchemy.testing.suite.test_types._UnicodeFixture.test_round_trip_executemany = (
+    test_round_trip_executemany
+)
 
 
 class RowCountTest(_RowCountTest):
-
     @classmethod
     def insert_data(cls, connection):
         cls.data = data = [
@@ -251,6 +245,8 @@ class RowCountTest(_RowCountTest):
         employees_table = cls.tables.employees
         connection.execute(
             employees_table.insert(),
-            [{"employee_id": i, "name": n, "department": d}
-             for i, (n, d) in enumerate(data)],
+            [
+                {"employee_id": i, "name": n, "department": d}
+                for i, (n, d) in enumerate(data)
+            ],
         )

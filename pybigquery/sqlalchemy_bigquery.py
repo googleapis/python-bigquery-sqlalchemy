@@ -289,13 +289,11 @@ class BigQueryCompiler(SQLCompiler):
 
     def __maybe_expand_in_binary_right(self, binary):
         param = binary.right
-        if (not param.expanding
-            and
-            isinstance(param.type, NullType)
-            and
-            param.value is not None
-            and
-            not param.value
+        if (
+            not param.expanding
+            and isinstance(param.type, NullType)
+            and param.value is not None
+            and not param.value
         ):
             # BQ isn't going to be able to determine the type.
             # If we expand, then we'll end up without a parameter
@@ -305,8 +303,7 @@ class BigQueryCompiler(SQLCompiler):
     def visit_in_op_binary(self, binary, operator_, **kw):
         self.__maybe_expand_in_binary_right(binary)
         return self.__fixup_in_param(
-            binary,
-            self._generate_generic_binary(binary, " IN ", **kw)
+            binary, self._generate_generic_binary(binary, " IN ", **kw)
         )
 
     def visit_empty_set_expr(self, element_types):
@@ -315,8 +312,7 @@ class BigQueryCompiler(SQLCompiler):
     def visit_not_in_op_binary(self, binary, operator, **kw):
         self.__maybe_expand_in_binary_right(binary)
         return self.__fixup_in_param(
-            binary,
-            self._generate_generic_binary(binary, " NOT IN ", **kw)
+            binary, self._generate_generic_binary(binary, " NOT IN ", **kw)
         )
 
     visit_notin_op_binary = visit_not_in_op_binary  # before 1.4
@@ -416,6 +412,7 @@ class BigQueryCompiler(SQLCompiler):
                 param = param.replace(")", f":{bq_type})")
 
         else:
+
             def replace_placeholder(m):
                 name, type_ = m.groups()
                 if name == bindparam.key and type_ is None:
@@ -432,7 +429,8 @@ class BigQueryCompiler(SQLCompiler):
     __expanded_param = re.compile(
         fr"\(\["
         fr"{'EXPANDING' if sqlalchemy.__version__ < '1.4' else 'POSTCOMPILE'}"
-        fr"_[^\]]+\]\)$").match
+        fr"_[^\]]+\]\)$"
+    ).match
 
 
 class BigQueryTypeCompiler(GenericTypeCompiler):
