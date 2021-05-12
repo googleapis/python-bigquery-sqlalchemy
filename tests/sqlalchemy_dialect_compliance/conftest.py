@@ -20,7 +20,6 @@
 import re
 import traceback
 
-import sqlalchemy
 from sqlalchemy.testing.plugin.pytestplugin import *  # noqa
 
 import google.cloud.bigquery.dbapi.connection
