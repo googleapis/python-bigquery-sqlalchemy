@@ -202,7 +202,7 @@ class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
 
     data = datetime.datetime(2012, 10, 15, 12, 57, 18, 396, tzinfo=pytz.UTC)
 
-    def test_literal(self):
+    def test_literal(self, literal_round_trip):
         # The base tests doesn't set up the literal properly, because
         # it doesn't pass its datatype to `literal`.
 
@@ -213,7 +213,26 @@ class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
             return sqlalchemy.sql.elements.literal(value, self.datatype)
 
         with mock.patch("sqlalchemy.testing.suite.test_types.literal", literal):
-            super(TimestampMicrosecondsTest, self).test_literal()
+            super(TimestampMicrosecondsTest, self).test_literal(literal_round_trip)
+
+
+import sqlalchemy.testing.suite.test_types
+
+def test_round_trip_executemany(self, connection):
+    unicode_table = self.tables.unicode_table
+    connection.execute(
+        unicode_table.insert(),
+        [{"id": i, "unicode_data": self.data} for i in range(3)],
+    )
+
+    rows = connection.execute(
+        select(unicode_table.c.unicode_data)
+    ).fetchall()
+    eq_(rows, [(self.data,) for i in range(3)])
+    for row in rows:
+        assert isinstance(row[0], util.text_type)
+
+sqlalchemy.testing.suite.test_types._UnicodeFixture.test_round_trip_executemany = test_round_trip_executemany
 
 
 class RowCountTest(_RowCountTest):
