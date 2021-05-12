@@ -65,7 +65,7 @@ setup(
     ],
     platforms="Posix; MacOS X; Windows",
     install_requires=[
-        "sqlalchemy>=1.2.0,<1.4.0dev",
+        "sqlalchemy>=1.2.0,<1.4.16",
         "google-auth>=1.24.0,<2.0dev",  # Work around pip wack.
         "google-cloud-bigquery>=2.15.0",
         "google-api-core>=1.23.0",  # Work-around bug in cloud core deps.
