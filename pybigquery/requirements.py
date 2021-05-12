@@ -218,3 +218,15 @@ class Requirements(sqlalchemy.testing.requirements.SuiteRequirements):
 
         """
         return supported()
+
+
+class NoSchemas(Requirements):
+    """
+    Option to run without schema tests
+
+    because the `test_schema` name can't be overridden.
+    """
+
+    @property
+    def schemas(self):
+        return unsupported()
