@@ -216,7 +216,6 @@ def compliance(session):
         "--only-rerun=409 Already Exists",
         "--only-rerun=404 Not found",
         "--only-rerun=400 Cannot execute DML over a non-existent table",
-        "--dropfirst",
         system_test_folder_path,
         *session.posargs,
     )

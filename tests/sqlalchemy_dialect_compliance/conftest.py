@@ -17,12 +17,20 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+import contextlib
+import random
+import traceback
+
+import sqlalchemy
+from sqlalchemy.testing import config
 from sqlalchemy.testing.plugin.pytestplugin import *  # noqa
+from sqlalchemy.testing.plugin.pytestplugin import (
+    pytest_sessionstart as _pytest_sessionstart,
+    pytest_sessionfinish as _pytest_sessionfinish,
+)
 
 import google.cloud.bigquery.dbapi.connection
 import pybigquery.sqlalchemy_bigquery
-import sqlalchemy
-import traceback
 
 pybigquery.sqlalchemy_bigquery.BigQueryDialect.preexecute_autoincrement_sequences = True
 google.cloud.bigquery.dbapi.connection.Connection.rollback = lambda self: None
@@ -46,3 +54,18 @@ def visit_delete(self, delete_stmt, *args, **kw):
 
 
 pybigquery.sqlalchemy_bigquery.BigQueryCompiler.visit_delete = visit_delete
+
+
+def pytest_sessionstart(session):
+    dataset_id = f"test_pybigquery_sqla{random.randint(0, 1<<63)}"
+    session.config.option.dburi = [f"bigquery:///{dataset_id}"]
+    with contextlib.closing(google.cloud.bigquery.Client()) as client:
+        client.create_dataset(dataset_id)
+    _pytest_sessionstart(session)
+
+
+def pytest_sessionfinish(session):
+    dataset_id = config.db.dialect.dataset_id
+    _pytest_sessionfinish(session)
+    with contextlib.closing(google.cloud.bigquery.Client()) as client:
+        client.delete_dataset(dataset_id, delete_contents=True)
