@@ -39,7 +39,7 @@ except ImportError:
 # Package metadata.
 
 name = "pybigquery"
-version = "0.6.1"
+version = "0.7.0"
 description = "SQLAlchemy dialect for BigQuery"
 
 # Should be one of:
