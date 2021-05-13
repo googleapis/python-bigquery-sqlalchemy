@@ -233,11 +233,6 @@ class Requirements(sqlalchemy.testing.requirements.SuiteRequirements):
         """
         return unsupported()
 
-    @property
-    def sane_multi_rowcount(self):
-        """See https://github.com/googleapis/python-bigquery/issues/659"""
-        return unsupported()
-
 
 class NoSchemas(Requirements):
     """
