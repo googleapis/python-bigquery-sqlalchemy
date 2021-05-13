@@ -66,7 +66,6 @@ def substitute_re_method(r, flags=0, repl=None):
     if repl is None:
         return lambda f: substitute_re_method(r, flags, f)
 
-    if isinstance(r, str):
-        r = re.compile(r, flags)
+    r = re.compile(r, flags)
 
     return lambda self, s: r.sub(repl, s)
