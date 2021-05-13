@@ -7,12 +7,11 @@
 import datetime
 import pathlib
 import random
+from typing import List
 
 import pytest
-import google.api_core.exceptions
-from google.cloud import bigquery
 
-from typing import List
+from google.cloud import bigquery
 
 
 DATA_DIR = pathlib.Path(__file__).parent / "data"
@@ -73,7 +72,7 @@ def bigquery_dataset(
         bigquery_client,
         bigquery_schema,
         filename="sample_one_row.json",
-        )
+    )
     job2.result()
     view = bigquery.Table(f"{project_id}.{dataset_id}.sample_view",)
     view.view_query = f"SELECT string FROM `{dataset_id}.sample`"
@@ -95,23 +94,6 @@ def bigquery_empty_table(
     empty_table = bigquery.Table(table_id, schema=bigquery_schema)
     bigquery_client.create_table(empty_table)
     return table_id
-
-
-@pytest.fixture(scope="session", autouse=True)
-def bigquery_alt_dataset(
-    bigquery_client: bigquery.Client, bigquery_schema: List[bigquery.SchemaField]
-):
-    project_id = bigquery_client.project
-    dataset_id = "test_pybigquery_alt"
-    dataset = bigquery.Dataset(f"{project_id}.{dataset_id}")
-    dataset = bigquery_client.create_dataset(dataset, exists_ok=True)
-    sample_table_id = f"{project_id}.{dataset_id}.sample_alt"
-    try:
-        bigquery_client.get_table(sample_table_id)
-    except google.api_core.exceptions.NotFound:
-        job = load_sample_data(sample_table_id, bigquery_client, bigquery_schema)
-        job.result()
-    return dataset_id
 
 
 @pytest.fixture(scope="session", autouse=True)

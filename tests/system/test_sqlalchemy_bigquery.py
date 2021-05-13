@@ -693,27 +693,14 @@ def test_invalid_table_reference(
         )
 
 
-def test_has_table(
-    engine, engine_using_test_dataset, bigquery_alt_dataset, bigquery_dataset
-):
+def test_has_table(engine, engine_using_test_dataset, bigquery_dataset):
     assert engine.has_table("sample", bigquery_dataset) is True
     assert engine.has_table(f"{bigquery_dataset}.sample") is True
     assert engine.has_table(f"{bigquery_dataset}.nonexistent_table") is False
     assert engine.has_table("nonexistent_table", "nonexistent_dataset") is False
-
-    assert engine.has_table("sample_alt", bigquery_alt_dataset) is True
-    assert engine.has_table(f"{bigquery_alt_dataset}.sample_alt") is True
 
     assert engine_using_test_dataset.has_table("sample") is True
     assert engine_using_test_dataset.has_table("sample", bigquery_dataset) is True
     assert engine_using_test_dataset.has_table(f"{bigquery_dataset}.sample") is True
 
     assert engine_using_test_dataset.has_table("sample_alt") is False
-
-    assert (
-        engine_using_test_dataset.has_table("sample_alt", bigquery_alt_dataset) is True
-    )
-    assert (
-        engine_using_test_dataset.has_table(f"{bigquery_alt_dataset}.sample_alt")
-        is True
-    )
