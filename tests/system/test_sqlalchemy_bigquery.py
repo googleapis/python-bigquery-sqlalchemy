@@ -536,10 +536,10 @@ def test_dml(engine, session, table_dml):
     assert len(result) == 0
 
 
-def test_create_table(engine, bigquery_dataset, bigquery_dml_dataset):
+def test_create_table(engine, bigquery_dataset):
     meta = MetaData()
     Table(
-        f"{bigquery_dml_dataset}.test_table_create",
+        f"{bigquery_dataset}.test_table_create",
         meta,
         Column("integer_c", sqlalchemy.Integer, doc="column description"),
         Column("float_c", sqlalchemy.Float),
@@ -562,7 +562,7 @@ def test_create_table(engine, bigquery_dataset, bigquery_dml_dataset):
     Base = declarative_base()
 
     class TableTest(Base):
-        __tablename__ = f"{bigquery_dml_dataset}.test_table_create2"
+        __tablename__ = f"{bigquery_dataset}.test_table_create2"
         integer_c = Column(sqlalchemy.Integer, primary_key=True)
         float_c = Column(sqlalchemy.Float)
 
@@ -584,14 +584,16 @@ def test_table_names_in_schema(
     tables = inspector.get_table_names(bigquery_dataset)
     assert f"{bigquery_dataset}.sample" in tables
     assert f"{bigquery_dataset}.sample_one_row" in tables
+    assert f"{bigquery_dataset}.sample_dml_empty" in tables
     assert f"{bigquery_dataset}.sample_view" not in tables
-    assert len(tables) == 2
+    assert len(tables) == 3
 
     tables = inspector_using_test_dataset.get_table_names()
     assert "sample" in tables
     assert "sample_one_row" in tables
+    assert "sample_dml_empty" in tables
     assert "sample_view" not in tables
-    assert len(tables) == 2
+    assert len(tables) == 3
 
 
 def test_view_names(inspector, inspector_using_test_dataset, bigquery_dataset):
