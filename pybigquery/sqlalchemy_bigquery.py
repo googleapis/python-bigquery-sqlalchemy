@@ -34,6 +34,7 @@ from google.cloud.bigquery.schema import SchemaField
 from google.cloud.bigquery.table import TableReference
 from google.api_core.exceptions import NotFound
 
+import sqlalchemy
 import sqlalchemy.sql.sqltypes
 import sqlalchemy.sql.type_api
 from sqlalchemy.exc import NoSuchTableError
@@ -152,15 +153,20 @@ class BigQueryExecutionContext(DefaultExecutionContext):
         elif isinstance(column.type, String):
             return str(uuid.uuid4())
 
-    def pre_exec(
-        self,
-        in_sub=re.compile(
-            r" IN UNNEST\(\[ "
-            r"(%\([^)]+_\d+\)s(?:, %\([^)]+_\d+\)s)*)?"  # Placeholders. See below.
-            r":([A-Z0-9]+)"  # Type
-            r" \]\)"
-        ).sub,
-    ):
+    __remove_type_from_empty_in = _helpers.substitute_re_method(
+        r" IN UNNEST\(\[ (NULL(?:, NULL)*\) (?:AND|OR) \(1 !?= 1):[A-Z0-9]+ \]\)",
+        re.IGNORECASE,
+        r" IN (\1)",
+    )
+
+    @_helpers.substitute_re_method(
+        r" IN UNNEST\(\[ "
+        r"(%\([^)]+_\d+\)s(?:, %\([^)]+_\d+\)s)*)?"  # Placeholders. See below.
+        r":([A-Z0-9]+)"  # Type
+        r" \]\)",
+        re.IGNORECASE,
+    )
+    def __distribute_types_to_expanded_placeholders(m):
         # If we have an in parameter, it sometimes gets expaned to 0 or more
         # parameters and we need to move the type marker to each
         # parameter.
@@ -171,16 +177,16 @@ class BigQueryExecutionContext(DefaultExecutionContext):
         # suffixes refect that when an array parameter is expanded,
         # numeric suffixes are added.  For example, a placeholder like
         # `%(foo)s` gets expaneded to `%(foo_0)s, `%(foo_1)s, ...`.
+        placeholders, type_ = m.groups()
+        if placeholders:
+            placeholders = placeholders.replace(")", f":{type_})")
+        else:
+            placeholders = ""
+        return f" IN UNNEST([ {placeholders} ])"
 
-        def repl(m):
-            placeholders, type_ = m.groups()
-            if placeholders:
-                placeholders = placeholders.replace(")", f":{type_})")
-            else:
-                placeholders = ""
-            return f" IN UNNEST([ {placeholders} ])"
-
-        self.statement = in_sub(repl, self.statement)
+    def pre_exec(self):
+        self.statement = self.__distribute_types_to_expanded_placeholders(
+            self.__remove_type_from_empty_in(self.statement))
 
 
 class BigQueryCompiler(SQLCompiler):
@@ -268,7 +274,7 @@ class BigQueryCompiler(SQLCompiler):
     __in_nonexpanding_bind = re.compile(r" IN (.+)$")
 
     def __fixup_in_param(self, binary, in_text):
-        if binary.right.expanding:
+        if getattr(binary.right, 'expanding', True):
             return self.__in_expanding_bind.sub(r" IN UNNEST([ \1 ])", in_text)
         else:
             return self.__in_nonexpanding_bind.sub(r" IN UNNEST(\1)", in_text)
@@ -276,7 +282,7 @@ class BigQueryCompiler(SQLCompiler):
     def __maybe_expand_in_binary_right(self, binary):
         param = binary.right
         if (
-            not param.expanding
+            not getattr(param, 'expanding', True)
             and isinstance(param.type, NullType)
             and param.value is not None
             and not param.value
@@ -398,19 +404,24 @@ class BigQueryCompiler(SQLCompiler):
                 param = param.replace(")", f":{bq_type})")
 
         else:
-
-            def replace_placeholder(m):
+            m = self.__placeholder.match(param)
+            if m:
                 name, type_ = m.groups()
-                if name == bindparam.key and type_ is None:
-                    return f"%({name}:{bq_type})s"
-                else:
-                    return m.group(0)
+                if type_ is None:
+                    param = f"%({name}:{bq_type})s"
 
-            param = self.__placeholder.sub(replace_placeholder, param)
+            # def replace_placeholder(m):
+            #     name, type_ = m.groups()
+            #     if name == bindparam.key and type_ is None:
+            #         return f"%({name}:{bq_type})s"
+            #     else:
+            #         return m.group(0)
+
+            # param = self.__placeholder.sub(replace_placeholder, param)
 
         return param
 
-    __placeholder = re.compile(r"%\(([^\]:]+)(:[^\]:]+)?\)s")
+    __placeholder = re.compile(r"%\(([^\]:]+)(:[^\]:]+)?\)s$")
 
     __expanded_param = re.compile(
         fr"\(\["
