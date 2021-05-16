@@ -38,12 +38,13 @@ from sqlalchemy.testing.suite import (
     QuotedNameArgumentTest,
     SimpleUpdateDeleteTest as _SimpleUpdateDeleteTest,
     TimestampMicrosecondsTest as _TimestampMicrosecondsTest,
-    RowCountTest as _RowCountTest,
 )
 
 
 if sqlalchemy.__version__ < "1.4":
-    from sqlalchemy.testing.suite import LimitOffsetTest as _LimitOffsetTest
+    from sqlalchemy.testing.suite import (
+        LimitOffsetTest as _LimitOffsetTest,
+        )
 
     class LimitOffsetTest(_LimitOffsetTest):
         @pytest.mark.skip("BigQuery doesn't allow an offset without a limit.")
@@ -53,8 +54,29 @@ if sqlalchemy.__version__ < "1.4":
         test_bound_offset = test_simple_offset
 
 
+    class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
+
+        data = datetime.datetime(2012, 10, 15, 12, 57, 18, 396, tzinfo=pytz.UTC)
+
+        def test_literal(self):
+            # The base tests doesn't set up the literal properly, because
+            # it doesn't pass its datatype to `literal`.
+
+            def literal(value):
+                assert value == self.data
+                import sqlalchemy.sql.sqltypes
+
+                return sqlalchemy.sql.elements.literal(value, self.datatype)
+
+            with mock.patch("sqlalchemy.testing.suite.test_types.literal", literal):
+                super(TimestampMicrosecondsTest, self).test_literal()
+
 else:
-    from sqlalchemy.testing.suite import FetchLimitOffsetTest as _FetchLimitOffsetTest
+    from sqlalchemy.testing.suite import (
+        ComponentReflectionTestExtra as _ComponentReflectionTestExtra,
+        FetchLimitOffsetTest as _FetchLimitOffsetTest,
+        RowCountTest as _RowCountTest,
+    )
 
     class FetchLimitOffsetTest(_FetchLimitOffsetTest):
         @pytest.mark.skip("BigQuery doesn't allow an offset without a limit.")
@@ -87,16 +109,73 @@ else:
     # over the backquotes that we add everywhere. XXX Why do we do that?
     del PostCompileParamsTest
 
-    from sqlalchemy.testing.suite import (
-        ComponentReflectionTestExtra as _ComponentReflectionTestExtra,
-    )
-
     class ComponentReflectionTestExtra(_ComponentReflectionTestExtra):
         @pytest.mark.skip("BQ types don't have parameters like precision and length")
         def test_numeric_reflection(self):
             pass
 
         test_varchar_reflection = test_numeric_reflection
+
+
+    class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
+
+        data = datetime.datetime(2012, 10, 15, 12, 57, 18, 396, tzinfo=pytz.UTC)
+
+        def test_literal(self, literal_round_trip):
+            # The base tests doesn't set up the literal properly, because
+            # it doesn't pass its datatype to `literal`.
+
+            def literal(value):
+                assert value == self.data
+                import sqlalchemy.sql.sqltypes
+
+                return sqlalchemy.sql.elements.literal(value, self.datatype)
+
+            with mock.patch("sqlalchemy.testing.suite.test_types.literal", literal):
+                super(TimestampMicrosecondsTest, self).test_literal(literal_round_trip)
+
+
+    def test_round_trip_executemany(self, connection):
+        unicode_table = self.tables.unicode_table
+        connection.execute(
+            unicode_table.insert(),
+            [{"id": i, "unicode_data": self.data} for i in range(3)],
+        )
+
+        rows = connection.execute(select(unicode_table.c.unicode_data)).fetchall()
+        eq_(rows, [(self.data,) for i in range(3)])
+        for row in rows:
+            assert isinstance(row[0], util.text_type)
+
+
+    sqlalchemy.testing.suite.test_types._UnicodeFixture.test_round_trip_executemany = (
+        test_round_trip_executemany
+    )
+
+
+    class RowCountTest(_RowCountTest):
+        @classmethod
+        def insert_data(cls, connection):
+            cls.data = data = [
+                ("Angela", "A"),
+                ("Andrew", "A"),
+                ("Anand", "A"),
+                ("Bob", "B"),
+                ("Bobette", "B"),
+                ("Buffy", "B"),
+                ("Charlie", "C"),
+                ("Cynthia", "C"),
+                ("Chris", "C"),
+            ]
+
+            employees_table = cls.tables.employees
+            connection.execute(
+                employees_table.insert(),
+                [
+                    {"employee_id": i, "name": n, "department": d}
+                    for i, (n, d) in enumerate(data)
+                ],
+            )
 
 
 # Quotes aren't allowed in BigQuery table names.
@@ -189,64 +268,3 @@ class ComponentReflectionTest(_ComponentReflectionTest):
     @pytest.mark.skip("BQ doesn't have indexes (in the way these tests expect).")
     def test_get_indexes(self):
         pass
-
-
-class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
-
-    data = datetime.datetime(2012, 10, 15, 12, 57, 18, 396, tzinfo=pytz.UTC)
-
-    def test_literal(self, literal_round_trip):
-        # The base tests doesn't set up the literal properly, because
-        # it doesn't pass its datatype to `literal`.
-
-        def literal(value):
-            assert value == self.data
-            import sqlalchemy.sql.sqltypes
-
-            return sqlalchemy.sql.elements.literal(value, self.datatype)
-
-        with mock.patch("sqlalchemy.testing.suite.test_types.literal", literal):
-            super(TimestampMicrosecondsTest, self).test_literal(literal_round_trip)
-
-
-def test_round_trip_executemany(self, connection):
-    unicode_table = self.tables.unicode_table
-    connection.execute(
-        unicode_table.insert(),
-        [{"id": i, "unicode_data": self.data} for i in range(3)],
-    )
-
-    rows = connection.execute(select(unicode_table.c.unicode_data)).fetchall()
-    eq_(rows, [(self.data,) for i in range(3)])
-    for row in rows:
-        assert isinstance(row[0], util.text_type)
-
-
-sqlalchemy.testing.suite.test_types._UnicodeFixture.test_round_trip_executemany = (
-    test_round_trip_executemany
-)
-
-
-class RowCountTest(_RowCountTest):
-    @classmethod
-    def insert_data(cls, connection):
-        cls.data = data = [
-            ("Angela", "A"),
-            ("Andrew", "A"),
-            ("Anand", "A"),
-            ("Bob", "B"),
-            ("Bobette", "B"),
-            ("Buffy", "B"),
-            ("Charlie", "C"),
-            ("Cynthia", "C"),
-            ("Chris", "C"),
-        ]
-
-        employees_table = cls.tables.employees
-        connection.execute(
-            employees_table.insert(),
-            [
-                {"employee_id": i, "name": n, "department": d}
-                for i, (n, d) in enumerate(data)
-            ],
-        )

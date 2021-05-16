@@ -1,1 +1,3 @@
 sqlalchemy>=1.4.13
+#sqlalchemy==1.3.24
+
