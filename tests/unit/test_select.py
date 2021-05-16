@@ -286,7 +286,7 @@ def test_select_in_param_empty(faux_conn):
     )
     assert not isin
     assert faux_conn.test_data["execute"][-1] == (
-        "SELECT %(param_1:INT64)s IN (NULL) AND (1 != 1) AS `anon_1`",
+        "SELECT %(param_1:INT64)s IN(NULL) AND (1 != 1) AS `anon_1`",
         {"param_1": 1},
     )
 
@@ -312,8 +312,8 @@ def test_select_notin_lit(faux_conn):
     assert isnotin
 
     assert _normalize_in_params(*faux_conn.test_data["execute"][-1]) == (
-        "SELECT %(p_0:INT64)s NOT IN "
-        "UNNEST([ %(p_1:INT64)s, %(p_2:INT64)s, %(p_3:INT64)s ]) AS `anon_1`",
+        "SELECT (%(p_0:INT64)s NOT IN "
+        "UNNEST([ %(p_1:INT64)s, %(p_2:INT64)s, %(p_3:INT64)s ])) AS `anon_1`",
         {"p_0": 0, "p_1": 1, "p_2": 2, "p_3": 3},
     )
 
@@ -327,9 +327,9 @@ def test_select_notin_param(faux_conn):
     )
     assert not isnotin
     assert faux_conn.test_data["execute"][-1] == (
-        "SELECT %(param_1:INT64)s NOT IN UNNEST("
+        "SELECT (%(param_1:INT64)s NOT IN UNNEST("
         "[ %(q_1:INT64)s, %(q_2:INT64)s, %(q_3:INT64)s ]"
-        ") AS `anon_1`",
+        ")) AS `anon_1`",
         {"param_1": 1, "q_1": 1, "q_2": 2, "q_3": 3},
     )
 
@@ -344,6 +344,6 @@ def test_select_notin_param_empty(faux_conn):
     )
     assert isnotin
     assert faux_conn.test_data["execute"][-1] == (
-        "SELECT %(param_1:INT64)s NOT IN (NULL) OR (1 = 1) AS `anon_1`",
+        "SELECT (%(param_1:INT64)s NOT IN(NULL) OR (1 = 1)) AS `anon_1`",
         {"param_1": 1},
     )
