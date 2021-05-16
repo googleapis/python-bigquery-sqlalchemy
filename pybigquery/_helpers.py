@@ -4,6 +4,7 @@
 # license that can be found in the LICENSE file or at
 # https://opensource.org/licenses/MIT.
 
+import functools
 import re
 
 from google.api_core import client_info
@@ -68,4 +69,4 @@ def substitute_re_method(r, flags=0, repl=None):
 
     r = re.compile(r, flags)
 
-    return lambda self, s: r.sub(repl, s)
+    return functools.wraps(repl)(lambda self, s: r.sub(repl, s))

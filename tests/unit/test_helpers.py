@@ -155,3 +155,5 @@ def test_substitute_re(module_under_test):
 
     foo_to_baz = module_under_test.substitute_re_method("foo", re.IGNORECASE, "baz")
     assert foo_to_baz(object(), "some foo and FOO is good") == "some baz and baz is good"
+
+    assert foo_to_bar.__name__ == 'foo_to_bar'
