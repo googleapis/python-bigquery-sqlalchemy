@@ -143,6 +143,10 @@ def test_get_view_names(
     "inp, outp",
     [("(NULL IN UNNEST([ NULL) AND (1 != 1 ]))",
       "(NULL IN(NULL) AND (1 != 1))"),
+     ("(NULL IN UNNEST([ NULL) AND (1 != 1:INT64 ]))",
+      "(NULL IN(NULL) AND (1 != 1))"),
+     ("(NULL IN UNNEST([ (NULL, NULL)) AND (1 != 1:INT64 ]))",
+      "(NULL IN((NULL, NULL)) AND (1 != 1))"),
         ])
 def test__remove_type_from_empty_in(inp, outp):
     from pybigquery.sqlalchemy_bigquery import BigQueryExecutionContext
