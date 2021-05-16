@@ -298,8 +298,8 @@ def test_select_notin_lit13(faux_conn):
     )
     assert isnotin
     assert faux_conn.test_data["execute"][-1] == (
-        "SELECT %(param_1:INT64)s NOT IN "
-        "(%(param_2:INT64)s, %(param_3:INT64)s, %(param_4:INT64)s) AS `anon_1`",
+        "SELECT (%(param_1:INT64)s NOT IN "
+        "(%(param_2:INT64)s, %(param_3:INT64)s, %(param_4:INT64)s)) AS `anon_1`",
         {"param_1": 0, "param_2": 1, "param_3": 2, "param_4": 3},
     )
 
