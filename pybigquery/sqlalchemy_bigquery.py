@@ -270,19 +270,22 @@ class BigQueryCompiler(SQLCompiler):
     # no way to tell sqlalchemy that, so it works harder than
     # necessary and makes us do the same.
 
-    __in_expanding_bind = re.compile(
+    __in_expanding_bind = _helpers.substitute_re_method(
         fr" IN \((\["
         fr"{'EXPANDING' if sqlalchemy.__version__ < '1.4' else 'POSTCOMPILE'}"
-        fr"_[^\]]+\](:[A-Z0-9]+)?)\)$"
+        fr"_[^\]]+\](:[A-Z0-9]+)?)\)$",
+        re.IGNORECASE,
+        r" IN UNNEST([ \1 ])",
     )
 
-    __in_nonexpanding_bind = re.compile(r" IN (.+)$")
+    __in_nonexpanding_bind = _helpers.substitute_re_method(
+        r" IN (.+)$", re.IGNORECASE, r" IN UNNEST(\1)")
 
     def __fixup_in_param(self, binary, in_text):
         if getattr(binary.right, 'expanding', True):
-            return self.__in_expanding_bind.sub(r" IN UNNEST([ \1 ])", in_text)
+            return self.__in_expanding_bind(in_text)
         else:
-            return self.__in_nonexpanding_bind.sub(r" IN UNNEST(\1)", in_text)
+            return self.__in_nonexpanding_bind(in_text)
 
     def __maybe_expand_in_binary_right(self, binary):
         param = binary.right
@@ -409,24 +412,15 @@ class BigQueryCompiler(SQLCompiler):
                 param = param.replace(")", f":{bq_type})")
 
         else:
-            m = self.__placeholder.match(param)
+            m = self.__placeholder(param)
             if m:
                 name, type_ = m.groups()
                 if type_ is None:
                     param = f"%({name}:{bq_type})s"
 
-            # def replace_placeholder(m):
-            #     name, type_ = m.groups()
-            #     if name == bindparam.key and type_ is None:
-            #         return f"%({name}:{bq_type})s"
-            #     else:
-            #         return m.group(0)
-
-            # param = self.__placeholder.sub(replace_placeholder, param)
-
         return param
 
-    __placeholder = re.compile(r"%\(([^\]:]+)(:[^\]:]+)?\)s$")
+    __placeholder = re.compile(r"%\(([^\]:]+)(:[^\]:]+)?\)s$").match
 
     __expanded_param = re.compile(
         fr"\(\["
