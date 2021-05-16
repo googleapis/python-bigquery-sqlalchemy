@@ -154,9 +154,14 @@ class BigQueryExecutionContext(DefaultExecutionContext):
             return str(uuid.uuid4())
 
     __remove_type_from_empty_in = _helpers.substitute_re_method(
-        r" IN UNNEST\(\[ (NULL(?:, NULL)*\) (?:AND|OR) \(1 !?= 1):[A-Z0-9]+ \]\)",
+        r" IN UNNEST\(\[ ("
+        r"(?:NULL|\(NULL(?:, NULL)+\))\)"
+        r" (?:AND|OR) \(1 !?= 1"
+        r")"
+        r"(?:[:][A-Z0-9]+)?"
+        r" \]\)",
         re.IGNORECASE,
-        r" IN (\1)",
+        r" IN(\1)",
     )
 
     @_helpers.substitute_re_method(
