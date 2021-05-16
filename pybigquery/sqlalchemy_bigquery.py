@@ -303,9 +303,9 @@ class BigQueryCompiler(SQLCompiler):
 
     def visit_not_in_op_binary(self, binary, operator, **kw):
         self.__maybe_expand_in_binary_right(binary)
-        return self.__fixup_in_param(
+        return '(' + self.__fixup_in_param(
             binary, self._generate_generic_binary(binary, " NOT IN ", **kw)
-        )
+        ) + ')'
 
     visit_notin_op_binary = visit_not_in_op_binary  # before 1.4
 
