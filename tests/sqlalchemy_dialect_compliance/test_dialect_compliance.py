@@ -42,9 +42,7 @@ from sqlalchemy.testing.suite import (
 
 
 if sqlalchemy.__version__ < "1.4":
-    from sqlalchemy.testing.suite import (
-        LimitOffsetTest as _LimitOffsetTest,
-        )
+    from sqlalchemy.testing.suite import LimitOffsetTest as _LimitOffsetTest
 
     class LimitOffsetTest(_LimitOffsetTest):
         @pytest.mark.skip("BigQuery doesn't allow an offset without a limit.")
@@ -52,7 +50,6 @@ if sqlalchemy.__version__ < "1.4":
             pass
 
         test_bound_offset = test_simple_offset
-
 
     class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
 
@@ -70,6 +67,7 @@ if sqlalchemy.__version__ < "1.4":
 
             with mock.patch("sqlalchemy.testing.suite.test_types.literal", literal):
                 super(TimestampMicrosecondsTest, self).test_literal()
+
 
 else:
     from sqlalchemy.testing.suite import (
@@ -116,7 +114,6 @@ else:
 
         test_varchar_reflection = test_numeric_reflection
 
-
     class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
 
         data = datetime.datetime(2012, 10, 15, 12, 57, 18, 396, tzinfo=pytz.UTC)
@@ -134,7 +131,6 @@ else:
             with mock.patch("sqlalchemy.testing.suite.test_types.literal", literal):
                 super(TimestampMicrosecondsTest, self).test_literal(literal_round_trip)
 
-
     def test_round_trip_executemany(self, connection):
         unicode_table = self.tables.unicode_table
         connection.execute(
@@ -147,11 +143,9 @@ else:
         for row in rows:
             assert isinstance(row[0], util.text_type)
 
-
     sqlalchemy.testing.suite.test_types._UnicodeFixture.test_round_trip_executemany = (
         test_round_trip_executemany
     )
-
 
     class RowCountTest(_RowCountTest):
         @classmethod

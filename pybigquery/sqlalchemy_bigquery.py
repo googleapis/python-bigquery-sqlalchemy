@@ -197,7 +197,8 @@ class BigQueryExecutionContext(DefaultExecutionContext):
 
     def pre_exec(self):
         self.statement = self.__distribute_types_to_expanded_placeholders(
-            self.__remove_type_from_empty_in(self.statement))
+            self.__remove_type_from_empty_in(self.statement)
+        )
 
 
 class BigQueryCompiler(SQLCompiler):
@@ -293,9 +294,13 @@ class BigQueryCompiler(SQLCompiler):
         return ""
 
     def visit_not_in_op_binary(self, binary, operator, **kw):
-        return '(' + self.__in_expanding_bind(
-            self._generate_generic_binary(binary, " NOT IN ", **kw)
-        ) + ')'
+        return (
+            "("
+            + self.__in_expanding_bind(
+                self._generate_generic_binary(binary, " NOT IN ", **kw)
+            )
+            + ")"
+        )
 
     visit_notin_op_binary = visit_not_in_op_binary  # before 1.4
 

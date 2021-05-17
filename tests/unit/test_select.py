@@ -287,8 +287,8 @@ def test_select_in_param_empty(faux_conn):
     assert not isin
     assert faux_conn.test_data["execute"][-1] == (
         "SELECT %(param_1:INT64)s IN(NULL) AND (1 != 1) AS `anon_1`"
-        if sqlalchemy.__version__ >= '1.4' else
-        "SELECT %(param_1:INT64)s IN UNNEST([  ]) AS `anon_1`",
+        if sqlalchemy.__version__ >= "1.4"
+        else "SELECT %(param_1:INT64)s IN UNNEST([  ]) AS `anon_1`",
         {"param_1": 1},
     )
 
@@ -347,7 +347,7 @@ def test_select_notin_param_empty(faux_conn):
     assert isnotin
     assert faux_conn.test_data["execute"][-1] == (
         "SELECT (%(param_1:INT64)s NOT IN(NULL) OR (1 = 1)) AS `anon_1`"
-        if sqlalchemy.__version__ >= '1.4' else
-        "SELECT (%(param_1:INT64)s NOT IN UNNEST([  ])) AS `anon_1`",
+        if sqlalchemy.__version__ >= "1.4"
+        else "SELECT (%(param_1:INT64)s NOT IN UNNEST([  ])) AS `anon_1`",
         {"param_1": 1},
     )

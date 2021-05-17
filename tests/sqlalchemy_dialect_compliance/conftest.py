@@ -22,7 +22,6 @@ import random
 import re
 import traceback
 
-import sqlalchemy
 from sqlalchemy.testing import config
 from sqlalchemy.testing.plugin.pytestplugin import *  # noqa
 from sqlalchemy.testing.plugin.pytestplugin import (

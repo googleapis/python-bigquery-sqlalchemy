@@ -111,16 +111,14 @@ class Cursor:
     ).match
 
     @substitute_re_method(
-        r"(?P<prefix>`(?P<col>\w+)`\s+\w+|\))"
-        r"\s+options\((?P<options>[^)]+)\)",
-        re.IGNORECASE)
+        r"(?P<prefix>`(?P<col>\w+)`\s+\w+|\))" r"\s+options\((?P<options>[^)]+)\)",
+        re.IGNORECASE,
+    )
     def __handle_column_comments(self, m, table_name):
         col = m.group("col") or ""
         options = {
             name.strip().lower(): value.strip()
-            for name, value in (
-                o.split("=") for o in m.group("options").split(",")
-            )
+            for name, value in (o.split("=") for o in m.group("options").split(","))
         }
 
         comment = options.get("description")
@@ -128,7 +126,6 @@ class Cursor:
             self.__update_comment(table_name, col, comment)
 
         return m.group("prefix")
-
 
     def __handle_comments(
         self,
@@ -153,15 +150,13 @@ class Cursor:
         return operation
 
     @substitute_re_method(
-        r"(?<=[(,])" r"\s*`\w+`\s+\w+<\w+>\s*"
-        r"(?=[,)])",
-        re.IGNORECASE)
+        r"(?<=[(,])" r"\s*`\w+`\s+\w+<\w+>\s*" r"(?=[,)])", re.IGNORECASE
+    )
     def __normalize_array_types(self, m):
         return m.group(0).replace("<", "_").replace(">", "_")
 
     def __handle_array_types(
-        self,
-        operation,
+        self, operation,
     ):
         if self.__create_table(operation):
             return self.__normalize_array_types(operation)
@@ -197,7 +192,7 @@ class Cursor:
         r"\s*(?=[]),])",
         re.IGNORECASE,
         r"parse_datish('\1', \2)",
-        )
+    )
 
     def __handle_problematic_literal_inserts(
         self,
@@ -240,7 +235,8 @@ class Cursor:
             return operation
 
     __handle_unnest = substitute_re_method(
-        r"UNNEST\(\[ ([^\]]+)? \]\)", re.IGNORECASE, r"(\1)")
+        r"UNNEST\(\[ ([^\]]+)? \]\)", re.IGNORECASE, r"(\1)"
+    )
 
     def __handle_true_false(self, operation):
         # Older sqlite versions, like those used on the CI servers
@@ -260,7 +256,7 @@ class Cursor:
         operation = self.__handle_problematic_literal_inserts(operation)
         operation = self.__handle_unnest(operation)
         operation = self.__handle_true_false(operation)
-        operation = operation.replace(' UNION DISTINCT ', ' UNION ')
+        operation = operation.replace(" UNION DISTINCT ", " UNION ")
 
         if operation:
             try:

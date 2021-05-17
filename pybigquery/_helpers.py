@@ -73,7 +73,6 @@ def substitute_re_method(r, flags=0, repl=None):
         return lambda self, s: r.sub(repl, s)
 
     def sub(self, s, *args, **kw):
-
         def repl_(m):
             return repl(self, m, *args, **kw)
 

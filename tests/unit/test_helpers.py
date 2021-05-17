@@ -142,7 +142,9 @@ def test_substitute_re_string(module_under_test):
     import re
 
     foo_to_baz = module_under_test.substitute_re_method("foo", re.IGNORECASE, "baz")
-    assert foo_to_baz(object(), "some foo and FOO is good") == "some baz and baz is good"
+    assert (
+        foo_to_baz(object(), "some foo and FOO is good") == "some baz and baz is good"
+    )
 
 
 def test_substitute_re_func(module_under_test):
@@ -150,30 +152,35 @@ def test_substitute_re_func(module_under_test):
 
     @module_under_test.substitute_re_method("foo", re.IGNORECASE)
     def Foo_to_bar(self, m):
-        return 'bar'
+        return "bar"
 
-    assert Foo_to_bar(object(), "some foo and FOO is good") == "some bar and bar is good"
+    assert (
+        Foo_to_bar(object(), "some foo and FOO is good") == "some bar and bar is good"
+    )
 
     @module_under_test.substitute_re_method("foo")
-    def foo_to_bar(self, m, x='bar'):
+    def foo_to_bar(self, m, x="bar"):
         return x
 
-    assert foo_to_bar(object(), "some foo and FOO is good") == "some bar and FOO is good"
+    assert (
+        foo_to_bar(object(), "some foo and FOO is good") == "some bar and FOO is good"
+    )
 
-    assert foo_to_bar(object(), "some foo and FOO is good", 'hah'
-                      ) == "some hah and FOO is good"
+    assert (
+        foo_to_bar(object(), "some foo and FOO is good", "hah")
+        == "some hah and FOO is good"
+    )
 
-    assert foo_to_bar(object(), "some foo and FOO is good", x='hah'
-                      ) == "some hah and FOO is good"
+    assert (
+        foo_to_bar(object(), "some foo and FOO is good", x="hah")
+        == "some hah and FOO is good"
+    )
 
-    assert foo_to_bar.__name__ == 'foo_to_bar'
+    assert foo_to_bar.__name__ == "foo_to_bar"
 
 
 def test_substitute_re_func_self(module_under_test):
-    import re
-
     class Replacer:
-
         def __init__(self, x):
             self.x = x
 
@@ -181,5 +188,7 @@ def test_substitute_re_func_self(module_under_test):
         def foo_to_bar(self, m):
             return self.x
 
-    assert Replacer('hah').foo_to_bar("some foo and FOO is good"
-                                      ) == "some hah and FOO is good"
+    assert (
+        Replacer("hah").foo_to_bar("some foo and FOO is good")
+        == "some hah and FOO is good"
+    )

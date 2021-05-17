@@ -141,14 +141,20 @@ def test_get_view_names(
 
 @pytest.mark.parametrize(
     "inp, outp",
-    [("(NULL IN UNNEST([ NULL) AND (1 != 1 ]))",
-      "(NULL IN(NULL) AND (1 != 1))"),
-     ("(NULL IN UNNEST([ NULL) AND (1 != 1:INT64 ]))",
-      "(NULL IN(NULL) AND (1 != 1))"),
-     ("(NULL IN UNNEST([ (NULL, NULL)) AND (1 != 1:INT64 ]))",
-      "(NULL IN((NULL, NULL)) AND (1 != 1))"),
-        ])
+    [
+        ("(NULL IN UNNEST([ NULL) AND (1 != 1 ]))", "(NULL IN(NULL) AND (1 != 1))"),
+        (
+            "(NULL IN UNNEST([ NULL) AND (1 != 1:INT64 ]))",
+            "(NULL IN(NULL) AND (1 != 1))",
+        ),
+        (
+            "(NULL IN UNNEST([ (NULL, NULL)) AND (1 != 1:INT64 ]))",
+            "(NULL IN((NULL, NULL)) AND (1 != 1))",
+        ),
+    ],
+)
 def test__remove_type_from_empty_in(inp, outp):
     from pybigquery.sqlalchemy_bigquery import BigQueryExecutionContext
+
     r = BigQueryExecutionContext._BigQueryExecutionContext__remove_type_from_empty_in
     assert r(None, inp) == outp
