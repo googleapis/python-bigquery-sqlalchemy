@@ -58,6 +58,12 @@ from pybigquery import _helpers
 FIELD_ILLEGAL_CHARACTERS = re.compile(r"[^\w]+")
 
 
+def assert_(cond, message="Assertion failed"):  # pragma: NO COVER
+    if not cond:
+        breakpoint()
+        raise AssertionError(message)
+
+
 class BigQueryIdentifierPreparer(IdentifierPreparer):
     """
     Set containing everything
@@ -183,10 +189,8 @@ class BigQueryExecutionContext(DefaultExecutionContext):
         # numeric suffixes are added.  For example, a placeholder like
         # `%(foo)s` gets expaneded to `%(foo_0)s, `%(foo_1)s, ...`.
         placeholders, type_ = m.groups()
-        if placeholders:
-            placeholders = placeholders.replace(")", f":{type_})")
-        else:
-            placeholders = ""
+        assert_(placeholders)
+        placeholders = placeholders.replace(")", f":{type_})")
         return f" IN UNNEST([ {placeholders} ])"
 
     def pre_exec(self):
@@ -278,41 +282,14 @@ class BigQueryCompiler(SQLCompiler):
         r" IN UNNEST([ \1 ])",
     )
 
-    __in_nonexpanding_bind = _helpers.substitute_re_method(
-        r" IN (.+)$", re.IGNORECASE, r" IN UNNEST(\1)")
-
-    def __fixup_in_param(self, binary, in_text):
-        if getattr(binary.right, 'expanding', True):
-            return self.__in_expanding_bind(in_text)
-        else:
-            return self.__in_nonexpanding_bind(in_text)
-
-    def __maybe_expand_in_binary_right(self, binary):
-        param = binary.right
-        if (
-            not getattr(param, 'expanding', True)
-            and isinstance(param.type, NullType)
-            and param.value is not None
-            and not param.value
-        ):
-            # BQ isn't going to be able to determine the type.
-            # If we expand, then we'll end up without a parameter
-            # and BQ won't have a type to determine.
-            param.expanding = True
-
     def visit_in_op_binary(self, binary, operator_, **kw):
-        self.__maybe_expand_in_binary_right(binary)
-        return self.__fixup_in_param(
-            binary, self._generate_generic_binary(binary, " IN ", **kw)
+        return self.__in_expanding_bind(
+            self._generate_generic_binary(binary, " IN ", **kw)
         )
 
-    def visit_empty_set_expr(self, element_types):
-        return ""
-
     def visit_not_in_op_binary(self, binary, operator, **kw):
-        self.__maybe_expand_in_binary_right(binary)
-        return '(' + self.__fixup_in_param(
-            binary, self._generate_generic_binary(binary, " NOT IN ", **kw)
+        return '(' + self.__in_expanding_bind(
+            self._generate_generic_binary(binary, " NOT IN ", **kw)
         ) + ')'
 
     visit_notin_op_binary = visit_not_in_op_binary  # before 1.4
@@ -404,19 +381,18 @@ class BigQueryCompiler(SQLCompiler):
             # Values get arrayified at a lower level.
             bq_type = bq_type[6:-1]
 
-        assert param != "%s"
+        assert_(param != "%s", f"Unexpected param: {param}")
 
         if bindparam.expanding:
-
-            if self.__expanded_param(param):
-                param = param.replace(")", f":{bq_type})")
+            assert_(self.__expanded_param(param), f"Unexpected param: {param}")
+            param = param.replace(")", f":{bq_type})")
 
         else:
             m = self.__placeholder(param)
             if m:
                 name, type_ = m.groups()
-                if type_ is None:
-                    param = f"%({name}:{bq_type})s"
+                assert_(type_ is None)
+                param = f"%({name}:{bq_type})s"
 
         return param
 
