@@ -87,19 +87,18 @@ class Cursor:
         datetime.time,
     )
 
+    @substitute_re_method(r"%\((\w+)\)s", re.IGNORECASE)
+    def __pyformat_to_qmark(self, m, parameters, ordered_parameters):
+        name = m.group(1)
+        value = parameters[name]
+        if isinstance(value, self._need_to_be_pickled):
+            value = pickle.dumps(value, 4).decode("latin1")
+        ordered_parameters.append(value)
+        return "?"
+
     def __convert_params(self, operation, parameters):
         ordered_parameters = []
-
-        @substitute_re_method(r"%\((\w+)\)s", re.IGNORECASE)
-        def pyformat_to_qmark(m):
-            name = m.group(1)
-            value = parameters[name]
-            if isinstance(value, self._need_to_be_pickled):
-                value = pickle.dumps(value, 4).decode("latin1")
-            ordered_parameters.append(value)
-            return "?"
-
-        operation = pyformat_to_qmark(self, operation)
+        operation = self.__pyformat_to_qmark(operation, parameters, ordered_parameters)
         return operation, ordered_parameters
 
     def __update_comment(self, table, col, comment):
@@ -110,6 +109,26 @@ class Cursor:
     __create_table = re.compile(
         r"\s*create\s+table\s+`(?P<table>\w+)`", re.IGNORECASE
     ).match
+
+    @substitute_re_method(
+        r"(?P<prefix>`(?P<col>\w+)`\s+\w+|\))"
+        r"\s+options\((?P<options>[^)]+)\)",
+        re.IGNORECASE)
+    def __handle_column_comments(self, m, table_name):
+        col = m.group("col") or ""
+        options = {
+            name.strip().lower(): value.strip()
+            for name, value in (
+                o.split("=") for o in m.group("options").split(",")
+            )
+        }
+
+        comment = options.get("description")
+        if comment:
+            self.__update_comment(table_name, col, comment)
+
+        return m.group("prefix")
+
 
     def __handle_comments(
         self,
@@ -122,28 +141,7 @@ class Cursor:
     ):
         m = self.__create_table(operation)
         if m:
-            table_name = m.group("table")
-
-            @substitute_re_method(
-                r"(?P<prefix>`(?P<col>\w+)`\s+\w+|\))"
-                r"\s+options\((?P<options>[^)]+)\)",
-                re.IGNORECASE)
-            def handle_column_comments(m):
-                col = m.group("col") or ""
-                options = {
-                    name.strip().lower(): value.strip()
-                    for name, value in (
-                        o.split("=") for o in m.group("options").split(",")
-                    )
-                }
-
-                comment = options.get("description")
-                if comment:
-                    self.__update_comment(table_name, col, comment)
-
-                return m.group("prefix")
-
-            return handle_column_comments(self, operation)
+            return self.__handle_column_comments(operation, m.group("table"))
 
         m = alter_table(operation)
         if m:
@@ -158,7 +156,7 @@ class Cursor:
         r"(?<=[(,])" r"\s*`\w+`\s+\w+<\w+>\s*"
         r"(?=[,)])",
         re.IGNORECASE)
-    def __normalize_array_types(m):
+    def __normalize_array_types(self, m):
         return m.group(0).replace("<", "_").replace(">", "_")
 
     def __handle_array_types(

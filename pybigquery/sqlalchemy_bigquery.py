@@ -177,7 +177,7 @@ class BigQueryExecutionContext(DefaultExecutionContext):
         r" \]\)",
         re.IGNORECASE,
     )
-    def __distribute_types_to_expanded_placeholders(m):
+    def __distribute_types_to_expanded_placeholders(self, m):
         # If we have an in parameter, it sometimes gets expaned to 0 or more
         # parameters and we need to move the type marker to each
         # parameter.

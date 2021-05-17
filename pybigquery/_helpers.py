@@ -69,4 +69,14 @@ def substitute_re_method(r, flags=0, repl=None):
 
     r = re.compile(r, flags)
 
-    return functools.wraps(repl)(lambda self, s: r.sub(repl, s))
+    if isinstance(repl, str):
+        return lambda self, s: r.sub(repl, s)
+
+    def sub(self, s, *args, **kw):
+
+        def repl_(m):
+            return repl(self, m, *args, **kw)
+
+        return r.sub(repl_, s)
+
+    return functools.wraps(repl)(sub)
