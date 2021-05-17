@@ -189,8 +189,10 @@ class BigQueryExecutionContext(DefaultExecutionContext):
         # numeric suffixes are added.  For example, a placeholder like
         # `%(foo)s` gets expaneded to `%(foo_0)s, `%(foo_1)s, ...`.
         placeholders, type_ = m.groups()
-        assert_(placeholders)
-        placeholders = placeholders.replace(")", f":{type_})")
+        if placeholders:
+            placeholders = placeholders.replace(")", f":{type_})")
+        else:
+            placeholders = ""
         return f" IN UNNEST([ {placeholders} ])"
 
     def pre_exec(self):
@@ -286,6 +288,9 @@ class BigQueryCompiler(SQLCompiler):
         return self.__in_expanding_bind(
             self._generate_generic_binary(binary, " IN ", **kw)
         )
+
+    def visit_empty_set_expr(self, element_types):
+        return ""
 
     def visit_not_in_op_binary(self, binary, operator, **kw):
         return '(' + self.__in_expanding_bind(
