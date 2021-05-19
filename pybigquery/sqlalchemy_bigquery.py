@@ -60,7 +60,6 @@ FIELD_ILLEGAL_CHARACTERS = re.compile(r"[^\w]+")
 
 def assert_(cond, message="Assertion failed"):  # pragma: NO COVER
     if not cond:
-        breakpoint()
         raise AssertionError(message)
 
 
