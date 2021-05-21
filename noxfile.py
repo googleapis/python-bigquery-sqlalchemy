@@ -49,6 +49,7 @@ nox.options.sessions = [
 
 # Error if a python version is missing
 nox.options.error_on_missing_interpreters = True
+nox.options.stop_on_first_error = True
 
 
 @nox.session(python=DEFAULT_PYTHON_VERSION)
