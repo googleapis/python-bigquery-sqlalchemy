@@ -361,7 +361,8 @@ class BigQueryCompiler(SQLCompiler):
     __expanded_param = re.compile(fr"\(\[" fr"{__expandng_text}" fr"_[^\]]+\]\)$").match
 
     __remove_type_parameter = _helpers.substitute_re_method(
-        r"(\w+)\(\s*\d+\s*(,\s*\d+\s*)*\)", r"\1")
+        r"(\w+)\(\s*\d+\s*(,\s*\d+\s*)*\)", r"\1"
+    )
 
     def visit_bindparam(
         self,
@@ -433,9 +434,9 @@ class BigQueryTypeCompiler(GenericTypeCompiler):
     visit_REAL = visit_FLOAT
 
     def visit_STRING(self, type_, **kw):
-        if ((type_.length is not None) and
-            isinstance(kw.get('type_expression'), Column)  # column def
-            ):
+        if (type_.length is not None) and isinstance(
+            kw.get("type_expression"), Column
+        ):  # column def
             return f"STRING({type_.length})"
         return "STRING"
 
@@ -453,9 +454,9 @@ class BigQueryTypeCompiler(GenericTypeCompiler):
     visit_VARBINARY = visit_BINARY
 
     def visit_NUMERIC(self, type_, **kw):
-        if ((type_.precision is not None) and
-            isinstance(kw.get('type_expression'), Column)  # column def
-            ):
+        if (type_.precision is not None) and isinstance(
+            kw.get("type_expression"), Column
+        ):  # column def
             if type_.scale is not None:
                 suffix = f"({type_.precision}, {type_.scale})"
             else:
@@ -465,10 +466,10 @@ class BigQueryTypeCompiler(GenericTypeCompiler):
 
         return (
             "BIGNUMERIC"
-            if (type_.precision is not None and type_.precision > 38) or (
-                type_.scale is not None and type_.scale > 9
-                )
-            else "NUMERIC") + suffix
+            if (type_.precision is not None and type_.precision > 38)
+            or (type_.scale is not None and type_.scale > 9)
+            else "NUMERIC"
+        ) + suffix
 
     visit_DECIMAL = visit_NUMERIC
 
@@ -826,9 +827,9 @@ class BigQueryDialect(DefaultDialect):
                 fields = [
                     SchemaField.from_api_repr(
                         dict(f.to_api_repr(), name=f"{col.name}.{f.name}")
-                        )
+                    )
                     for f in col.fields
-                    ]
+                ]
                 results += self._get_columns_helper(fields, cur_columns)
                 cur_columns.pop()
         return results
@@ -847,9 +848,9 @@ class BigQueryDialect(DefaultDialect):
                 )
                 coltype = types.NullType
 
-            if col.field_type.endswith('NUMERIC'):
+            if col.field_type.endswith("NUMERIC"):
                 coltype = coltype(precision=col.precision, scale=col.scale)
-            elif col.field_type == 'STRING' or col.field_type == 'BYTES':
+            elif col.field_type == "STRING" or col.field_type == "BYTES":
                 coltype = coltype(col.max_length)
 
             result.append(

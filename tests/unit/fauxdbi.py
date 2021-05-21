@@ -329,9 +329,9 @@ class FauxClient:
         result = {d[0]: value for d, value in zip(cursor.description, row)}
         return result
 
-    __string_types = 'STRING', 'BYTES'
+    __string_types = "STRING", "BYTES"
 
-    @substitute_re_method("(\w+)\s*\(\s*(\d+)\s*(?:,\s*(\d+)\s*)?\)")
+    @substitute_re_method(r"(\w+)\s*\(\s*(\d+)\s*(?:,\s*(\d+)\s*)?\)")
     def __parse_type_parameters(self, m, parameters):
         name, precision, scale = m.groups()
         if scale is not None:
@@ -371,7 +371,7 @@ class FauxClient:
             mode=mode,
             description=description,
             fields=tuple(self._get_field(**f) for f in fields),
-            **parameters
+            **parameters,
         )
 
         return field

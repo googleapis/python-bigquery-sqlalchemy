@@ -106,7 +106,6 @@ else:
     # over the backquotes that we add everywhere. XXX Why do we do that?
     del PostCompileParamsTest
 
-
     class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
 
         data = datetime.datetime(2012, 10, 15, 12, 57, 18, 396, tzinfo=pytz.UTC)

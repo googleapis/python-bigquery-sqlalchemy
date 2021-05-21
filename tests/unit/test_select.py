@@ -130,7 +130,7 @@ def test_typed_parameters(faux_conn, type_, val, btype, vrep):
     if btype.startswith("ARRAY<"):
         btype = btype[6:-1]
 
-    ptype = btype[:btype.index('(')] if '(' in btype else btype
+    ptype = btype[: btype.index("(")] if "(" in btype else btype
 
     assert faux_conn.test_data["execute"][-1] == (
         f"INSERT INTO `t` (`{col_name}`) VALUES (%({col_name}:{ptype})s)",

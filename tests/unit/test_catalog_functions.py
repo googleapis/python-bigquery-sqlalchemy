@@ -172,7 +172,11 @@ def test_get_table_comment(faux_conn):
         ("NUMERIC(4, 2)", sqlalchemy.types.NUMERIC(4, 2), dict(precision=4, scale=2)),
         ("BIGNUMERIC", sqlalchemy.types.NUMERIC(), ()),
         ("BIGNUMERIC(42)", sqlalchemy.types.NUMERIC(42), dict(precision=42)),
-        ("BIGNUMERIC(42, 2)", sqlalchemy.types.NUMERIC(42, 2), dict(precision=42, scale=2)),
+        (
+            "BIGNUMERIC(42, 2)",
+            sqlalchemy.types.NUMERIC(42, 2),
+            dict(precision=42, scale=2),
+        ),
         ("BOOL", sqlalchemy.types.Boolean, ()),
         ("TIMESTAMP", sqlalchemy.types.TIMESTAMP, ()),
         ("DATE", sqlalchemy.types.DATE, ()),
@@ -186,17 +190,20 @@ def test_get_table_columns(faux_conn, btype, atype, extra):
     cursor.execute(f"create table foo (x {btype})")
 
     [col] = faux_conn.dialect.get_columns(faux_conn, "foo")
-    col['type'] = str(col['type'])
-    assert col == dict({
-        "comment": None,
-        "default": None,
-        'max_length': None,
-        "name": "x",
-        "nullable": True,
-        "type": str(atype),
-        'precision': None,
-        'scale': None,
-        }, **(extra or {}))
+    col["type"] = str(col["type"])
+    assert col == dict(
+        {
+            "comment": None,
+            "default": None,
+            "max_length": None,
+            "name": "x",
+            "nullable": True,
+            "type": str(atype),
+            "precision": None,
+            "scale": None,
+        },
+        **(extra or {}),
+    )
 
 
 def test_get_table_columns_special_cases(faux_conn):
@@ -223,7 +230,7 @@ def test_get_table_columns_special_cases(faux_conn):
             "max_length": None,
             "precision": None,
             "scale": None,
-            },
+        },
         {
             "comment": None,
             "default": None,
