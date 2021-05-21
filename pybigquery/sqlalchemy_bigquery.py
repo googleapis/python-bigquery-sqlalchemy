@@ -278,12 +278,12 @@ class BigQueryCompiler(SQLCompiler):
 
     __sqlalchemy_version_info = tuple(map(int, sqlalchemy.__version__.split(".")))
 
-    __expandng_text = 'EXPANDING' if __sqlalchemy_version_info < (1, 4) else 'POSTCOMPILE'
+    __expandng_text = (
+        "EXPANDING" if __sqlalchemy_version_info < (1, 4) else "POSTCOMPILE"
+    )
 
     __in_expanding_bind = _helpers.substitute_re_method(
-        fr" IN \((\["
-        fr"{__expandng_text}"
-        fr"_[^\]]+\](:[A-Z0-9]+)?)\)$",
+        fr" IN \((\[" fr"{__expandng_text}" fr"_[^\]]+\](:[A-Z0-9]+)?)\)$",
         re.IGNORECASE,
         r" IN UNNEST([ \1 ])",
     )
@@ -358,11 +358,7 @@ class BigQueryCompiler(SQLCompiler):
 
     __placeholder = re.compile(r"%\(([^\]:]+)(:[^\]:]+)?\)s$").match
 
-    __expanded_param = re.compile(
-        fr"\(\["
-        fr"{__expandng_text}"
-        fr"_[^\]]+\]\)$"
-    ).match
+    __expanded_param = re.compile(fr"\(\[" fr"{__expandng_text}" fr"_[^\]]+\]\)$").match
 
     def visit_bindparam(
         self,
