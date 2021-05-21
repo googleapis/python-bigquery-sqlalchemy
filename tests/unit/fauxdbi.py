@@ -329,6 +329,20 @@ class FauxClient:
         result = {d[0]: value for d, value in zip(cursor.description, row)}
         return result
 
+    __string_types = 'STRING', 'BYTES'
+
+    @substitute_re_method("(\w+)\s*\(\s*(\d+)\s*(?:,\s*(\d+)\s*)?\)")
+    def __parse_type_parameters(self, m, parameters):
+        name, precision, scale = m.groups()
+        if scale is not None:
+            parameters.update(precision=precision, scale=scale)
+        elif name in self.__string_types:
+            parameters.update(max_length=precision)
+        else:
+            parameters.update(precision=precision)
+
+        return name
+
     def _get_field(
         self,
         type,
@@ -348,12 +362,16 @@ class FauxClient:
         if not mode:
             mode = "REQUIRED" if notnull else "NULLABLE"
 
+        parameters = {}
+        type_ = self.__parse_type_parameters(type, parameters)
+
         field = google.cloud.bigquery.schema.SchemaField(
             name=name,
-            field_type=type,
+            field_type=type_,
             mode=mode,
             description=description,
             fields=tuple(self._get_field(**f) for f in fields),
+            **parameters
         )
 
         return field

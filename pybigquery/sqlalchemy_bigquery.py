@@ -122,8 +122,8 @@ _type_map = {
     "BYTES": types.BINARY,
     "TIME": types.TIME,
     "RECORD": types.JSON,
-    "NUMERIC": types.DECIMAL,
-    "BIGNUMERIC": types.DECIMAL,
+    "NUMERIC": types.Numeric,
+    "BIGNUMERIC": types.Numeric,
 }
 
 STRING = _type_map["STRING"]
@@ -360,6 +360,9 @@ class BigQueryCompiler(SQLCompiler):
 
     __expanded_param = re.compile(fr"\(\[" fr"{__expandng_text}" fr"_[^\]]+\]\)$").match
 
+    __remove_type_parameter = _helpers.substitute_re_method(
+        r"(\w+)\(\s*\d+\s*(,\s*\d+\s*)*\)", r"\1")
+
     def visit_bindparam(
         self,
         bindparam,
@@ -397,6 +400,7 @@ class BigQueryCompiler(SQLCompiler):
         if bq_type[-1] == ">" and bq_type.startswith("ARRAY<"):
             # Values get arrayified at a lower level.
             bq_type = bq_type[6:-1]
+        bq_type = self.__remove_type_parameter(bq_type)
 
         assert_(param != "%s", f"Unexpected param: {param}")
 
@@ -429,6 +433,10 @@ class BigQueryTypeCompiler(GenericTypeCompiler):
     visit_REAL = visit_FLOAT
 
     def visit_STRING(self, type_, **kw):
+        if ((type_.length is not None) and
+            isinstance(kw.get('type_expression'), Column)  # column def
+            ):
+            return f"STRING({type_.length})"
         return "STRING"
 
     visit_CHAR = visit_NCHAR = visit_STRING
@@ -438,17 +446,29 @@ class BigQueryTypeCompiler(GenericTypeCompiler):
         return "ARRAY<{}>".format(self.process(type_.item_type, **kw))
 
     def visit_BINARY(self, type_, **kw):
+        if type_.length is not None:
+            return f"BYTES({type_.length})"
         return "BYTES"
 
     visit_VARBINARY = visit_BINARY
 
     def visit_NUMERIC(self, type_, **kw):
-        if (type_.precision is not None and type_.precision > 38) or (
-            type_.scale is not None and type_.scale > 9
-        ):
-            return "BIGNUMERIC"
+        if ((type_.precision is not None) and
+            isinstance(kw.get('type_expression'), Column)  # column def
+            ):
+            if type_.scale is not None:
+                suffix = f"({type_.precision}, {type_.scale})"
+            else:
+                suffix = f"({type_.precision})"
         else:
-            return "NUMERIC"
+            suffix = ""
+
+        return (
+            "BIGNUMERIC"
+            if (type_.precision is not None and type_.precision > 38) or (
+                type_.scale is not None and type_.scale > 9
+                )
+            else "NUMERIC") + suffix
 
     visit_DECIMAL = visit_NUMERIC
 
@@ -800,18 +820,16 @@ class BigQueryDialect(DefaultDialect):
         """
         results = []
         for col in columns:
-            results += [
-                SchemaField(
-                    name=".".join(col.name for col in cur_columns + [col]),
-                    field_type=col.field_type,
-                    mode=col.mode,
-                    description=col.description,
-                    fields=col.fields,
-                )
-            ]
+            results += [col]
             if col.field_type == "RECORD":
                 cur_columns.append(col)
-                results += self._get_columns_helper(col.fields, cur_columns)
+                fields = [
+                    SchemaField.from_api_repr(
+                        dict(f.to_api_repr(), name=f"{col.name}.{f.name}")
+                        )
+                    for f in col.fields
+                    ]
+                results += self._get_columns_helper(fields, cur_columns)
                 cur_columns.pop()
         return results
 
@@ -829,6 +847,11 @@ class BigQueryDialect(DefaultDialect):
                 )
                 coltype = types.NullType
 
+            if col.field_type.endswith('NUMERIC'):
+                coltype = coltype(precision=col.precision, scale=col.scale)
+            elif col.field_type == 'STRING' or col.field_type == 'BYTES':
+                coltype = coltype(col.max_length)
+
             result.append(
                 {
                     "name": col.name,
@@ -836,6 +859,9 @@ class BigQueryDialect(DefaultDialect):
                     "nullable": col.mode == "NULLABLE" or col.mode == "REPEATED",
                     "comment": col.description,
                     "default": None,
+                    "precision": col.precision,
+                    "scale": col.scale,
+                    "max_length": col.max_length,
                 }
             )
 
