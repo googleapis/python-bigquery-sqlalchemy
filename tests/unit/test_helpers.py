@@ -192,3 +192,10 @@ def test_substitute_re_func_self(module_under_test):
         Replacer("hah").foo_to_bar("some foo and FOO is good")
         == "some hah and FOO is good"
     )
+
+
+def test_substitute_re_string_repl_wo_flags(module_under_test):
+    foo_to_baz = module_under_test.substitute_re_method("foo", "baz")
+    assert (
+        foo_to_baz(object(), "some foo and FOO is good") == "some baz and FOO is good"
+    )
