@@ -969,12 +969,11 @@ class BigQueryDialect(DefaultDialect):
 
 
 try:
-    import alembic
+    import alembic  # noqa
 except ImportError:
-   pass
+    pass
 else:
     from alembic.ddl import impl
-
 
     class PyBigQueryImpl(impl.DefaultImpl):
         __dialect__ = "bigquery"

@@ -101,8 +101,9 @@ def install_alembic_for_python_38(session, constraints_path):
     - We have a system test that demonstrates working with alembic and
       proves that the things we think should work do work. :)
     """
-    if session.python == '3.8':
+    if session.python == "3.8":
         session.install("alembic", "-c", constraints_path)
+
 
 def default(session):
     # Install all test dependencies, then install this package in-place.

@@ -23,8 +23,8 @@ import pytest
 from sqlalchemy import Column, DateTime, Integer, String
 
 try:
-    import alembic
-except:
+    import alembic  # noqa
+except ImportError:
     alembic = None
 
 import google.api_core.exceptions
@@ -36,18 +36,20 @@ def alembic_table(bigquery_dataset, bigquery_client):
     import alembic.migration
     import alembic.operations
 
-    def get_table(table_name, data='table'):
+    def get_table(table_name, data="table"):
         try:
             table_id = f"{bigquery_dataset}.{table_name}"
-            if data == 'rows':
-                return [dict(r) for r in  bigquery_client.list_rows(table_id)]
+            if data == "rows":
+                return [dict(r) for r in bigquery_client.list_rows(table_id)]
             else:
                 table = bigquery_client.get_table(table_id)
-                if data == 'table':
+                if data == "table":
                     return table
-                elif data == 'schema':
-                    return [repr(s).replace(', (), None)', ')').replace(', None)', ')')
-                            for s in table.schema]
+                elif data == "schema":
+                    return [
+                        repr(s).replace(", (), None)", ")").replace(", None)", ")")
+                        for s in table.schema
+                    ]
                 else:
                     raise ValueError(data)
         except google.api_core.exceptions.NotFound:
@@ -58,6 +60,7 @@ def alembic_table(bigquery_dataset, bigquery_client):
         migration_context = alembic.migration.MigrationContext.configure(conn, {})
         with alembic.operations.Operations.context(migration_context):
             yield get_table
+
 
 @pytest.mark.skipif(alembic is None, reason="Alembic isn't installed.")
 def test_alembic_scenario(alembic_table):
@@ -70,97 +73,98 @@ def test_alembic_scenario(alembic_table):
     """
     from alembic import op
 
-    assert alembic_table('account') is None
+    assert alembic_table("account") is None
 
     account = op.create_table(
-        'account',
-        Column('id', Integer, nullable=False),
-        Column('name', String(50), nullable=False, comment="The name"),
-        Column('description', String(200)),
+        "account",
+        Column("id", Integer, nullable=False),
+        Column("name", String(50), nullable=False, comment="The name"),
+        Column("description", String(200)),
     )
-    assert (alembic_table('account', "schema") ==
-            ["SchemaField('id', 'INTEGER', 'REQUIRED')",
-             "SchemaField('name', 'STRING(50)', 'REQUIRED', 'The name')",
-             "SchemaField('description', 'STRING(200)', 'NULLABLE')",
-             ])
+    assert alembic_table("account", "schema") == [
+        "SchemaField('id', 'INTEGER', 'REQUIRED')",
+        "SchemaField('name', 'STRING(50)', 'REQUIRED', 'The name')",
+        "SchemaField('description', 'STRING(200)', 'NULLABLE')",
+    ]
 
-    op.bulk_insert(account, [
-        dict(id=1, name='home', description='the home account'),
-        dict(id=2, name='operations', description='the ops account'),
-        dict(id=3, name='savings', description=None),
-        ])
+    op.bulk_insert(
+        account,
+        [
+            dict(id=1, name="home", description="the home account"),
+            dict(id=2, name="operations", description="the ops account"),
+            dict(id=3, name="savings", description=None),
+        ],
+    )
 
-    assert (
-        alembic_table('account', "rows") ==
-        [{'description': 'the home account', 'id': 1, 'name': 'home'},
-         {'description': 'the ops account', 'id': 2, 'name': 'operations'},
-         {'description': None, 'id': 3, 'name': 'savings'}])
+    assert alembic_table("account", "rows") == [
+        {"description": "the home account", "id": 1, "name": "home"},
+        {"description": "the ops account", "id": 2, "name": "operations"},
+        {"description": None, "id": 3, "name": "savings"},
+    ]
 
     op.add_column(
-        'account', Column('last_transaction_date', DateTime, comment="when updated")
+        "account", Column("last_transaction_date", DateTime, comment="when updated")
     )
 
-    assert (
-        alembic_table('account', "schema") ==
-        ["SchemaField('id', 'INTEGER', 'REQUIRED')",
-         "SchemaField('name', 'STRING(50)', 'REQUIRED', 'The name')",
-         "SchemaField('description', 'STRING(200)', 'NULLABLE')",
-         "SchemaField('last_transaction_date', 'DATETIME', 'NULLABLE', 'when updated')",
-         ]
-        )
+    assert alembic_table("account", "schema") == [
+        "SchemaField('id', 'INTEGER', 'REQUIRED')",
+        "SchemaField('name', 'STRING(50)', 'REQUIRED', 'The name')",
+        "SchemaField('description', 'STRING(200)', 'NULLABLE')",
+        "SchemaField('last_transaction_date', 'DATETIME', 'NULLABLE', 'when updated')",
+    ]
 
     op.create_table(
-        'account_w_comment',
-        Column('id', Integer, nullable=False),
-        Column('name', String(50), nullable=False, comment="The name"),
-        Column('description', String(200)),
-        comment="This table has comments")
-    assert (alembic_table('account_w_comment').description ==
-            "This table has comments")
-    op.drop_table_comment('account_w_comment')
-    assert alembic_table('account_w_comment').description == None
+        "account_w_comment",
+        Column("id", Integer, nullable=False),
+        Column("name", String(50), nullable=False, comment="The name"),
+        Column("description", String(200)),
+        comment="This table has comments",
+    )
+    assert alembic_table("account_w_comment").description == "This table has comments"
+    op.drop_table_comment("account_w_comment")
+    assert alembic_table("account_w_comment").description is None
 
-    op.drop_column('account_w_comment', 'description')
-    assert (alembic_table('account_w_comment', "schema") ==
-            ["SchemaField('id', 'INTEGER', 'REQUIRED')",
-             "SchemaField('name', 'STRING(50)', 'REQUIRED', 'The name')",
-             ])
+    op.drop_column("account_w_comment", "description")
+    assert alembic_table("account_w_comment", "schema") == [
+        "SchemaField('id', 'INTEGER', 'REQUIRED')",
+        "SchemaField('name', 'STRING(50)', 'REQUIRED', 'The name')",
+    ]
 
-    op.drop_table('account_w_comment')
-    assert alembic_table('account_w_comment') == None
+    op.drop_table("account_w_comment")
+    assert alembic_table("account_w_comment") is None
 
-    op.rename_table('account', 'accounts')
-    assert alembic_table('account') == None
-    assert (
-        alembic_table('accounts', "schema") ==
-        ["SchemaField('id', 'INTEGER', 'REQUIRED')",
-         "SchemaField('name', 'STRING(50)', 'REQUIRED', 'The name')",
-         "SchemaField('description', 'STRING(200)', 'NULLABLE')",
-         "SchemaField('last_transaction_date', 'DATETIME', 'NULLABLE', 'when updated')",
-         ]
-        )
-    op.drop_table('accounts')
-    assert alembic_table('accounts') == None
+    op.rename_table("account", "accounts")
+    assert alembic_table("account") is None
+    assert alembic_table("accounts", "schema") == [
+        "SchemaField('id', 'INTEGER', 'REQUIRED')",
+        "SchemaField('name', 'STRING(50)', 'REQUIRED', 'The name')",
+        "SchemaField('description', 'STRING(200)', 'NULLABLE')",
+        "SchemaField('last_transaction_date', 'DATETIME', 'NULLABLE', 'when updated')",
+    ]
+    op.drop_table("accounts")
+    assert alembic_table("accounts") is None
 
-    op.execute("""
+    op.execute(
+        """
         create table transactions(
             account INT64 NOT NULL,
             transaction_time DATETIME NOT NULL,
             amount NUMERIC(11, 2) NOT NULL
             )
         partition by DATE(transaction_time)
-        """)
+        """
+    )
 
     # The only thing we can alter about a column is we can make it
     # nullable:
-    op.alter_column('transactions', 'amount', True)
-    assert (alembic_table('transactions', 'schema') ==
-            ["SchemaField('account', 'INTEGER', 'REQUIRED')",
-             "SchemaField('transaction_time', 'DATETIME', 'REQUIRED')",
-             "SchemaField('amount', 'NUMERIC(11, 2)', 'NULLABLE')"])
+    op.alter_column("transactions", "amount", True)
+    assert alembic_table("transactions", "schema") == [
+        "SchemaField('account', 'INTEGER', 'REQUIRED')",
+        "SchemaField('transaction_time', 'DATETIME', 'REQUIRED')",
+        "SchemaField('amount', 'NUMERIC(11, 2)', 'NULLABLE')",
+    ]
 
+    op.create_table_comment("transactions", "Transaction log")
+    assert alembic_table("transactions").description == "Transaction log"
 
-    op.create_table_comment('transactions', "Transaction log")
-    assert alembic_table('transactions').description == "Transaction log"
-
-    op.drop_table('transactions')
+    op.drop_table("transactions")
