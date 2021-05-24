@@ -24,7 +24,7 @@ from setuptools import setup
 # Package metadata.
 
 name = "pybigquery"
-version = "0.6.1"
+version = "0.8.0"
 description = "SQLAlchemy dialect for BigQuery"
 
 # Should be one of:
@@ -65,10 +65,10 @@ setup(
     ],
     platforms="Posix; MacOS X; Windows",
     install_requires=[
-        "sqlalchemy>=1.1.9,<1.4.0dev",
-        "google-auth>=1.14.0,<2.0dev",  # Work around pip wack.
-        "google-cloud-bigquery>=1.12.0",
-        "google-api-core>=1.19.1",  # Work-around bug in cloud core deps.
+        "google-api-core>=1.23.0",  # Work-around bug in cloud core deps.
+        "google-auth>=1.24.0,<2.0dev",  # Work around pip wack.
+        "google-cloud-bigquery>=2.16.1",
+        "sqlalchemy>=1.2.0,<1.5.0dev",
         "future",
     ],
     python_requires=">=3.6, <3.10",
