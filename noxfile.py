@@ -97,6 +97,9 @@ def default(session):
     )
     session.install("mock", "pytest", "pytest-cov", "-c", constraints_path)
 
+    if session.python == '3.8':
+        session.install("alembic", "-c", constraints_path)
+
     session.install("-e", ".", "-c", constraints_path)
 
     # Run py.test against the unit tests.
@@ -152,6 +155,10 @@ def system(session):
     # Install all test dependencies, then install this package into the
     # virtualenv's dist-packages.
     session.install("mock", "pytest", "google-cloud-testutils", "-c", constraints_path)
+
+    if session.python == '3.8':
+        session.install("alembic", "-c", constraints_path)
+
     session.install("-e", ".", "-c", constraints_path)
 
     # Run py.test against the system tests.
