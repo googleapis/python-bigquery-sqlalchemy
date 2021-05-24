@@ -159,22 +159,32 @@ class BigQueryExecutionContext(DefaultExecutionContext):
             return str(uuid.uuid4())
 
     __remove_type_from_empty_in = _helpers.substitute_string_re_method(
-        r" IN UNNEST\(\[ ("
-        r"(?:NULL|\(NULL(?:, NULL)+\))\)"
-        r" (?:AND|OR) \(1 !?= 1"
-        r")"
-        r"(?:[:][A-Z0-9]+)?"
-        r" \]\)",
-        flags=re.IGNORECASE,
+        r"""
+        \sIN\sUNNEST\(\[\s               # ' IN UNNEST([ '
+        (
+        (?:NULL|\(NULL(?:,\sNULL)+\))\)  # '(NULL)' or '((NULL, NULL, ...))'
+        \s(?:AND|OR)\s\(1\s!?=\s1        # ' and 1 != 1' or ' or 1 = 1'
+        )
+        (?:[:][A-Z0-9]+)?                # Maybe ':TYPE' (e.g. ':INT64')
+        \s\]\)                           # Close: ' ])'
+        """,
+        flags=re.IGNORECASE | re.VERBOSE,
         repl=r" IN(\1)",
     )
 
     @_helpers.substitute_re_method(
-        r" IN UNNEST\(\[ "
-        r"(%\([^)]+_\d+\)s(?:, %\([^)]+_\d+\)s)*)?"  # Placeholders. See below.
-        r":([A-Z0-9]+)"  # Type
-        r" \]\)",
-        flags=re.IGNORECASE,
+        r"""
+        \sIN\sUNNEST\(\[\s       # ' IN UNNEST([ '
+        (                        # Placeholders. See below.
+        %\([^)]+_\d+\)s          # Placeholder '%(foo_1)s'
+        (?:,\s                   # 0 or more placeholders
+        %\([^)]+_\d+\)s
+        )*
+        )?
+        :([A-Z0-9]+)             # Type ':TYPE' (e.g. ':INT64')
+        \s\]\)                   # Close: ' ])'
+        """,
+        flags=re.IGNORECASE | re.VERBOSE,
     )
     def __distribute_types_to_expanded_placeholders(self, m):
         # If we have an in parameter, it sometimes gets expaned to 0 or more
@@ -283,8 +293,18 @@ class BigQueryCompiler(SQLCompiler):
     )
 
     __in_expanding_bind = _helpers.substitute_string_re_method(
-        fr" IN \((\[" fr"{__expandng_text}" fr"_[^\]]+\](:[A-Z0-9]+)?)\)$",
-        flags=re.IGNORECASE,
+        fr"""
+        \sIN\s\(                     # ' IN ('
+        (
+        \[                           # Expanding placeholder
+        {__expandng_text}            #   e.g. [EXPANDING_foo_1]
+        _[^\]]+                      #
+        \]
+        (:[A-Z0-9]+)?                # type marker (e.g. ':INT64'
+        )
+        \)$                          # close w ending )
+        """,
+        flags=re.IGNORECASE | re.VERBOSE,
         repl=r" IN UNNEST([ \1 ])",
     )
 
@@ -361,7 +381,15 @@ class BigQueryCompiler(SQLCompiler):
     __expanded_param = re.compile(fr"\(\[" fr"{__expandng_text}" fr"_[^\]]+\]\)$").match
 
     __remove_type_parameter = _helpers.substitute_string_re_method(
-        r"(\w+)\(\s*\d+\s*(,\s*\d+\s*)*\)", repl=r"\1"
+        r"""
+        (STRING|BYTES|NUMERIC|BIGNUMERIC)  # Base type
+        \(                                 # Dimensions e.g. '(42)', '(4, 2)':
+        \s*\d+\s*                          # First dimension
+        (?:,\s*\d+\s*)*                    # Remaining dimensions
+        \)
+        """,
+        repl=r"\1",
+        flags=re.VERBOSE | re.IGNORECASE,
     )
 
     def visit_bindparam(
