@@ -30,7 +30,7 @@ import google.cloud.bigquery.schema
 import google.cloud.bigquery.table
 import google.cloud.bigquery.dbapi.cursor
 
-from pybigquery._helpers import substitute_re_method
+from pybigquery._helpers import substitute_re_method, substitute_string_re_method
 
 
 class Connection:
@@ -87,7 +87,7 @@ class Cursor:
         datetime.time,
     )
 
-    @substitute_re_method(r"%\((\w+)\)s", re.IGNORECASE)
+    @substitute_re_method(r"%\((\w+)\)s", flags=re.IGNORECASE)
     def __pyformat_to_qmark(self, m, parameters, ordered_parameters):
         name = m.group(1)
         value = parameters[name]
@@ -112,7 +112,7 @@ class Cursor:
 
     @substitute_re_method(
         r"(?P<prefix>`(?P<col>\w+)`\s+\w+|\))" r"\s+options\((?P<options>[^)]+)\)",
-        re.IGNORECASE,
+        flags=re.IGNORECASE,
     )
     def __handle_column_comments(self, m, table_name):
         col = m.group("col") or ""
@@ -150,7 +150,7 @@ class Cursor:
         return operation
 
     @substitute_re_method(
-        r"(?<=[(,])" r"\s*`\w+`\s+\w+<\w+>\s*" r"(?=[,)])", re.IGNORECASE
+        r"(?<=[(,])" r"\s*`\w+`\s+\w+<\w+>\s*" r"(?=[,)])", flags=re.IGNORECASE
     )
     def __normalize_array_types(self, m):
         return m.group(0).replace("<", "_").replace(">", "_")
@@ -186,12 +186,12 @@ class Cursor:
         else:
             raise AssertionError(type_)  # pragma: NO COVER
 
-    __normalize_bq_datish = substitute_re_method(
+    __normalize_bq_datish = substitute_string_re_method(
         r"(?<=[[(,])\s*"
         r"(?P<type>date(?:time)?|time(?:stamp)?) (?P<val>'[^']+')"
         r"\s*(?=[]),])",
-        re.IGNORECASE,
-        r"parse_datish('\1', \2)",
+        flags=re.IGNORECASE,
+        repl=r"parse_datish('\1', \2)",
     )
 
     def __handle_problematic_literal_inserts(
@@ -234,8 +234,8 @@ class Cursor:
         else:
             return operation
 
-    __handle_unnest = substitute_re_method(
-        r"UNNEST\(\[ ([^\]]+)? \]\)", re.IGNORECASE, r"(\1)"
+    __handle_unnest = substitute_string_re_method(
+        r"UNNEST\(\[ ([^\]]+)? \]\)", flags=re.IGNORECASE, repl=r"(\1)"
     )
 
     def __handle_true_false(self, operation):

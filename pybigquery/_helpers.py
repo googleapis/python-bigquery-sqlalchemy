@@ -65,17 +65,9 @@ def create_bigquery_client(
 
 def substitute_re_method(r, flags=0, repl=None):
     if repl is None:
-        if isinstance(flags, int):
-            return lambda f: substitute_re_method(r, flags, f)
-        else:
-            # someone passed 2 args, a pattern and a replacement
-            repl = flags
-            flags = 0
+        return lambda f: substitute_re_method(r, flags, f)
 
     r = re.compile(r, flags)
-
-    if isinstance(repl, str):
-        return lambda self, s: r.sub(repl, s)
 
     @functools.wraps(repl)
     def sub(self, s, *args, **kw):
@@ -85,3 +77,8 @@ def substitute_re_method(r, flags=0, repl=None):
         return r.sub(repl_, s)
 
     return sub
+
+
+def substitute_string_re_method(r, *, repl, flags=0):
+    r = re.compile(r, flags)
+    return lambda self, s: r.sub(repl, s)

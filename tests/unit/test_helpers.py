@@ -138,10 +138,12 @@ def test_create_bigquery_client_with_default_credentials_respects_project(
     assert bqclient.project == "connection-url-project"
 
 
-def test_substitute_re_string(module_under_test):
+def test_substitute_string_re(module_under_test):
     import re
 
-    foo_to_baz = module_under_test.substitute_re_method("foo", re.IGNORECASE, "baz")
+    foo_to_baz = module_under_test.substitute_string_re_method(
+        "foo", flags=re.IGNORECASE, repl="baz"
+    )
     assert (
         foo_to_baz(object(), "some foo and FOO is good") == "some baz and baz is good"
     )
@@ -191,11 +193,4 @@ def test_substitute_re_func_self(module_under_test):
     assert (
         Replacer("hah").foo_to_bar("some foo and FOO is good")
         == "some hah and FOO is good"
-    )
-
-
-def test_substitute_re_string_repl_wo_flags(module_under_test):
-    foo_to_baz = module_under_test.substitute_re_method("foo", "baz")
-    assert (
-        foo_to_baz(object(), "some foo and FOO is good") == "some baz and FOO is good"
     )

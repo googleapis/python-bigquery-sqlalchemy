@@ -158,15 +158,15 @@ class BigQueryExecutionContext(DefaultExecutionContext):
         elif isinstance(column.type, String):
             return str(uuid.uuid4())
 
-    __remove_type_from_empty_in = _helpers.substitute_re_method(
+    __remove_type_from_empty_in = _helpers.substitute_string_re_method(
         r" IN UNNEST\(\[ ("
         r"(?:NULL|\(NULL(?:, NULL)+\))\)"
         r" (?:AND|OR) \(1 !?= 1"
         r")"
         r"(?:[:][A-Z0-9]+)?"
         r" \]\)",
-        re.IGNORECASE,
-        r" IN(\1)",
+        flags=re.IGNORECASE,
+        repl=r" IN(\1)",
     )
 
     @_helpers.substitute_re_method(
@@ -174,7 +174,7 @@ class BigQueryExecutionContext(DefaultExecutionContext):
         r"(%\([^)]+_\d+\)s(?:, %\([^)]+_\d+\)s)*)?"  # Placeholders. See below.
         r":([A-Z0-9]+)"  # Type
         r" \]\)",
-        re.IGNORECASE,
+        flags=re.IGNORECASE,
     )
     def __distribute_types_to_expanded_placeholders(self, m):
         # If we have an in parameter, it sometimes gets expaned to 0 or more
@@ -282,10 +282,10 @@ class BigQueryCompiler(SQLCompiler):
         "EXPANDING" if __sqlalchemy_version_info < (1, 4) else "POSTCOMPILE"
     )
 
-    __in_expanding_bind = _helpers.substitute_re_method(
+    __in_expanding_bind = _helpers.substitute_string_re_method(
         fr" IN \((\[" fr"{__expandng_text}" fr"_[^\]]+\](:[A-Z0-9]+)?)\)$",
-        re.IGNORECASE,
-        r" IN UNNEST([ \1 ])",
+        flags=re.IGNORECASE,
+        repl=r" IN UNNEST([ \1 ])",
     )
 
     def visit_in_op_binary(self, binary, operator_, **kw):
@@ -360,8 +360,8 @@ class BigQueryCompiler(SQLCompiler):
 
     __expanded_param = re.compile(fr"\(\[" fr"{__expandng_text}" fr"_[^\]]+\]\)$").match
 
-    __remove_type_parameter = _helpers.substitute_re_method(
-        r"(\w+)\(\s*\d+\s*(,\s*\d+\s*)*\)", r"\1"
+    __remove_type_parameter = _helpers.substitute_string_re_method(
+        r"(\w+)\(\s*\d+\s*(,\s*\d+\s*)*\)", repl=r"\1"
     )
 
     def visit_bindparam(
