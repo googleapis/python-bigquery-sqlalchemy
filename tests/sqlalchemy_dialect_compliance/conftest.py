@@ -30,9 +30,9 @@ from sqlalchemy.testing.plugin.pytestplugin import (
 )
 
 import google.cloud.bigquery.dbapi.connection
-import pybigquery.sqlalchemy_bigquery
+import sqlalchemy_bigquery.sqlalchemy_bigquery
 
-pybigquery.sqlalchemy_bigquery.BigQueryDialect.preexecute_autoincrement_sequences = True
+sqlalchemy_bigquery.sqlalchemy_bigquery.BigQueryDialect.preexecute_autoincrement_sequences = True
 google.cloud.bigquery.dbapi.connection.Connection.rollback = lambda self: None
 
 _where = re.compile(r"\s+WHERE\s+", re.IGNORECASE).search
@@ -46,7 +46,7 @@ _where = re.compile(r"\s+WHERE\s+", re.IGNORECASE).search
 
 
 def visit_delete(self, delete_stmt, *args, **kw):
-    text = super(pybigquery.sqlalchemy_bigquery.BigQueryCompiler, self).visit_delete(
+    text = super(sqlalchemy_bigquery.sqlalchemy_bigquery.BigQueryCompiler, self).visit_delete(
         delete_stmt, *args, **kw
     )
 
@@ -58,11 +58,11 @@ def visit_delete(self, delete_stmt, *args, **kw):
     return text
 
 
-pybigquery.sqlalchemy_bigquery.BigQueryCompiler.visit_delete = visit_delete
+sqlalchemy_bigquery.sqlalchemy_bigquery.BigQueryCompiler.visit_delete = visit_delete
 
 
 def pytest_sessionstart(session):
-    dataset_id = f"test_pybigquery_sqla{random.randint(0, 1<<63)}"
+    dataset_id = f"test_sqlalchemy_bigquery_sqla{random.randint(0, 1<<63)}"
     session.config.option.dburi = [f"bigquery:///{dataset_id}"]
     with contextlib.closing(google.cloud.bigquery.Client()) as client:
         client.create_dataset(dataset_id)

@@ -19,9 +19,9 @@
 
 from sqlalchemy.dialects import registry
 
-registry.register("bigquery", "pybigquery.sqlalchemy_bigquery", "BigQueryDialect")
+registry.register("bigquery", "sqlalchemy_bigquery.sqlalchemy_bigquery", "BigQueryDialect")
 
 # sqlalchemy's dialect-testing machinery wants an entry like this. It is wack. :(
 registry.register(
-    "bigquery.bigquery", "pybigquery.sqlalchemy_bigquery", "BigQueryDialect"
+    "bigquery.bigquery", "sqlalchemy_bigquery.sqlalchemy_bigquery", "BigQueryDialect"
 )

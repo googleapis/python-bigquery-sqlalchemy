@@ -23,7 +23,7 @@ from google.cloud.bigquery import QueryJobConfig
 from google.cloud.bigquery.table import EncryptionConfiguration, TableReference
 from google.cloud.bigquery.dataset import DatasetReference
 
-from pybigquery.parse_url import parse_url
+from sqlalchemy_bigquery.parse_url import parse_url
 
 
 @pytest.fixture(scope="session")
@@ -227,7 +227,7 @@ def test_not_implemented(not_implemented_arg):
 
 
 def test_parse_boolean():
-    from pybigquery.parse_url import parse_boolean
+    from sqlalchemy_bigquery.parse_url import parse_boolean
 
     assert parse_boolean("true")
     assert parse_boolean("True")

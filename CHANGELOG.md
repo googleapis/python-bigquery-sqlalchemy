@@ -2,7 +2,7 @@
 
 [PyPI History][1]
 
-[1]: https://pypi.org/project/pybigquery/#history
+[1]: https://pypi.org/project/sqlalchemy-bigquery/#history
 
 ## [0.9.0](https://www.github.com/googleapis/python-bigquery-sqlalchemy/compare/v0.8.0...v0.9.0) (2021-05-25)
 

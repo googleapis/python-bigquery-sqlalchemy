@@ -53,7 +53,7 @@ from sqlalchemy.sql import elements, selectable
 import re
 
 from .parse_url import parse_url
-from pybigquery import _helpers
+from sqlalchemy_bigquery import _helpers
 
 FIELD_ILLEGAL_CHARACTERS = re.compile(r"[^\w]+")
 
@@ -975,5 +975,5 @@ except ImportError:
 else:
     from alembic.ddl import impl
 
-    class PyBigQueryImpl(impl.DefaultImpl):
+    class SqlalchemyBigqueryImpl(impl.DefaultImpl):
         __dialect__ = "bigquery"

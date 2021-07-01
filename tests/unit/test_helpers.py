@@ -25,7 +25,7 @@ class AnonymousCredentialsWithProject(google.auth.credentials.AnonymousCredentia
 
 @pytest.fixture(scope="session")
 def module_under_test():
-    from pybigquery import _helpers
+    from sqlalchemy_bigquery import _helpers
 
     return _helpers
 

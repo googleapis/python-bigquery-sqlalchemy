@@ -23,7 +23,7 @@ from setuptools import setup
 
 # Package metadata.
 
-name = "pybigquery"
+name = "sqlalchemy-bigquery"
 version = "0.9.0"
 description = "SQLAlchemy dialect for BigQuery"
 
@@ -45,9 +45,9 @@ setup(
     description=description,
     long_description=readme(),
     long_description_content_type="text/x-rst",
-    author="The PyBigQuery Authors",
+    author="The Sqlalchemy-Bigquery Authors",
     author_email="googleapis-packages@google.com",
-    packages=["pybigquery"],
+    packages=["sqlalchemy_bigquery"],
     url="https://github.com/googleapis/python-bigquery-sqlalchemy",
     keywords=["bigquery", "sqlalchemy"],
     classifiers=[
@@ -75,7 +75,7 @@ setup(
     tests_require=["pytz"],
     entry_points={
         "sqlalchemy.dialects": [
-            "bigquery = pybigquery.sqlalchemy_bigquery:BigQueryDialect"
+            "bigquery = sqlalchemy_bigquery.sqlalchemy_bigquery:BigQueryDialect"
         ]
     },
 )

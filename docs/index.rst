@@ -9,12 +9,12 @@ API Reference
 .. toctree::
     :maxdepth: 2
 
-    pybigquery/api
+    sqlalchemy-bigquery/api
 
 Changelog
 ---------
 
-For a list of all ``pybigquery`` releases:
+For a list of all ``sqlalchemy-bigquery`` releases:
 
 .. toctree::
    :maxdepth: 2

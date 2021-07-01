@@ -73,7 +73,7 @@ def bigquery_dataset(
     bigquery_client: bigquery.Client, bigquery_schema: List[bigquery.SchemaField]
 ):
     project_id = bigquery_client.project
-    dataset_id = f"test_pybigquery_{temp_suffix()}"
+    dataset_id = f"test_sqlalchemy_bigquery_{temp_suffix()}"
     dataset = bigquery.Dataset(f"{project_id}.{dataset_id}")
     dataset = bigquery_client.create_dataset(dataset)
     sample_table_id = f"{project_id}.{dataset_id}.sample"
@@ -112,7 +112,7 @@ def bigquery_empty_table(
 @pytest.fixture(scope="session")
 def bigquery_regional_dataset(bigquery_client, bigquery_schema):
     project_id = bigquery_client.project
-    dataset_id = f"test_pybigquery_location_{temp_suffix()}"
+    dataset_id = f"test_sqlalchemy_bigquery_location_{temp_suffix()}"
     dataset = bigquery.Dataset(f"{project_id}.{dataset_id}")
     dataset.location = "asia-northeast1"
     dataset = bigquery_client.create_dataset(dataset)

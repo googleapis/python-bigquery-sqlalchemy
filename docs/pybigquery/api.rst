@@ -1,7 +1,7 @@
 PyBigQuery API
 ==============
 
-.. automodule:: pybigquery.api
+.. automodule:: sqlalchemy-bigquery.api
     :members:
     :undoc-members:
     :inherited-members:

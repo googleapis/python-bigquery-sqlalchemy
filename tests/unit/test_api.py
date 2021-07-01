@@ -22,10 +22,10 @@ import mock
 
 def test_dry_run():
 
-    with mock.patch("pybigquery._helpers.create_bigquery_client") as create_client:
-        import pybigquery.api
+    with mock.patch("sqlalchemy_bigquery._helpers.create_bigquery_client") as create_client:
+        import sqlalchemy_bigquery.api
 
-        client = pybigquery.api.ApiClient("/my/creds", "mars")
+        client = sqlalchemy_bigquery.api.ApiClient("/my/creds", "mars")
         create_client.assert_called_once_with(
             credentials_path="/my/creds", location="mars"
         )

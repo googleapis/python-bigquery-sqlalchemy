@@ -50,7 +50,7 @@ def faux_conn():
     with mock.patch("google.cloud.bigquery.dbapi.connection.Connection", factory):
         # We want to bypass client creation. We don't need it and it requires creds.
         with mock.patch(
-            "pybigquery._helpers.create_bigquery_client", fauxdbi.FauxClient
+            "sqlalchemy_bigquery._helpers.create_bigquery_client", fauxdbi.FauxClient
         ):
             with mock.patch("google.auth.default", return_value=("authdb", "authproj")):
                 engine = sqlalchemy.create_engine("bigquery://myproject/mydataset")

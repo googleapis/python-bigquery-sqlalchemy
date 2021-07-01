@@ -24,7 +24,7 @@ from __future__ import unicode_literals
 
 from google.cloud.bigquery import QueryJobConfig
 
-from pybigquery import _helpers
+from sqlalchemy_bigquery import _helpers
 
 
 class ApiClient(object):
