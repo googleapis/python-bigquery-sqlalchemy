@@ -21,7 +21,10 @@ from sqlalchemy.dialects import registry
 
 registry.register("bigquery", "sqlalchemy_bigquery", "BigQueryDialect")
 
-# sqlalchemy's dialect-testing machinery wants an entry like this. It is wack. :(
+# sqlalchemy's dialect-testing machinery wants an entry like this.
+# This seems to be based around dialects maybe having multiple drivers
+# and wanting to test drover-specific URLs, but doesn't seem to make
+# much sense for dialects with only one driver. ¯\_(ツ)_/¯
 registry.register(
     "bigquery.bigquery", "sqlalchemy_bigquery", "BigQueryDialect"
 )
