@@ -154,7 +154,7 @@ def test_get_view_names(
     ],
 )
 def test__remove_type_from_empty_in(inp, outp):
-    from sqlalchemy_bigquery.sqlalchemy_bigquery import BigQueryExecutionContext
+    from sqlalchemy_bigquery.base import BigQueryExecutionContext
 
     r = BigQueryExecutionContext._BigQueryExecutionContext__remove_type_from_empty_in
     assert r(None, inp) == outp

@@ -23,7 +23,7 @@ from decimal import Decimal
 import pytest
 import sqlalchemy
 
-import sqlalchemy_bigquery.sqlalchemy_bigquery
+import sqlalchemy_bigquery
 
 from conftest import (
     setup_table,
@@ -141,7 +141,7 @@ def test_typed_parameters(faux_conn, type_, val, btype, vrep):
         table.insert()
         .values(**{col_name: sqlalchemy.literal(val, type_)})
         .compile(
-            dialect=sqlalchemy_bigquery.sqlalchemy_bigquery.BigQueryDialect(),
+            dialect=sqlalchemy_bigquery.BigQueryDialect(),
             compile_kwargs=dict(literal_binds=True),
         )
     )

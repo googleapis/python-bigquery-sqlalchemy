@@ -30,9 +30,9 @@ from sqlalchemy.testing.plugin.pytestplugin import (
 )
 
 import google.cloud.bigquery.dbapi.connection
-import sqlalchemy_bigquery.sqlalchemy_bigquery
+import sqlalchemy_bigquery.base
 
-sqlalchemy_bigquery.sqlalchemy_bigquery.BigQueryDialect.preexecute_autoincrement_sequences = True
+sqlalchemy_bigquery.BigQueryDialect.preexecute_autoincrement_sequences = True
 google.cloud.bigquery.dbapi.connection.Connection.rollback = lambda self: None
 
 _where = re.compile(r"\s+WHERE\s+", re.IGNORECASE).search
@@ -46,7 +46,7 @@ _where = re.compile(r"\s+WHERE\s+", re.IGNORECASE).search
 
 
 def visit_delete(self, delete_stmt, *args, **kw):
-    text = super(sqlalchemy_bigquery.sqlalchemy_bigquery.BigQueryCompiler, self).visit_delete(
+    text = super(sqlalchemy_bigquery.base.BigQueryCompiler, self).visit_delete(
         delete_stmt, *args, **kw
     )
 
@@ -58,7 +58,7 @@ def visit_delete(self, delete_stmt, *args, **kw):
     return text
 
 
-sqlalchemy_bigquery.sqlalchemy_bigquery.BigQueryCompiler.visit_delete = visit_delete
+sqlalchemy_bigquery.base.BigQueryCompiler.visit_delete = visit_delete
 
 
 def pytest_sessionstart(session):
