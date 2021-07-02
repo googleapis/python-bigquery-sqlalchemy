@@ -34,3 +34,16 @@ from .base import (
     NUMERIC,
     BIGNUMERIC,
     )
+
+try:
+    import pybigquery
+except ImportError:
+    pass
+else:
+    if not hasattr(pybigquery, '__version__'):
+        import warnings
+        warnings.warn(
+            "Obsolete pybigquery is installed, which is likely to\n"
+            "interfere with sqlalchemy_bigquery.\n"
+            "pybigquery should be uninstalled.",
+            stacklevel=2)
