@@ -35,7 +35,7 @@ description = "SQLAlchemy dialect for BigQuery"
 release_status = "Development Status :: 4 - Beta"
 
 package_root = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(package_root, "sqlalchemy_bigquery", "__init__.py")) as f:
+with open(os.path.join(package_root, "sqlalchemy_bigquery", "version.py")) as f:
     version = re.search('__version__ = "([^\"]+)"', f.read()).group(1)
 
 
