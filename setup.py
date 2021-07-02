@@ -74,9 +74,4 @@ setup(
     ],
     python_requires=">=3.6, <3.10",
     tests_require=["pytz"],
-    entry_points={
-        "sqlalchemy.dialects": [
-            "bigquery = pybigquery.sqlalchemy_bigquery:BigQueryDialect"
-        ]
-    },
 )
