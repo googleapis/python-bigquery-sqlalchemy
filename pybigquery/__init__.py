@@ -16,3 +16,17 @@
 # COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+__version__ = "xxx"
+
+import sys
+import sqlalchemy_bigquery
+from sqlalchemy_bigquery import api, base, _helpers, parse_url, requirements
+
+sys.modules[__name__] = sqlalchemy_bigquery
+sys.modules[__name__ + ".sqlalchemy_bigquery"] = base
+sys.modules["sqlalchemy_bigquery.sqlalchemy_bigquery"] = base
+sqlalchemy_bigquery.sqlalchemy_bigquery = base
+for module in api, base, _helpers, parse_url, requirements:
+    sys.modules[module.__name__.replace("sqlalchemy_bigquery", "pybigquery")] = module
+
+del sqlalchemy_bigquery, api, base, _helpers, parse_url, requirements
