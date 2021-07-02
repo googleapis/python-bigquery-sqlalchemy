@@ -22,7 +22,9 @@ import mock
 
 def test_dry_run():
 
-    with mock.patch("sqlalchemy_bigquery._helpers.create_bigquery_client") as create_client:
+    with mock.patch(
+        "sqlalchemy_bigquery._helpers.create_bigquery_client"
+    ) as create_client:
         import sqlalchemy_bigquery.api
 
         client = sqlalchemy_bigquery.api.ApiClient("/my/creds", "mars")

@@ -30,7 +30,10 @@ import google.cloud.bigquery.schema
 import google.cloud.bigquery.table
 import google.cloud.bigquery.dbapi.cursor
 
-from sqlalchemy_bigquery._helpers import substitute_re_method, substitute_string_re_method
+from sqlalchemy_bigquery._helpers import (
+    substitute_re_method,
+    substitute_string_re_method,
+)
 
 
 class Connection:

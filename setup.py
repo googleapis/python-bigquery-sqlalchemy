@@ -36,7 +36,7 @@ release_status = "Development Status :: 4 - Beta"
 
 package_root = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(package_root, "sqlalchemy_bigquery", "version.py")) as f:
-    version = re.search('__version__ = "([^\"]+)"', f.read()).group(1)
+    version = re.search('__version__ = "([^"]+)"', f.read()).group(1)
 
 
 def readme():
@@ -79,11 +79,8 @@ setup(
     python_requires=">=3.6, <3.10",
     tests_require=["pytz"],
     entry_points={
-        "sqlalchemy.dialects": [
-            "bigquery = sqlalchemy_bigquery:BigQueryDialect"
-        ]
+        "sqlalchemy.dialects": ["bigquery = sqlalchemy_bigquery:BigQueryDialect"]
     },
-
     # Document that this replaces pybigquery, however, this isn't
     # enforced by pip, because doing so would allow rogue packages to
     # obsolete legitimate ones.
