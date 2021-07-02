@@ -105,6 +105,7 @@ def default(session):
         CURRENT_DIRECTORY / "testing" / f"constraints-{session.python}.txt"
     )
     session.install("mock", "pytest", "pytest-cov", "-c", constraints_path)
+    session.install("sqlalchemy-bigquery-1.0.0a1.tar.gz")
 
     install_alembic_for_python_38(session, constraints_path)
     session.install("-e", ".", "-c", constraints_path)
