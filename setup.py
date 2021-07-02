@@ -19,12 +19,13 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import io
+import os
+import re
 from setuptools import setup
 
 # Package metadata.
 
 name = "sqlalchemy-bigquery"
-version = "0.9.0"
 description = "SQLAlchemy dialect for BigQuery"
 
 # Should be one of:
@@ -32,6 +33,9 @@ description = "SQLAlchemy dialect for BigQuery"
 # 'Development Status :: 4 - Beta'
 # 'Development Status :: 5 - Production/Stable'
 release_status = "Development Status :: 4 - Beta"
+
+with open(os.path.join("sqlalchemy_bigquery", "__init__.py")) as f:
+    version = re.search('__version__ = "([^\"]+)"', f.read()).group(1)
 
 
 def readme():
