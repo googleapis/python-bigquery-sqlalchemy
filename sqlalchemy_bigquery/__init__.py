@@ -41,7 +41,7 @@ try:
     import pybigquery
 except ImportError:
     pass
-else:
+else:  # pragma: NO COVER
     if not hasattr(pybigquery, '__version__'):
         import warnings
         warnings.warn(
