@@ -31,7 +31,7 @@ description = "SQLAlchemy dialect for BigQuery"
 # 'Development Status :: 3 - Alpha'
 # 'Development Status :: 4 - Beta'
 # 'Development Status :: 5 - Production/Stable'
-release_status = "Development Status :: 4 - Beta"
+release_status = "Development Status :: 7 - Inactive"
 
 
 def readme():
@@ -69,6 +69,7 @@ setup(
         "google-auth>=1.24.0,<2.0dev",  # Work around pip wack.
         "google-cloud-bigquery>=2.17.0",
         "sqlalchemy>=1.2.0,<1.5.0dev",
+        "sqlalchemy-bigquery",
         "future",
     ],
     python_requires=">=3.6, <3.10",
