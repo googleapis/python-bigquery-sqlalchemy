@@ -78,4 +78,9 @@ setup(
             "bigquery = sqlalchemy_bigquery:BigQueryDialect"
         ]
     },
+
+    # Document that this replaces pybigquery, however, this isn't
+    # enforced by pip, because doing so would allow rogue packages to
+    # obsolete legitimate ones.
+    obsoletes=["pybigquery"],
 )
