@@ -21,7 +21,7 @@ def mock_bigquery_client():
 
 @pytest.fixture
 def mock_connection(monkeypatch, mock_bigquery_client):
-    from sqlalchemy_bigquery import sqlalchemy_bigquery
+    import sqlalchemy_bigquery
 
     def mock_connect_args(*args, **kwargs):
         return ([mock_bigquery_client], {})
