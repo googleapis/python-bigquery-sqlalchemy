@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (c) 2017 The PyBigQuery Authors
+# Copyright (c) 2017 The sqlalchemy-bigquery Authors
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of
 # this software and associated documentation files (the "Software"), to deal in
@@ -34,7 +34,8 @@ description = "SQLAlchemy dialect for BigQuery"
 # 'Development Status :: 5 - Production/Stable'
 release_status = "Development Status :: 4 - Beta"
 
-with open(os.path.join("sqlalchemy_bigquery", "__init__.py")) as f:
+package_root = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(package_root, "sqlalchemy_bigquery", "__init__.py")) as f:
     version = re.search('__version__ = "([^\"]+)"', f.read()).group(1)
 
 
