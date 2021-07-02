@@ -33,6 +33,10 @@ DEFAULT_PYTHON_VERSION = "3.8"
 SYSTEM_TEST_PYTHON_VERSIONS = ["3.8", "3.9"]
 UNIT_TEST_PYTHON_VERSIONS = ["3.6", "3.7", "3.8", "3.9"]
 
+TEMP_SQLALCHEMY_BIGQUERY_TARBALL = (
+    "http://riversnake.com/sqlalchemy-bigquery-1.0.0a1.tar.gz"
+)
+
 CURRENT_DIRECTORY = pathlib.Path(__file__).parent.absolute()
 
 # 'docfx' is excluded since it only needs to run in 'docs-presubmit'
@@ -50,7 +54,6 @@ nox.options.sessions = [
 # Error if a python version is missing
 nox.options.stop_on_first_error = True
 nox.options.error_on_missing_interpreters = True
-
 
 @nox.session(python=DEFAULT_PYTHON_VERSION)
 def lint(session):
@@ -105,7 +108,7 @@ def default(session):
         CURRENT_DIRECTORY / "testing" / f"constraints-{session.python}.txt"
     )
     session.install("mock", "pytest", "pytest-cov", "-c", constraints_path)
-    session.install("sqlalchemy-bigquery-1.0.0a1.tar.gz")
+    session.install(TEMP_SQLALCHEMY_BIGQUERY_TARBALL)
 
     install_alembic_for_python_38(session, constraints_path)
     session.install("-e", ".", "-c", constraints_path)
@@ -160,6 +163,7 @@ def system(session):
     # Install all test dependencies, then install this package into the
     # virtualenv's dist-packages.
     session.install("mock", "pytest", "google-cloud-testutils", "-c", constraints_path)
+    session.install(TEMP_SQLALCHEMY_BIGQUERY_TARBALL)
     install_alembic_for_python_38(session, constraints_path)
     session.install("-e", ".", "-c", constraints_path)
 
@@ -209,6 +213,7 @@ def compliance(session):
         "-c",
         constraints_path,
     )
+    session.install(TEMP_SQLALCHEMY_BIGQUERY_TARBALL)
     session.install("-e", ".", "-c", constraints_path)
 
     session.run(
@@ -243,6 +248,7 @@ def cover(session):
 def docs(session):
     """Build the docs for this library."""
 
+    session.install(TEMP_SQLALCHEMY_BIGQUERY_TARBALL)
     session.install("-e", ".")
     session.install("sphinx==4.0.1", "alabaster", "recommonmark")
 
@@ -265,6 +271,7 @@ def docs(session):
 def docfx(session):
     """Build the docfx yaml files for this library."""
 
+    session.install(TEMP_SQLALCHEMY_BIGQUERY_TARBALL)
     session.install("-e", ".")
     session.install(
         "sphinx==4.0.1", "alabaster", "recommonmark", "gcp-sphinx-docfx-yaml"
