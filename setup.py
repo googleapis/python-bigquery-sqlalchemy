@@ -25,7 +25,19 @@ from setuptools import setup
 
 name = "pybigquery"
 version = "0.9.0"
-description = "SQLAlchemy dialect for BigQuery"
+sqlalchemy_bigquery = (
+    "`sqlalchemy-bigquery <https://pypi.org/project/sqlalchemy-bigquery/>`_"
+)
+description = f"""
+Obsolete SQLAlchemy dialect for BigQuery
+========================================
+
+This package has been replaced by the {sqlalchemy_bigquery} package.
+
+`pybigquery is just a facade that delegates to {sqlalchemy_bigquery}.
+
+You should use {sqlalchemy_bigquery} instead.
+"""
 
 # Should be one of:
 # 'Development Status :: 3 - Alpha'
