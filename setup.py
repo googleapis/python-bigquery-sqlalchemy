@@ -19,12 +19,16 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import io
+import os
+import re
 from setuptools import setup
 
 # Package metadata.
 
 name = "pybigquery"
-version = "0.9.0"
+package_root = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(package_root, "pybigquery", "version.py")) as f:
+    version = re.search('__version__ = "([^"]+)"', f.read()).group(1)
 sqlalchemy_bigquery = (
     "`sqlalchemy-bigquery <https://pypi.org/project/sqlalchemy-bigquery/>`_"
 )
