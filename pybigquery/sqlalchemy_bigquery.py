@@ -742,7 +742,7 @@ class BigQueryDialect(DefaultDialect):
 
             try:
                 tables = client.list_tables(
-                    dataset.reference, max_results=self.list_tables_page_size
+                    dataset.reference, page_size=self.list_tables_page_size
                 )
                 for table in tables:
                     if table_type == table.table_type:
