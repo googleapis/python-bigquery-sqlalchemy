@@ -55,6 +55,7 @@ nox.options.sessions = [
 nox.options.stop_on_first_error = True
 nox.options.error_on_missing_interpreters = True
 
+
 @nox.session(python=DEFAULT_PYTHON_VERSION)
 def lint(session):
     """Run linters.
