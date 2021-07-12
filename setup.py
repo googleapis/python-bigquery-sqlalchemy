@@ -74,6 +74,10 @@ setup(
         "sqlalchemy>=1.2.0,<1.5.0dev",
         "future",
     ],
+    extras_require=dict(
+        all=['GeoAlchemy2', 'shapely'],
+        geography=['GeoAlchemy2', 'shapely'],
+    ),
     python_requires=">=3.6, <3.10",
     tests_require=["pytz"],
     entry_points={
