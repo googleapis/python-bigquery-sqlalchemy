@@ -84,7 +84,7 @@ def lint_setup_py(session):
 
 def install_alembic_for_python_38(session, constraints_path):
     """
-    install alembic for Python 3.8 unit and system tests
+    Install alembic for Python 3.8 unit and system tests
 
     We do not require alembic and most tests should run without it, however
 
@@ -96,6 +96,17 @@ def install_alembic_for_python_38(session, constraints_path):
     """
     if session.python == "3.8":
         session.install("alembic", "-c", constraints_path)
+
+
+def install_geoalchemy_for_python_39(session, constraints_path):
+    """
+    Install geoalchemy2 for Python 3.9 system tests
+
+    We do not require geoalchemy2 and most tests should run without
+    it, however we do test geography support.
+    """
+    if session.python == "3.9":
+        session.install("GeoAlchemy2", "shapely", "-c", constraints_path)
 
 
 def default(session):
@@ -160,6 +171,7 @@ def system(session):
     # virtualenv's dist-packages.
     session.install("mock", "pytest", "google-cloud-testutils", "-c", constraints_path)
     install_alembic_for_python_38(session, constraints_path)
+    install_geoalchemy_for_python_39(session, constraints_path)
     session.install("-e", ".", "-c", constraints_path)
 
     # Run py.test against the system tests.
