@@ -17,7 +17,7 @@ class WKB(geoalchemy2.WKBElement):
 
     @property
     def wkt(self):
-        return wkt.dumps(wkb.loads(self.data))
+        return WKT(wkt.dumps(wkb.loads(self.data)))
 
 
 class WKT(geoalchemy2.WKTElement):
@@ -27,6 +27,9 @@ class WKT(geoalchemy2.WKTElement):
     def __init__(self, data):
         super().__init__(data, SRID, True)
 
+    @property
+    def wkb(self):
+        return WKB(wkb.dumps(wkt.loads(self.data)))
 
 
 class GEOGRAPHY(geoalchemy2.Geography):
