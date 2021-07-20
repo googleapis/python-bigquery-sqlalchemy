@@ -56,7 +56,7 @@ from .parse_url import parse_url
 from pybigquery import _helpers
 
 try:
-    from .geography import GEOGRAPHY
+    from geoalchemy2 import Geography
 except ImportError:
     pass
 
@@ -148,7 +148,7 @@ NUMERIC = _type_map["NUMERIC"]
 BIGNUMERIC = _type_map["NUMERIC"]
 
 try:
-    _type_map['GEOGRAPHY'] = GEOGRAPHY
+    _type_map['Geography'] = Geography
 except NameError:
     pass
 
