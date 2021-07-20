@@ -58,11 +58,13 @@ __all__ = [
 ]
 
 try:
-    from .geography import Geography, WKT
+    from geoalchemy2 import Geography  # noqa
 except ImportError:
     pass
 else:
-    __all__.extend(['GEOGRAPHY', 'WKT'])
+    from .geography import WKT  # noqa
+
+    __all__.extend(["Geography", "WKT"])
 
 try:
     import pybigquery
