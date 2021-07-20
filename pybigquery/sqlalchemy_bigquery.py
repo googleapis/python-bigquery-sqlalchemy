@@ -403,6 +403,10 @@ class BigQueryCompiler(SQLCompiler):
         flags=re.VERBOSE | re.IGNORECASE,
     )
 
+    __st_geogfromtext = re.compile(
+        'st_geogfromtext[(]%[(]([^:]*):geography[)]s[)]$',
+        re.IGNORECASE).match
+
     def visit_bindparam(
         self,
         bindparam,
@@ -435,6 +439,10 @@ class BigQueryCompiler(SQLCompiler):
 
             if type_.scale is None and t.exponent < 0:
                 type_.scale = -t.exponent
+        elif getattr(type_, 'name', None) == 'geography':
+            m = self.__st_geogfromtext(param)
+            if m:
+                return f'ST_GEOGFROMTEXT(%({m.group(1)}:STRING)s)'
 
         bq_type = self.dialect.type_compiler.process(type_)
         if bq_type[-1] == ">" and bq_type.startswith("ARRAY<"):
@@ -512,6 +520,12 @@ class BigQueryTypeCompiler(GenericTypeCompiler):
         ) + suffix
 
     visit_DECIMAL = visit_NUMERIC
+
+    def visit_user_defined(self, type_, **kw):
+        spec = type_.get_col_spec(**kw)
+        if spec == 'geography(GEOMETRY,-1)':
+            spec = 'GEOGRAPHY'
+        return spec
 
 
 class BigQueryDDLCompiler(DDLCompiler):
