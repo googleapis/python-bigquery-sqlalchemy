@@ -11,6 +11,9 @@ def test_geoalchemy2_core(bigquery_dataset):
       arguments.
     - Bigquery doesn't have ST_BUFFER
     """
+
+    # Connect to the DB
+    
     from sqlalchemy import create_engine
     engine = create_engine(f'bigquery:///{bigquery_dataset}')
 
@@ -21,7 +24,7 @@ def test_geoalchemy2_core(bigquery_dataset):
 
     metadata = MetaData()
     lake_table = Table(
-        'lake',
+        'lake_core',
         metadata,
         Column('name', String),
         Column('geog', Geography)
@@ -93,3 +96,90 @@ def test_geoalchemy2_core(bigquery_dataset):
         select([lake_table.c.geog.st_area()], lake_table.c.name == 'test2')
     ))[0][0]) == 49452374328
 
+def test_geoalchemy2_orm(bigquery_dataset):
+    """Make sure GeoAlchemy 2 ORM Tutorial works as adapted to only having geometry
+
+    https://geoalchemy-2.readthedocs.io/en/latest/orm_tutorial.html
+    """
+
+    # Connect to the DB
+
+    from sqlalchemy import create_engine
+    engine = create_engine(f'bigquery:///{bigquery_dataset}')
+
+    # Declare a Mapping
+
+    from sqlalchemy.ext.declarative import declarative_base
+    from sqlalchemy import Column, Integer, String
+    from geoalchemy2 import Geography
+
+    Base = declarative_base()
+
+    class Lake(Base):
+        __tablename__ = 'lake_orm'
+        # The ORM insists on an id, but bigquery doesn't auto-assign
+        # ids, so we'll have to provide them below.
+        id = Column(Integer, primary_key=True)
+        name = Column(String)
+        geog = Column(Geography)
+
+    # Create the Table in the Database
+
+    Lake.__table__.create(engine)
+
+    # Create an Instance of the Mapped Class
+
+    lake = Lake(id=1, name='Majeur', geog='POLYGON((0 0,1 0,1 1,0 1,0 0))')
+
+    # Create a Session
+
+    from sqlalchemy.orm import sessionmaker
+    Session = sessionmaker(bind=engine)
+
+    session = Session()
+
+    # Add New Objects
+
+    session.add(lake)
+    session.commit()
+
+    our_lake = session.query(Lake).filter_by(name='Majeur').first()
+    assert our_lake.name == 'Majeur'
+
+    from geoalchemy2 import WKBElement
+    assert isinstance(our_lake.geog, WKBElement)
+
+    session.add_all([
+        Lake(id=2, name='Garde', geog='POLYGON((1 0,3 0,3 2,1 2,1 0))'),
+        Lake(id=3, name='Orta', geog='POLYGON((3 0,6 0,6 3,3 3,3 0))')
+    ])
+
+    session.commit()
+
+    # Query
+
+    query = session.query(Lake).order_by(Lake.name)
+    assert [lake.name for lake in query] == ['Garde', 'Majeur', 'Orta']
+
+    assert [lake.name
+            for lake in session.query(Lake).order_by(Lake.name).all()
+            ] == ['Garde', 'Majeur', 'Orta']
+
+    # Make Spatial Queries
+
+    from sqlalchemy import func
+    from sqlalchemy_bigquery import WKT
+
+    query = session.query(Lake).filter(
+        func.ST_Contains(Lake.geog, WKT('POINT(4 1)')))
+
+    assert [lake.name for lake in query] == ['Orta']
+
+    query = (session.query(Lake)
+             .filter(Lake.geog.ST_Intersects(WKT('LINESTRING(2 1,4 1)')))
+             .order_by(Lake.name)
+             )
+    assert [lake.name for lake in query] == ['Garde', 'Orta']
+
+    lake = session.query(Lake).filter_by(name='Garde').one()
+    assert session.scalar(lake.geog.ST_Intersects(WKT('LINESTRING(2 1,4 1)')))
