@@ -12,16 +12,15 @@ def WKT(value):
     return element
 
 
-@sqlalchemy.ext.compiler.compiles(geoalchemy2.functions.GenericFunction, 'bigquery')
+@sqlalchemy.ext.compiler.compiles(geoalchemy2.functions.GenericFunction, "bigquery")
 def _fixup_st_arguments(element, compiler, **kw):
     argument_types = _argument_types.get(element.name.lower())
     if argument_types:
         for argument_type, argument in zip(argument_types, element.clauses.clauses):
-            if (isinstance(argument, BindParameter) and
-                (argument.type is not argument_type or
-                 not isinstance(argument.type, argument_type)
-                 )
-                ):
+            if isinstance(argument, BindParameter) and (
+                argument.type is not argument_type
+                or not isinstance(argument.type, argument_type)
+            ):
                 argument.type = argument_type()
 
     return compiler.visit_function(element, **kw)
