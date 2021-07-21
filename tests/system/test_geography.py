@@ -5,9 +5,6 @@ def test_geoalchemy2_core(bigquery_dataset):
 
     Note:
 
-    - BigQuery doesn't implicitly convert WKT strings to
-      geography when calling geography functions that want geography
-      arguments.
     - Bigquery doesn't have ST_BUFFER
     """
 
@@ -58,11 +55,10 @@ def test_geoalchemy2_core(bigquery_dataset):
     # Spatial query
 
     from sqlalchemy import func
-    from sqlalchemy_bigquery import WKT
 
     [[result]] = conn.execute(
         select(
-            [lake_table.c.name], func.ST_Contains(lake_table.c.geog, WKT("POINT(4 1)"))
+            [lake_table.c.name], func.ST_Contains(lake_table.c.geog, "POINT(4 1)")
         )
     )
     assert result == "Orta"
@@ -94,7 +90,7 @@ def test_geoalchemy2_core(bigquery_dataset):
 
     conn.execute(
         lake_table.insert().values(
-            name="test2", geog=WKT("POLYGON((1 0,3 0,3 2,1 2,1 0))")
+            name="test2", geog="POLYGON((1 0,3 0,3 2,1 2,1 0))"
         )
     )
     assert (
@@ -188,21 +184,20 @@ def test_geoalchemy2_orm(bigquery_dataset):
     # Make Spatial Queries
 
     from sqlalchemy import func
-    from sqlalchemy_bigquery import WKT
 
-    query = session.query(Lake).filter(func.ST_Contains(Lake.geog, WKT("POINT(4 1)")))
+    query = session.query(Lake).filter(func.ST_Contains(Lake.geog, "POINT(4 1)"))
 
     assert [lake.name for lake in query] == ["Orta"]
 
     query = (
         session.query(Lake)
-        .filter(Lake.geog.ST_Intersects(WKT("LINESTRING(2 1,4 1)")))
+        .filter(Lake.geog.ST_Intersects("LINESTRING(2 1,4 1)"))
         .order_by(Lake.name)
     )
     assert [lake.name for lake in query] == ["Garde", "Orta"]
 
     lake = session.query(Lake).filter_by(name="Garde").one()
-    assert session.scalar(lake.geog.ST_Intersects(WKT("LINESTRING(2 1,4 1)")))
+    assert session.scalar(lake.geog.ST_Intersects("LINESTRING(2 1,4 1)"))
 
     # Use Other Spatial Functions
     query = session.query(Lake.name, func.ST_Area(Lake.geog).label("area")).order_by(
