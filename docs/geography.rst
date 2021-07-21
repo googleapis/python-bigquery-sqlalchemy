@@ -40,10 +40,9 @@ binary (WKB) representations
 Geography data is typically represented in Python as text strings in
 WKT format or as `WKB` objects, which contain binary data in WKB
 format.  Querying geographic data returns `WKB` objects and `WKB`
-objects may be used in queries.  When using text representations in
-queries, the text must be converted to geography data in SQL using the
-`ST_GEOGFROMTEXT` SQL function, or by wrapping the value in a `WKT`
-objects (the text version or `WKB` objects) in Python.
+objects may be used in queries.  When
+calling spatial functions that expect geographic arguments, text
+arguments are automatically coerced to geography.
 
 Inserting data
 ==============
@@ -66,10 +65,15 @@ Queries
 =======
 
 When performing spacial queries, and geography objects are expected,
-you need to pass WKB or WKT objects::
+you can to pass `WKB` or `WKT` objects::
 
   query = session.query(Lake).filter(
-      func.ST_Contains(Lake.geom, WKT('POINT(4 1)')))
+      func.ST_Contains(Lake.geom, some_wkb_or_wkt))
+
+Or you can pass strings in WKT format:
+
+  query = session.query(Lake).filter(
+      func.ST_Contains(Lake.geom, 'POINT(4 1)'))
 
 In this example, `Lake.geom` is a geography column.  The point
 constant needs to be wrapped in a `WKT` object.
