@@ -148,7 +148,7 @@ NUMERIC = _type_map["NUMERIC"]
 BIGNUMERIC = _type_map["NUMERIC"]
 
 try:
-    _type_map["Geography"] = Geography
+    _type_map["GEOGRAPHY"] = Geography
 except NameError:
     pass
 
