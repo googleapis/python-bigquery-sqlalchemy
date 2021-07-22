@@ -57,9 +57,7 @@ def test_geoalchemy2_core(bigquery_dataset):
     from sqlalchemy import func
 
     [[result]] = conn.execute(
-        select(
-            [lake_table.c.name], func.ST_Contains(lake_table.c.geog, "POINT(4 1)")
-        )
+        select([lake_table.c.name], func.ST_Contains(lake_table.c.geog, "POINT(4 1)"))
     )
     assert result == "Orta"
 
@@ -89,9 +87,7 @@ def test_geoalchemy2_core(bigquery_dataset):
     # normally wouldn't want to.
 
     conn.execute(
-        lake_table.insert().values(
-            name="test2", geog="POLYGON((1 0,3 0,3 2,1 2,1 0))"
-        )
+        lake_table.insert().values(name="test2", geog="POLYGON((1 0,3 0,3 2,1 2,1 0))")
     )
     assert (
         int(
