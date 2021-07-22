@@ -59,6 +59,8 @@ try:
     from geoalchemy2 import Geography
 except ImportError:
     pass
+else:
+    from .geography import WKT  # noqa
 
 FIELD_ILLEGAL_CHARACTERS = re.compile(r"[^\w]+")
 
