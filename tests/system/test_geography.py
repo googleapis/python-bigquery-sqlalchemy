@@ -34,13 +34,13 @@ def test_geoalchemy2_core(bigquery_dataset):
     engine = create_engine(f"bigquery:///{bigquery_dataset}")
 
     from sqlalchemy import Table, Column, String, MetaData
-    from geoalchemy2 import Geography
+    from pybigquery.sqlalchemy_bigquery import GEOGRAPHY
 
     # Create the Table
 
     metadata = MetaData()
     lake_table = Table(
-        "lake_core", metadata, Column("name", String), Column("geog", Geography)
+        "lake_core", metadata, Column("name", String), Column("geog", GEOGRAPHY)
     )
 
     lake_table.create(engine)
@@ -136,7 +136,7 @@ def test_geoalchemy2_orm(bigquery_dataset):
 
     from sqlalchemy.ext.declarative import declarative_base
     from sqlalchemy import Column, Integer, String
-    from geoalchemy2 import Geography
+    from pybigquery.sqlalchemy_bigquery import GEOGRAPHY
 
     Base = declarative_base()
 
@@ -146,7 +146,7 @@ def test_geoalchemy2_orm(bigquery_dataset):
         # ids, so we'll have to provide them below.
         id = Column(Integer, primary_key=True)
         name = Column(String)
-        geog = Column(Geography)
+        geog = Column(GEOGRAPHY)
 
     # Create the Table in the Database
 
@@ -240,7 +240,7 @@ def test_geoalchemy2_orm_w_relationship(bigquery_dataset):
     engine = create_engine(f"bigquery:///{bigquery_dataset}")
 
     from sqlalchemy import Column, Integer, String
-    from geoalchemy2 import Geography
+    from pybigquery.sqlalchemy_bigquery import GEOGRAPHY
 
     from sqlalchemy.ext.declarative import declarative_base
 
@@ -249,7 +249,7 @@ def test_geoalchemy2_orm_w_relationship(bigquery_dataset):
     class Treasure(Base):
         __tablename__ = "treasure"
         id = Column(Integer, primary_key=True)
-        geog = Column(Geography)
+        geog = Column(GEOGRAPHY)
 
     Treasure.__table__.create(engine)
 
@@ -259,7 +259,7 @@ def test_geoalchemy2_orm_w_relationship(bigquery_dataset):
         __tablename__ = "lake_rel"
         id = Column(Integer, primary_key=True)
         name = Column(String)
-        geog = Column(Geography)
+        geog = Column(GEOGRAPHY)
         treasures = relationship(
             "Treasure",
             primaryjoin="func.ST_Contains(foreign(Lake.geog), Treasure.geog).as_comparison(1, 2)",

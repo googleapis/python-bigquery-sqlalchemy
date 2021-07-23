@@ -17,18 +17,83 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-from geoalchemy2 import WKTElement
+from geoalchemy2 import WKBElement, WKTElement
+from geoalchemy2.shape import to_shape
 import geoalchemy2.functions
 import sqlalchemy.ext.compiler
 from sqlalchemy.sql.elements import BindParameter
+from sqlalchemy import func
 
 SRID = 4326  # WGS84
 
 
-def WKT(value):
-    element = WKTElement(value, SRID, True)
-    element.geom_from_extended_version = "ST_GeogFromText"
-    return element
+class WKB(geoalchemy2.WKBElement):
+
+    geom_from_extended_version = 'ST_GeogFromWKB'
+
+    def __init__(self, data, srid=SRID, extended=True):
+        if srid != SRID:
+            raise AssertionError("Bad srid", srid)
+        if not extended:
+            raise AssertionError("Extended must be True.")
+        super().__init__(data, srid, True)
+
+    @property
+    def wkt(self):
+        return WKT(wkt.dumps(wkb.loads(self.data)))
+
+
+class WKT(geoalchemy2.WKTElement):
+
+    geom_from_extended_version = 'ST_GeogFromText'
+
+    def __init__(self, data):
+        super().__init__(data, SRID, True)
+
+    @property
+    def wkb(self):
+        return WKB(wkb.dumps(wkt.loads(self.data)))
+
+
+class GEOGRAPHY(geoalchemy2.Geography):
+
+    ElementType = WKB
+
+    def __init__(self):
+        super().__init__(
+            geometry_type=None,
+            spatial_index=False,
+            srid=SRID,
+        )
+        self.extended = True
+
+    # Un-inherit the bind function that adds an ST_GeogFromText.
+    # It's unnecessary and causes BigQuery to error.
+    #
+    # Some things to note about this:
+    #
+    # 1. bind_expression can't always know the value.  When multiple
+    #    rows are being inserted, the values may be different in each
+    #    row.  As a consequence, we have to treat all the values as WKT.
+    #
+    # 2. This applies equally to explicitly converting with
+    #    st_geogfromtext, or implicitly with the geography parameter
+    #    conversion.
+    #
+    # 3. We handle different types using bind_processor, below.
+    #
+    bind_expression = sqlalchemy.sql.type_api.TypeEngine.bind_expression
+
+    def bind_processor(self, dialect):
+        def process(bindvalue):
+            if isinstance(bindvalue, WKTElement):
+                return bindvalue.data
+            elif isinstance(bindvalue, WKBElement):
+                return to_shape(bindvalue).wkt
+            else:
+                return bindvalue
+
+        return process
 
 
 @sqlalchemy.ext.compiler.compiles(geoalchemy2.functions.GenericFunction, "bigquery")
@@ -46,50 +111,52 @@ def _fixup_st_arguments(element, compiler, **kw):
 
 
 _argument_types = dict(
-    st_area=(geoalchemy2.Geography,),
-    st_asbinary=(geoalchemy2.Geography,),
-    st_asgeojson=(geoalchemy2.Geography,),
-    st_astext=(geoalchemy2.Geography,),
-    st_boundary=(geoalchemy2.Geography,),
-    st_centroid=(geoalchemy2.Geography,),
-    st_centroid_agg=(geoalchemy2.Geography,),
-    st_closestpoint=(geoalchemy2.Geography, geoalchemy2.Geography,),
-    st_clusterdbscan=(geoalchemy2.Geography,),
-    st_contains=(geoalchemy2.Geography, geoalchemy2.Geography,),
-    st_convexhull=(geoalchemy2.Geography,),
-    st_coveredby=(geoalchemy2.Geography, geoalchemy2.Geography,),
-    st_covers=(geoalchemy2.Geography, geoalchemy2.Geography,),
-    st_difference=(geoalchemy2.Geography, geoalchemy2.Geography,),
-    st_dimension=(geoalchemy2.Geography,),
-    st_disjoint=(geoalchemy2.Geography, geoalchemy2.Geography,),
-    st_distance=(geoalchemy2.Geography, geoalchemy2.Geography,),
-    st_dump=(geoalchemy2.Geography,),
-    st_dwithin=(geoalchemy2.Geography, geoalchemy2.Geography,),
-    st_endpoint=(geoalchemy2.Geography,),
-    st_equals=(geoalchemy2.Geography, geoalchemy2.Geography,),
-    st_exteriorring=(geoalchemy2.Geography,),
-    st_geohash=(geoalchemy2.Geography,),
-    st_intersection=(geoalchemy2.Geography, geoalchemy2.Geography,),
-    st_intersects=(geoalchemy2.Geography, geoalchemy2.Geography,),
-    st_intersectsbox=(geoalchemy2.Geography,),
-    st_iscollection=(geoalchemy2.Geography,),
-    st_isempty=(geoalchemy2.Geography,),
-    st_length=(geoalchemy2.Geography,),
-    st_makeline=(geoalchemy2.Geography, geoalchemy2.Geography,),
-    st_makepolygon=(geoalchemy2.Geography, geoalchemy2.Geography,),
-    st_makepolygonoriented=(geoalchemy2.Geography,),
-    st_maxdistance=(geoalchemy2.Geography, geoalchemy2.Geography,),
-    st_npoints=(geoalchemy2.Geography,),
-    st_numpoints=(geoalchemy2.Geography,),
-    st_perimeter=(geoalchemy2.Geography,),
-    st_pointn=(geoalchemy2.Geography,),
-    st_simplify=(geoalchemy2.Geography,),
-    st_snaptogrid=(geoalchemy2.Geography,),
-    st_startpoint=(geoalchemy2.Geography,),
-    st_touches=(geoalchemy2.Geography, geoalchemy2.Geography,),
-    st_union=(geoalchemy2.Geography, geoalchemy2.Geography,),
-    st_union_agg=(geoalchemy2.Geography,),
-    st_within=(geoalchemy2.Geography, geoalchemy2.Geography,),
-    st_x=(geoalchemy2.Geography,),
-    st_y=(geoalchemy2.Geography,),
+    st_area=(GEOGRAPHY,),
+    st_asbinary=(GEOGRAPHY,),
+    st_asgeojson=(GEOGRAPHY,),
+    st_astext=(GEOGRAPHY,),
+    st_boundary=(GEOGRAPHY,),
+    st_centroid=(GEOGRAPHY,),
+    st_centroid_agg=(GEOGRAPHY,),
+    st_closestpoint=(GEOGRAPHY, GEOGRAPHY,),
+    st_clusterdbscan=(GEOGRAPHY,),
+    st_contains=(GEOGRAPHY, GEOGRAPHY,),
+    st_convexhull=(GEOGRAPHY,),
+    st_coveredby=(GEOGRAPHY, GEOGRAPHY,),
+    st_covers=(GEOGRAPHY, GEOGRAPHY,),
+    st_difference=(GEOGRAPHY, GEOGRAPHY,),
+    st_dimension=(GEOGRAPHY,),
+    st_disjoint=(GEOGRAPHY, GEOGRAPHY,),
+    st_distance=(GEOGRAPHY, GEOGRAPHY,),
+    st_dump=(GEOGRAPHY,),
+    st_dwithin=(GEOGRAPHY, GEOGRAPHY,),
+    st_endpoint=(GEOGRAPHY,),
+    st_equals=(GEOGRAPHY, GEOGRAPHY,),
+    st_exteriorring=(GEOGRAPHY,),
+    st_geohash=(GEOGRAPHY,),
+    st_intersection=(GEOGRAPHY, GEOGRAPHY,),
+    st_intersects=(GEOGRAPHY, GEOGRAPHY,),
+    st_intersectsbox=(GEOGRAPHY,),
+    st_iscollection=(GEOGRAPHY,),
+    st_isempty=(GEOGRAPHY,),
+    st_length=(GEOGRAPHY,),
+    st_makeline=(GEOGRAPHY, GEOGRAPHY,),
+    st_makepolygon=(GEOGRAPHY, GEOGRAPHY,),
+    st_makepolygonoriented=(GEOGRAPHY,),
+    st_maxdistance=(GEOGRAPHY, GEOGRAPHY,),
+    st_npoints=(GEOGRAPHY,),
+    st_numpoints=(GEOGRAPHY,),
+    st_perimeter=(GEOGRAPHY,),
+    st_pointn=(GEOGRAPHY,),
+    st_simplify=(GEOGRAPHY,),
+    st_snaptogrid=(GEOGRAPHY,),
+    st_startpoint=(GEOGRAPHY,),
+    st_touches=(GEOGRAPHY, GEOGRAPHY,),
+    st_union=(GEOGRAPHY, GEOGRAPHY,),
+    st_union_agg=(GEOGRAPHY,),
+    st_within=(GEOGRAPHY, GEOGRAPHY,),
+    st_x=(GEOGRAPHY,),
+    st_y=(GEOGRAPHY,),
 )
+
+__all__ = ['GEOGRAPHY', 'WKB', 'WKT']

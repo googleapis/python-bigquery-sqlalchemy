@@ -56,11 +56,9 @@ from .parse_url import parse_url
 from pybigquery import _helpers
 
 try:
-    from geoalchemy2 import Geography
+    from .geography import GEOGRAPHY, WKB, WKT  # noqa
 except ImportError:
     pass
-else:
-    from .geography import WKT  # noqa
 
 FIELD_ILLEGAL_CHARACTERS = re.compile(r"[^\w]+")
 
@@ -150,7 +148,7 @@ NUMERIC = _type_map["NUMERIC"]
 BIGNUMERIC = _type_map["NUMERIC"]
 
 try:
-    _type_map["GEOGRAPHY"] = Geography
+    _type_map["GEOGRAPHY"] = GEOGRAPHY
 except NameError:
     pass
 
@@ -404,10 +402,6 @@ class BigQueryCompiler(SQLCompiler):
         flags=re.VERBOSE | re.IGNORECASE,
     )
 
-    __st_geogfromtext = re.compile(
-        "st_geogfromtext[(]%[(]([^:]*):geography[)]s[)]$", re.IGNORECASE
-    ).match
-
     def visit_bindparam(
         self,
         bindparam,
@@ -440,10 +434,6 @@ class BigQueryCompiler(SQLCompiler):
 
             if type_.scale is None and t.exponent < 0:
                 type_.scale = -t.exponent
-        elif getattr(type_, "name", None) == "geography":
-            m = self.__st_geogfromtext(param)
-            if m:
-                return f"ST_GEOGFROMTEXT(%({m.group(1)}:STRING)s)"
 
         bq_type = self.dialect.type_compiler.process(type_)
         if bq_type[-1] == ">" and bq_type.startswith("ARRAY<"):
@@ -521,12 +511,6 @@ class BigQueryTypeCompiler(GenericTypeCompiler):
         ) + suffix
 
     visit_DECIMAL = visit_NUMERIC
-
-    def visit_user_defined(self, type_, **kw):
-        spec = type_.get_col_spec(**kw)
-        if spec == "geography(GEOMETRY,-1)":
-            spec = "GEOGRAPHY"
-        return spec
 
 
 class BigQueryDDLCompiler(DDLCompiler):
