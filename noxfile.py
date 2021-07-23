@@ -118,6 +118,7 @@ def default(session):
     session.install("mock", "pytest", "pytest-cov", "-c", constraints_path)
 
     install_alembic_for_python_38(session, constraints_path)
+    install_geoalchemy_for_python_39(session, constraints_path)
     session.install("-e", ".", "-c", constraints_path)
 
     # Run py.test against the unit tests.
