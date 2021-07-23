@@ -12,16 +12,10 @@ pytestmark = pytest.mark.skipif(
     reason="We install geoalchemy2 only for Python 3.9")
 
 
-def test_geoalchemy2_core(faux_conn):
+def test_geoalchemy2_core(faux_conn, last_query):
     """Make sure GeoAlchemy 2 Core Tutorial works as adapted to only having geometry
     """
     conn = faux_conn
-
-    def last_sql(sql, params=None, offset=1):
-        actual_sql, actual_params = faux_conn.test_data["execute"][-offset]
-        assert actual_sql == sql
-        if params is not None:
-            assert actual_params == params
 
     # Create the Table
 
@@ -40,7 +34,7 @@ def test_geoalchemy2_core(faux_conn):
         )
     )
 
-    last_sql(
+    last_query(
         'INSERT INTO `lake` (`name`, `geog`)'
         ' VALUES (%(name:STRING)s, %(geog:geography)s)',
         ({'geog': 'POLYGON((0 0,1 0,1 1,0 1,0 0))', 'name': 'Majeur'}))
@@ -52,13 +46,13 @@ def test_geoalchemy2_core(faux_conn):
             {"name": "Orta", "geog": "POLYGON((3 0,6 0,6 3,3 3,3 0))"},
         ],
     )
-    last_sql(
+    last_query(
         'INSERT INTO `lake` (`name`, `geog`)'
         ' VALUES (%(name:STRING)s, %(geog:geography)s)',
         {'name': 'Garde', 'geog': 'POLYGON((1 0,3 0,3 2,1 2,1 0))'},
         offset=2,
         )
-    last_sql(
+    last_query(
         'INSERT INTO `lake` (`name`, `geog`)'
         ' VALUES (%(name:STRING)s, %(geog:geography)s)',
         {'name': 'Orta', 'geog': 'POLYGON((3 0,6 0,6 3,3 3,3 0))'},
@@ -70,7 +64,7 @@ def test_geoalchemy2_core(faux_conn):
 
     try: conn.execute(select([lake_table]))
     except Exception: pass  # sqlite had no special functions :)
-    last_sql('SELECT `lake`.`name`, ST_AsBinary(`lake`.`geog`) AS `geog` \n'
+    last_query('SELECT `lake`.`name`, ST_AsBinary(`lake`.`geog`) AS `geog` \n'
              'FROM `lake`')
 
     # Spatial query
@@ -83,7 +77,7 @@ def test_geoalchemy2_core(faux_conn):
                    func.ST_Contains(lake_table.c.geog, "POINT(4 1)"))
         )
     except Exception: pass  # sqlite had no special functions :)
-    last_sql(
+    last_query(
         'SELECT `lake`.`name` \n'
         'FROM `lake` \n'
         'WHERE ST_Contains(`lake`.`geog`, %(ST_Contains_1:geography)s)',
@@ -94,7 +88,7 @@ def test_geoalchemy2_core(faux_conn):
             select([lake_table.c.name, lake_table.c.geog.ST_AREA().label("area")])
             )
     except Exception: pass  # sqlite had no special functions :)
-    last_sql('SELECT `lake`.`name`, ST_Area(`lake`.`geog`) AS `area` \nFROM `lake`')
+    last_query('SELECT `lake`.`name`, ST_Area(`lake`.`geog`) AS `area` \nFROM `lake`')
 
     # Extra: Make sure we can save a retrieved value back:
 
@@ -105,7 +99,7 @@ def test_geoalchemy2_core(faux_conn):
         b'\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00'
         b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
     conn.execute(lake_table.insert().values(name="test", geog=geog))
-    last_sql('INSERT INTO `lake` (`name`, `geog`)'
+    last_query('INSERT INTO `lake` (`name`, `geog`)'
              ' VALUES (%(name:STRING)s, %(geog:geography)s)',
              {'name': 'test', 'geog': 'POINT (0 0)'})
 
@@ -118,10 +112,11 @@ def test_geoalchemy2_core(faux_conn):
             geog=WKT("POLYGON((1 0,3 0,3 2,1 2,1 0))"),
         )
     )
-    last_sql('INSERT INTO `lake` (`name`, `geog`)'
-             ' VALUES (%(name:STRING)s, %(geog:geography)s)',
-             {'name': 'test2', 'geog': 'POLYGON((1 0,3 0,3 2,1 2,1 0))'},
-             )
+    last_query(
+        'INSERT INTO `lake` (`name`, `geog`)'
+        ' VALUES (%(name:STRING)s, %(geog:geography)s)',
+        {'name': 'test2', 'geog': 'POLYGON((1 0,3 0,3 2,1 2,1 0))'},
+    )
 
 
 def test_WKB_bad_srid():
@@ -136,3 +131,15 @@ def test_WKB_bad_extended():
 
     with pytest.raises(AssertionError, match="Extended must be True."):
         WKB('data', extended=False)
+
+
+def test_calling_st_functions_we_that_dont_take_geographies(faux_conn, last_query):
+    from sqlalchemy import select, func
+    try: faux_conn.execute(select([func.ST_GEOGFROMTEXT("point(0 0)")]))
+    except Exception: pass  # sqlite had no special functions :)
+
+    last_query(
+        'SELECT ST_AsBinary(ST_GeogFromText(%(ST_GeogFromText_2:STRING)s))'
+        ' AS `ST_GeogFromText_1`',
+        dict(ST_GeogFromText_2="point(0 0)"),
+    )
