@@ -16,6 +16,14 @@
 # COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+import sys
+
+import pytest
+
+pytestmark = pytest.mark.skipif(
+    sys.version_info[:2] != (3, 9),
+    reason="We install geoalchemy2 only for Python 3.9")
+
 
 def test_geoalchemy2_core(bigquery_dataset):
     """Make sure GeoAlchemy 2 Core Tutorial works as adapted to only having geography
@@ -104,9 +112,13 @@ def test_geoalchemy2_core(bigquery_dataset):
 
     # and, while we're at it, that we can insert WKTs, although we
     # normally wouldn't want to.
+    from pybigquery.sqlalchemy_bigquery import WKT
 
     conn.execute(
-        lake_table.insert().values(name="test2", geog="POLYGON((1 0,3 0,3 2,1 2,1 0))")
+        lake_table.insert().values(
+            name="test2",
+            geog=WKT("POLYGON((1 0,3 0,3 2,1 2,1 0))"),
+        )
     )
     assert (
         int(
