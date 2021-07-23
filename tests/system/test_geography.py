@@ -18,7 +18,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 def test_geoalchemy2_core(bigquery_dataset):
-    """Make sure GeoAlchemy 2 Core Tutorial works as adapted to only having geometry
+    """Make sure GeoAlchemy 2 Core Tutorial works as adapted to only having geography
 
     https://geoalchemy-2.readthedocs.io/en/latest/core_tutorial.html
 
