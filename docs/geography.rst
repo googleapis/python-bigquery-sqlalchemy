@@ -1,6 +1,5 @@
-============================
 Working with Geographic data
-============================
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 BigQuery provides a `GEOGRAPHY data type
 <https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#geography_type>`_
@@ -16,11 +15,11 @@ Geographic data uses the `WGS84
 <https://earth-info.nga.mil/#tab_wgs84-data>`_ coordinate system.
 
 To define a geography column, use the `GEOGRAPHY` data type imported
-from the `sqlalchemy_bigquery` package::
+from the `pybigquery.sqlalchemy_bigquery` module::
 
   from sqlalchemy.ext.declarative import declarative_base
   from sqlalchemy import Column, String
-  from sqlalchemy_bigquery import GEOGRAPHY
+  from pybigquery.sqlalchemy_bigquery import GEOGRAPHY
 
   Base = declarative_base()
 
@@ -45,7 +44,7 @@ calling spatial functions that expect geographic arguments, text
 arguments are automatically coerced to geography.
 
 Inserting data
-==============
+~~~~~~~~~~~~~~
 
 When inserting geography data, you can pass WKT strings, `WKT` objects,
 or `WKB` objects::
@@ -62,7 +61,7 @@ Note that in the `lake3` example, we got a `WKB` object by creating a
 objects as results of previous queries.
 
 Queries
-=======
+~~~~~~~
 
 When performing spacial queries, and geography objects are expected,
 you can to pass `WKB` or `WKT` objects::
@@ -70,7 +69,7 @@ you can to pass `WKB` or `WKT` objects::
   query = session.query(Lake).filter(
       func.ST_Contains(Lake.geom, some_wkb_or_wkt))
 
-Or you can pass strings in WKT format:
+Or you can pass strings in WKT format::
 
   query = session.query(Lake).filter(
       func.ST_Contains(Lake.geom, 'POINT(4 1)'))
@@ -78,9 +77,9 @@ Or you can pass strings in WKT format:
 In this example, `Lake.geom` is a geography column.  The point
 constant needs to be wrapped in a `WKT` object.
 
-Installation
-============
+Installing geography support
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To get geography support, you need to install `sqlalchemy-bigquery`
+To get geography support, you need to install `pybigquery`
 with the `geography` extra, or separately install `GeoAlchemy2` and
 `shapely`.
