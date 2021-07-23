@@ -17,20 +17,19 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-from geoalchemy2 import WKBElement, WKTElement
+import geoalchemy2
 from geoalchemy2.shape import to_shape
 import geoalchemy2.functions
 from shapely import wkb, wkt
 import sqlalchemy.ext.compiler
 from sqlalchemy.sql.elements import BindParameter
-from sqlalchemy import func
 
 SRID = 4326  # WGS84
 
 
 class WKB(geoalchemy2.WKBElement):
 
-    geom_from_extended_version = 'ST_GeogFromWKB'
+    geom_from_extended_version = "ST_GeogFromWKB"
 
     def __init__(self, data, srid=SRID, extended=True):
         if srid != SRID:
@@ -46,7 +45,7 @@ class WKB(geoalchemy2.WKBElement):
 
 class WKT(geoalchemy2.WKTElement):
 
-    geom_from_extended_version = 'ST_GeogFromText'
+    geom_from_extended_version = "ST_GeogFromText"
 
     def __init__(self, data):
         super().__init__(data, SRID, True)
@@ -62,9 +61,7 @@ class GEOGRAPHY(geoalchemy2.Geography):
 
     def __init__(self):
         super().__init__(
-            geometry_type=None,
-            spatial_index=False,
-            srid=SRID,
+            geometry_type=None, spatial_index=False, srid=SRID,
         )
         self.extended = True
 
@@ -160,4 +157,4 @@ _argument_types = dict(
     st_y=(GEOGRAPHY,),
 )
 
-__all__ = ['GEOGRAPHY', 'WKB', 'WKT']
+__all__ = ["GEOGRAPHY", "WKB", "WKT"]

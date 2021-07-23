@@ -21,8 +21,8 @@ import sys
 import pytest
 
 pytestmark = pytest.mark.skipif(
-    sys.version_info[:2] != (3, 9),
-    reason="We install geoalchemy2 only for Python 3.9")
+    sys.version_info[:2] != (3, 9), reason="We install geoalchemy2 only for Python 3.9"
+)
 
 
 def test_geoalchemy2_core(bigquery_dataset):
@@ -116,8 +116,7 @@ def test_geoalchemy2_core(bigquery_dataset):
 
     conn.execute(
         lake_table.insert().values(
-            name="test2",
-            geog=WKT("POLYGON((1 0,3 0,3 2,1 2,1 0))"),
+            name="test2", geog=WKT("POLYGON((1 0,3 0,3 2,1 2,1 0))"),
         )
     )
     assert (
