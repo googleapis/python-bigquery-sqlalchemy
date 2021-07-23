@@ -20,6 +20,7 @@
 from geoalchemy2 import WKBElement, WKTElement
 from geoalchemy2.shape import to_shape
 import geoalchemy2.functions
+from shapely import wkb, wkt
 import sqlalchemy.ext.compiler
 from sqlalchemy.sql.elements import BindParameter
 from sqlalchemy import func
@@ -40,7 +41,7 @@ class WKB(geoalchemy2.WKBElement):
 
     @property
     def wkt(self):
-        return WKT(wkt.dumps(wkb.loads(self.data)))
+        return WKT(to_shape(self).wkt)
 
 
 class WKT(geoalchemy2.WKTElement):
@@ -86,10 +87,10 @@ class GEOGRAPHY(geoalchemy2.Geography):
 
     def bind_processor(self, dialect):
         def process(bindvalue):
-            if isinstance(bindvalue, WKTElement):
+            if isinstance(bindvalue, WKT):
                 return bindvalue.data
-            elif isinstance(bindvalue, WKBElement):
-                return to_shape(bindvalue).wkt
+            elif isinstance(bindvalue, WKB):
+                return bindvalue.wkt.data
             else:
                 return bindvalue
 
