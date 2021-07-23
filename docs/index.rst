@@ -2,6 +2,8 @@
 
 .. include:: multiprocessing.rst
 
+.. include:: geography.rst
+
 .. include:: alembic.rst
 
 API Reference
