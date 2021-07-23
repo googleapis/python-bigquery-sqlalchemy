@@ -1,7 +1,16 @@
+import sys
+
+import pytest
+
 from conftest import (
     setup_table,
     sqlalchemy_1_4_or_higher,
 )
+
+pytestmark = pytest.mark.skipif(
+    sys.version_info[:2] != (3, 9),
+    reason="We install geoalchemy2 only for Python 3.9")
+
 
 def test_geoalchemy2_core(faux_conn):
     """Make sure GeoAlchemy 2 Core Tutorial works as adapted to only having geometry
@@ -95,9 +104,7 @@ def test_geoalchemy2_core(faux_conn):
     assert geog.data == (
         b'\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00'
         b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
-    try:
-        conn.execute(lake_table.insert().values(name="test", geog=geog))
-    except Exception: pass  # sqlite had no special functions :)
+    conn.execute(lake_table.insert().values(name="test", geog=geog))
     last_sql('INSERT INTO `lake` (`name`, `geog`)'
              ' VALUES (%(name:STRING)s, %(geog:geography)s)',
              {'name': 'test', 'geog': 'POINT (0 0)'})
@@ -106,9 +113,26 @@ def test_geoalchemy2_core(faux_conn):
     # normally wouldn't want to.
 
     conn.execute(
-        lake_table.insert().values(name="test2", geog="POLYGON((1 0,3 0,3 2,1 2,1 0))")
+        lake_table.insert().values(
+            name="test2",
+            geog=WKT("POLYGON((1 0,3 0,3 2,1 2,1 0))"),
+        )
     )
     last_sql('INSERT INTO `lake` (`name`, `geog`)'
              ' VALUES (%(name:STRING)s, %(geog:geography)s)',
              {'name': 'test2', 'geog': 'POLYGON((1 0,3 0,3 2,1 2,1 0))'},
              )
+
+
+def test_WKB_bad_srid():
+    from pybigquery.sqlalchemy_bigquery import WKB
+
+    with pytest.raises(AssertionError, match="Bad srid"):
+        WKB('data', srid=-1)
+
+
+def test_WKB_bad_extended():
+    from pybigquery.sqlalchemy_bigquery import WKB
+
+    with pytest.raises(AssertionError, match="Extended must be True."):
+        WKB('data', extended=False)
