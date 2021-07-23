@@ -33,10 +33,10 @@ def test_geoalchemy2_core(bigquery_dataset):
 
     engine = create_engine(f"bigquery:///{bigquery_dataset}")
 
+    # Create the Table
+
     from sqlalchemy import Table, Column, String, MetaData
     from pybigquery.sqlalchemy_bigquery import GEOGRAPHY
-
-    # Create the Table
 
     metadata = MetaData()
     lake_table = Table(
