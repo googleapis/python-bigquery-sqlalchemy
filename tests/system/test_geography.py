@@ -48,7 +48,7 @@ def test_geoalchemy2_core(bigquery_dataset):
 
     metadata = MetaData()
     lake_table = Table(
-        "lake_core", metadata, Column("name", String), Column("geog", GEOGRAPHY)
+        "lake", metadata, Column("name", String), Column("geog", GEOGRAPHY)
     )
 
     lake_table.create(engine)
@@ -152,7 +152,7 @@ def test_geoalchemy2_orm(bigquery_dataset):
     Base = declarative_base()
 
     class Lake(Base):
-        __tablename__ = "lake_orm"
+        __tablename__ = "lake"
         # The ORM insists on an id, but bigquery doesn't auto-assign
         # ids, so we'll have to provide them below.
         id = Column(Integer, primary_key=True)
@@ -267,7 +267,7 @@ def test_geoalchemy2_orm_w_relationship(bigquery_dataset):
     from sqlalchemy.orm import relationship, backref
 
     class Lake(Base):
-        __tablename__ = "lake_rel"
+        __tablename__ = "lake"
         id = Column(Integer, primary_key=True)
         name = Column(String)
         geog = Column(GEOGRAPHY)
