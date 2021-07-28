@@ -1,17 +1,10 @@
-.. include:: README.rst
 
-.. include:: multiprocessing.rst
-
-.. include:: geography.rst
-
-.. include:: alembic.rst
-
-API Reference
--------------
 .. toctree::
-    :maxdepth: 2
+   :maxdepth: 2
 
-    pybigquery/api
+   README
+   geography
+   alembic
 
 Changelog
 ---------
