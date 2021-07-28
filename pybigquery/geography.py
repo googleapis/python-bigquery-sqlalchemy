@@ -28,22 +28,47 @@ SRID = 4326  # WGS84, https://spatialreference.org/ref/epsg/wgs-84/
 
 
 class WKB(geoalchemy2.WKBElement):
+    """
+    Well-Known-Binary data wrapper.
+
+    WKB objects hold geographic data in a binary format known as
+    "Well-Known Binary",
+    <https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry>.
+    These objects are returned from queries and can be used in insert
+    and queries.
+
+    The WKB class is a subclass of the Geoalchemy2 WKBElement class
+    customized for working with BigQuery.
+    """
 
     geom_from_extended_version = "ST_GeogFromWKB"
 
-    def __init__(self, data, srid=SRID, extended=True):
-        if srid != SRID:
-            raise AssertionError("Bad srid", srid)
-        if not extended:
-            raise AssertionError("Extended must be True.")
-        super().__init__(data, srid, True)
+    def __init__(self, data):
+        super().__init__(data, SRID, True)
 
     @property
     def wkt(self):
+        """
+        Return the WKB object as a WKT object.
+        """
         return WKT(to_shape(self).wkt)
 
 
 class WKT(geoalchemy2.WKTElement):
+    """
+    Well-Known-Text data wrapper.
+
+    WKT objects hold geographic data in a text format known as
+    "Well-Known Text",
+    <https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry>.
+
+    You generally shouldn't need to create WKT objects directly, as
+    text arguments to geographic functions and inserts to GEOGRAPHY
+    columns are automatically coerced to geographic data.
+
+    The WKT class is a subclass of the Geoalchemy2 WKTElement class
+    customized for working with BigQuery.
+    """
 
     geom_from_extended_version = "ST_GeogFromText"
 
@@ -52,12 +77,26 @@ class WKT(geoalchemy2.WKTElement):
 
     @property
     def wkb(self):
+        """
+        Return the WKT object as a WKB object.
+        """
         return WKB(wkb.dumps(wkt.loads(self.data)))
 
 
 class GEOGRAPHY(geoalchemy2.Geography):
+    """
+    GEOGRAPHY type
 
-    ElementType = WKB
+    Use this to define BigQuery GEOGRAPHY columns::
+
+        class Lake(Base):
+            __tablename__ = 'lakes'
+
+            name = Column(String)
+            geog = column(GEOGRAPHY)
+
+
+    """
 
     def __init__(self):
         super().__init__(
@@ -83,6 +122,15 @@ class GEOGRAPHY(geoalchemy2.Geography):
     bind_expression = sqlalchemy.sql.type_api.TypeEngine.bind_expression
 
     def bind_processor(self, dialect):
+        """
+        SqlAlchemy plugin that controls how values are converted to parameters
+
+        When we bind values, we always bind as text.  We have to do
+        this because when we decide how to bind, we don't always know
+        what the values will be.
+
+        This is not a user-facing methos.
+        """
         def process(bindvalue):
             if isinstance(bindvalue, WKT):
                 return bindvalue.data
@@ -93,9 +141,42 @@ class GEOGRAPHY(geoalchemy2.Geography):
 
         return process
 
+    @staticmethod
+    def ElementType(data, srid=SRID, extended=True):
+        """
+        Plugin for the Geoalchemy2 framework for constructing WKB objects.
+
+        The framework wants a callable, which it assumes is a class
+        (this the name), for constructing a geographic element.
+
+        We don't want `WKB` to accept extra arguments that it checks
+        and ignores, so we do that in this wrapper.
+
+        This is not a user-facing method.
+        """
+        if srid != SRID:
+            raise AssertionError("Bad srid", srid)
+        if not extended:
+            raise AssertionError("Extended must be True.")
+        return WKB(data)
+
 
 @sqlalchemy.ext.compiler.compiles(geoalchemy2.functions.GenericFunction, "bigquery")
 def _fixup_st_arguments(element, compiler, **kw):
+    """
+    Compiler-plugin for the BigQuery that overrides how geographic functions are handled
+
+    Geographic function (ST_...) get turned into
+    `geoalchemy2.functions.GenericFunction` objects by
+    Geoalchemy2. The code here overrides how they're handeled.
+
+    We want arguments passed to have the GEOGRAPHY type associated
+    with them, when appropriate, where "when appropriate" is
+    determined by the `function documentation
+    <https://cloud.google.com/bigquery/docs/reference/standard-sql/geography_functions>`_..
+
+    This is not a user-facing function.
+    """
     argument_types = _argument_types.get(element.name.lower())
     if argument_types:
         for argument_type, argument in zip(argument_types, element.clauses.clauses):
