@@ -231,3 +231,14 @@ To add metadata to a column:
 .. code-block:: python
 
     Column('mycolumn', doc='my column description')
+
+Threading and Multiprocessing
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Because this client uses :mod:`grpc` library, it's safe to
+share instances across threads.
+
+In multiprocessing scenarios, the best
+practice is to create client instances *after* the invocation of
+:func:`os.fork` by :class:`multiprocessing.pool.Pool` or
+:class:`multiprocessing.Process`.

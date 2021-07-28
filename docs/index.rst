@@ -5,6 +5,7 @@
    README
    geography
    alembic
+   reference
 
 Changelog
 ---------
