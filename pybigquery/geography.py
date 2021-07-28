@@ -24,7 +24,7 @@ from shapely import wkb, wkt
 import sqlalchemy.ext.compiler
 from sqlalchemy.sql.elements import BindParameter
 
-SRID = 4326  # WGS84
+SRID = 4326  # WGS84, https://spatialreference.org/ref/epsg/wgs-84/
 
 
 class WKB(geoalchemy2.WKBElement):
