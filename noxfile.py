@@ -90,7 +90,13 @@ def default(session):
     )
     session.install("mock", "pytest", "pytest-cov", "-c", constraints_path)
 
-    session.install("-e", ".", "-c", constraints_path)
+    if session.python == "3.8":
+        extras = "[alembic]"
+    elif session.python == "3.9":
+        extras = "[geography]"
+    else:
+        extras = ""
+    session.install("-e", f".{extras}", "-c", constraints_path)
 
     # Run py.test against the unit tests.
     session.run(
@@ -142,7 +148,13 @@ def system(session):
     # Install all test dependencies, then install this package into the
     # virtualenv's dist-packages.
     session.install("mock", "pytest", "google-cloud-testutils", "-c", constraints_path)
-    session.install("-e", ".", "-c", constraints_path)
+    if session.python == "3.8":
+        extras = "[alembic]"
+    elif session.python == "3.9":
+        extras = "[geography]"
+    else:
+        extras = ""
+    session.install("-e", f".{extras}", "-c", constraints_path)
 
     # Run py.test against the system tests.
     if system_test_exists:
@@ -190,7 +202,13 @@ def compliance(session):
         "-c",
         constraints_path,
     )
-    session.install("-e", ".", "-c", constraints_path)
+    if session.python == "3.8":
+        extras = "[alembic]"
+    elif session.python == "3.9":
+        extras = "[geography]"
+    else:
+        extras = ""
+    session.install("-e", f".{extras}", "-c", constraints_path)
 
     session.run(
         "py.test",
@@ -226,7 +244,7 @@ def docs(session):
 
     session.install("-e", ".")
     session.install(
-        "sphinx==4.0.1", "alabaster", "recommonmark", "geoalchemy2", "shapely"
+        "sphinx==4.0.1", "alabaster", "geoalchemy2", "shapely", "recommonmark"
     )
 
     shutil.rmtree(os.path.join("docs", "_build"), ignore_errors=True)
@@ -250,7 +268,12 @@ def docfx(session):
 
     session.install("-e", ".")
     session.install(
-        "sphinx==4.0.1", "alabaster", "recommonmark", "gcp-sphinx-docfx-yaml"
+        "sphinx==4.0.1",
+        "alabaster",
+        "geoalchemy2",
+        "shapely",
+        "recommonmark",
+        "gcp-sphinx-docfx-yaml",
     )
 
     shutil.rmtree(os.path.join("docs", "_build"), ignore_errors=True)
