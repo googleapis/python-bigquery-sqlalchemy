@@ -146,18 +146,18 @@ def test_geoalchemy2_core(faux_conn, last_query):
     )
 
 
-def test_WKB_bad_srid():
-    from pybigquery.sqlalchemy_bigquery import WKB
+def test_GEOGRAPHY_ElementType_bad_srid():
+    from pybigquery.sqlalchemy_bigquery import GEOGRAPHY
 
     with pytest.raises(AssertionError, match="Bad srid"):
-        WKB("data", srid=-1)
+        GEOGRAPHY.ElementType("data", srid=-1)
 
 
-def test_WKB_bad_extended():
-    from pybigquery.sqlalchemy_bigquery import WKB
+def test_GEOGRAPHY_ElementType_bad_extended():
+    from pybigquery.sqlalchemy_bigquery import GEOGRAPHY
 
     with pytest.raises(AssertionError, match="Extended must be True."):
-        WKB("data", extended=False)
+        GEOGRAPHY.ElementType("data", extended=False)
 
 
 def test_calling_st_functions_we_that_dont_take_geographies(faux_conn, last_query):
