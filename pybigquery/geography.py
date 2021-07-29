@@ -131,6 +131,7 @@ class GEOGRAPHY(geoalchemy2.Geography):
 
         This is not a user-facing methos.
         """
+
         def process(bindvalue):
             if isinstance(bindvalue, WKT):
                 return bindvalue.data
