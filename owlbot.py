@@ -36,6 +36,10 @@ templated_files = common.py_library(
     unit_test_python_versions=["3.6", "3.7", "3.8", "3.9"],
     system_test_python_versions=["3.8", "3.9"],
     cov_level=100
+    unit_test_extras=extras,
+    unit_test_extras_by_python=extras_by_python,
+    system_test_extras=extras,
+    system_test_extras_by_python=extras_by_python,
 )
 s.move(templated_files, excludes=[
     # pybigquery was originally licensed MIT
