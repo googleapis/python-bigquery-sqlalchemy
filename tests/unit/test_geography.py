@@ -160,7 +160,15 @@ def test_GEOGRAPHY_ElementType_bad_extended():
         GEOGRAPHY.ElementType("data", extended=False)
 
 
-def test_calling_st_functions_we_that_dont_take_geographies(faux_conn, last_query):
+def test_GEOGRAPHY_ElementType():
+    from pybigquery.sqlalchemy_bigquery import GEOGRAPHY, WKB
+
+    data = GEOGRAPHY.ElementType("data")
+    assert isinstance(data, WKB)
+    assert (data.data, data.srid, data.extended) == ('data', 4326, True)
+
+
+def test_calling_st_functions_that_dont_take_geographies(faux_conn, last_query):
     from sqlalchemy import select, func
 
     try:
