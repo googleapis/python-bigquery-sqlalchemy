@@ -1,0 +1,21 @@
+# This file is used to generate README.rst
+
+product:
+  name: SQLAlchemy support for Google BigQuery
+  short_name: SQLAlchemy BigQuery
+  url: https://googleapis.dev/python/pybigquery/latest/index.html
+  description: >
+    `SQLAlchemy support for Google BigQuery`_ allows SQLAlchemy to be used with
+    Googe BigQuery, a serverless, highly scalable, and cost-effective
+    multicloud data warehouse designed for business agility.
+
+setup:
+- auth
+- install_deps
+
+samples:
+- name: Read BigQuery data into Pandas
+  file: pandas_read_sql.py
+  show_help: true
+
+folder: snippets
