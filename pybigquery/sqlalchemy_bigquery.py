@@ -131,6 +131,7 @@ _type_map = {
     "BIGNUMERIC": types.Numeric,
 }
 
+# By convention, dialect-provided types are spelled with all upper case.
 STRING = _type_map["STRING"]
 BOOL = _type_map["BOOL"]
 BOOLEAN = _type_map["BOOLEAN"]
