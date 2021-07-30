@@ -20,9 +20,7 @@ import sys
 
 import pytest
 
-pytestmark = pytest.mark.skipif(
-    sys.version_info[:2] != (3, 9), reason="We install geoalchemy2 only for Python 3.9"
-)
+geoalchemy2 = pytest.importorskip("geoalchemy2")
 
 
 def test_geoalchemy2_core(bigquery_dataset):
