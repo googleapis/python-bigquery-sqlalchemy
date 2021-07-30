@@ -17,8 +17,6 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import sys
-
 import pytest
 
 from conftest import setup_table
@@ -163,7 +161,7 @@ def test_GEOGRAPHY_ElementType():
 
     data = GEOGRAPHY.ElementType("data")
     assert isinstance(data, WKB)
-    assert (data.data, data.srid, data.extended) == ('data', 4326, True)
+    assert (data.data, data.srid, data.extended) == ("data", 4326, True)
 
 
 def test_calling_st_functions_that_dont_take_geographies(faux_conn, last_query):
