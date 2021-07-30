@@ -49,6 +49,10 @@ def read_geographic_data_into_pandas_using_read_sql() -> None:
     # For information on available functions, see:
     # https://cloud.google.com/bigquery/docs/reference/standard-sql/geography_functions
 
+    # The last argument, `'EPSG:4326'`, tells geopandas that the data
+    # are in the EPSG:4326 coordinate system, which is the coordinate
+    # system used by BigQuery.
+
     df = geopandas.read_postgis(
         """select created_date, complaint_description,
                   ST_ASBINARY(ST_GEOGPOINT(longitude, latitude)) as location
@@ -57,6 +61,7 @@ def read_geographic_data_into_pandas_using_read_sql() -> None:
         """,
         engine,
         "location",
+        'EPSG:4326',
     )
 
     # Don't wrap pr elide:
