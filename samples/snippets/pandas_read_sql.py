@@ -29,7 +29,7 @@ def read_data_into_pandas_using_read_sql() -> None:
     # https://googleapis.dev/python/google-api-core/latest/auth.html
     engine = create_engine("bigquery://")
 
-    # Read data from the austin 311-compliant table in the google
+    # Read data from the austin 311-complaint table in the google
     # public datasets.
 
     # The table is given in three parts in this example:
