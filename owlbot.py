@@ -18,7 +18,7 @@ import pathlib
 
 import synthtool as s
 from synthtool import gcp
-
+from synthtool.languages import python
 
 REPO_ROOT = pathlib.Path(__file__).parent.absolute()
 
@@ -200,6 +200,12 @@ addopts= --tb native -v -r fxX -p no:warnings
 python_files=tests/*test_*.py
 """
 )
+
+# ----------------------------------------------------------------------------
+# Samples templates
+# ----------------------------------------------------------------------------
+
+python.py_samples(skip_readmes=True)
 
 # ----------------------------------------------------------------------------
 # Final cleanup
