@@ -20,14 +20,16 @@
 
 
 def read_geographic_data_into_pandas_using_read_sql() -> None:
-    """Read BigQuery geographic data using the geopandas `read_postgis` function.
+    # [START sqlalchemy_bigquery_read_postgis]
 
-    Even though, as it's name implies, `read_postgis` was designed to
-    work with the Postgres GIS extension, PostGIS, it works with
-    BigQuery too, as long as the data returned from queries is in `WKB
-    format
-    <https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry>`_.
-    """
+    # Read BigQuery geographic data using the geopandas `read_postgis` function.
+
+    # Even though, as it's name implies, `read_postgis` was designed to
+    # work with the Postgres GIS extension, PostGIS, it works with
+    # BigQuery too, as long as the data returned from queries is in `WKB
+    # format
+    # <https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry>`_.
+
     import geopandas
     import pandas as pd
     from sqlalchemy import create_engine
@@ -69,6 +71,7 @@ def read_geographic_data_into_pandas_using_read_sql() -> None:
     pd.options.display.width = 2000
 
     print(df)
+    # [END sqlalchemy_bigquery_read_postgis]
 
 
 if __name__ == "__main__":
