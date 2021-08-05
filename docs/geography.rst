@@ -83,3 +83,7 @@ Installing geography support
 To get geography support, you need to install `pybigquery`
 with the `geography` extra, or separately install `GeoAlchemy2` and
 `shapely`.
+
+.. code-block:: console
+
+    pip install 'pybigquery[geography]'
