@@ -62,12 +62,9 @@ try:
 except ImportError:
     pass
 else:  # pragma: NO COVER
-    if not hasattr(pybigquery, "__version__"):
-        import warnings
-
-        warnings.warn(
-            "Obsolete pybigquery is installed, which is likely to\n"
-            "interfere with sqlalchemy_bigquery.\n"
-            "pybigquery should be uninstalled.",
-            stacklevel=2,
-        )
+    warnings.warn(
+        "Obsolete pybigquery is installed, which is likely to\n"
+        "interfere with sqlalchemy_bigquery.\n"
+        "pybigquery should be uninstalled.",
+        stacklevel=2,
+    )
