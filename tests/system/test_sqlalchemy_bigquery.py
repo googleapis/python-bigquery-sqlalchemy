@@ -21,7 +21,6 @@
 from __future__ import unicode_literals
 
 from google.api_core.exceptions import BadRequest
-from sqlalchemy_bigquery.api import ApiClient
 from sqlalchemy_bigquery import BigQueryDialect
 from sqlalchemy.engine import create_engine
 from sqlalchemy.schema import Table, MetaData, Column
@@ -227,22 +226,6 @@ def query():
         return query
 
     return query
-
-
-@pytest.fixture(scope="session")
-def api_client():
-    return ApiClient()
-
-
-def test_dry_run(engine, api_client, bigquery_dataset):
-    sql = f"SELECT * FROM {bigquery_dataset}.sample_one_row"
-    assert api_client.dry_run_query(sql).total_bytes_processed == 148
-
-    sql = "SELECT * FROM sample_one_row"
-    with pytest.raises(BadRequest) as excinfo:
-        api_client.dry_run_query(sql)
-    expected_message = 'Table name "sample_one_row" missing dataset while no default dataset is set in the request.'
-    assert expected_message in str(excinfo.value.message)
 
 
 def test_engine_with_dataset(engine_using_test_dataset, bigquery_dataset):

@@ -4,13 +4,6 @@
 
 .. include:: alembic.rst
 
-API Reference
--------------
-.. toctree::
-    :maxdepth: 2
-
-    sqlalchemy-bigquery/api
-
 Changelog
 ---------
 
