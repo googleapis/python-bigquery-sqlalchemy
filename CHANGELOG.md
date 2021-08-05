@@ -1,8 +1,12 @@
 # Changelog
 
-[PyPI History][1]
+[PyPI History][1][2]
 
 [1]: https://pypi.org/project/sqlalchemy-bigquery/#history
+
+
+[2]: https://pypi.org/project/pybigquery/#history
+
 
 ### [0.10.1](https://www.github.com/googleapis/python-bigquery-sqlalchemy/compare/v0.10.0...v0.10.1) (2021-07-30)
 
