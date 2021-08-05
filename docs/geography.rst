@@ -27,7 +27,7 @@ from the `pybigquery.sqlalchemy_bigquery` module::
       __tablename__ = 'lakes'
 
       name = Column(String)
-      geog = column(GEOGRAPHY)
+      geog = Column(GEOGRAPHY)
 
 BigQuery has a variety of `SQL geographic functions
 <https://cloud.google.com/bigquery/docs/reference/standard-sql/geography_functions>`_
