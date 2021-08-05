@@ -7,6 +7,6 @@
   "language": "python",
   "library_type": "INTEGRATION",
   "repo": "googleapis/python-bigquery-sqlalchemy",
-  "distribution_name": "sqlalchemy-bigquery"
+    "distribution_name": "sqlalchemy-bigquery",
   "api_id": "bigquery.googleapis.com"
 }
