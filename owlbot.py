@@ -103,7 +103,9 @@ new_sessions = '''
 
 s.replace( ["noxfile.py"], old_sessions, new_sessions)
 
-# Maybe we can get rid of this when we don't need pytest-rerunfailures
+# Maybe we can get rid of this when we don't need pytest-rerunfailures,
+# which we won't need when BQ retries itself:
+# https://github.com/googleapis/python-bigquery/pull/837
 compliance = '''
 @nox.session(python=SYSTEM_TEST_PYTHON_VERSIONS)
 def compliance(session):
