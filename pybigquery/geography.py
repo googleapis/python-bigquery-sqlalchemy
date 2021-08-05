@@ -129,7 +129,7 @@ class GEOGRAPHY(geoalchemy2.Geography):
         this because when we decide how to bind, we don't always know
         what the values will be.
 
-        This is not a user-facing methos.
+        This is not a user-facing method.
         """
 
         def process(bindvalue):
