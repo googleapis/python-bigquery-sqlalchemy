@@ -63,7 +63,7 @@ def read_geographic_data_into_pandas_using_read_sql() -> None:
         """,
         engine,
         "location",
-        'EPSG:4326',
+        "EPSG:4326",
     )
 
     # Don't wrap pr elide:

@@ -22,7 +22,7 @@
 def read_data_into_pandas_using_read_sql() -> None:
     # [START sqlalchemy_bigquery_read_sql]
 
-    #Read BigQuery data using the pandas `read_sql` function.
+    # Read BigQuery data using the pandas `read_sql` function.
 
     import pandas as pd
     from sqlalchemy import create_engine
