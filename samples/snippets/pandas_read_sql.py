@@ -20,7 +20,7 @@
 
 
 def read_data_into_pandas_using_read_sql() -> None:
-    # [START sqlalchemy_bigquery_read_sql]
+    # [START bigquery_pandas_sqlalchemy]
 
     # Read BigQuery data using the pandas `read_sql` function.
 
@@ -46,7 +46,7 @@ def read_data_into_pandas_using_read_sql() -> None:
     )
 
     print(df)
-    # [END sqlalchemy_bigquery_read_sql]
+    # [END bigquery_pandas_sqlalchemy]
 
 
 if __name__ == "__main__":

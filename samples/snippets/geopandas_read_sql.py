@@ -20,7 +20,7 @@
 
 
 def read_geographic_data_into_pandas_using_read_sql() -> None:
-    # [START sqlalchemy_bigquery_read_postgis]
+    # [START bigquery_geopandas_sqlalchemy]
 
     # Read BigQuery geographic data using the geopandas `read_postgis` function.
 
@@ -71,7 +71,7 @@ def read_geographic_data_into_pandas_using_read_sql() -> None:
     pd.options.display.width = 2000
 
     print(df)
-    # [END sqlalchemy_bigquery_read_postgis]
+    # [END bigquery_geopandas_sqlalchemy]
 
 
 if __name__ == "__main__":
