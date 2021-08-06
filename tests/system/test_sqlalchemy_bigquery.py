@@ -297,7 +297,12 @@ def test_reflect_select(table, table_using_test_dataset):
         assert isinstance(table.c["nested_record.record.name"].type, types.String)
         assert isinstance(table.c.array.type, types.ARRAY)
 
-        rows = table.select().execute().fetchall()
+        # Force unique column labels using `use_labels` below to deal
+        # with BQ sometimes complaining about duplicate column names
+        # when a destination table is specified, even though no
+        # destination table is specified. When this test was written,
+        # `use_labels` was forced by the dialect.
+        rows = table.select(use_labels=True).execute().fetchall()
         assert len(rows) == 1000
 
 
