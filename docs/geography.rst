@@ -15,19 +15,13 @@ Geographic data uses the `WGS84
 <https://earth-info.nga.mil/#tab_wgs84-data>`_ coordinate system.
 
 To define a geography column, use the `GEOGRAPHY` data type imported
-from the `sqlalchemy_bigquery` module::
+from the `sqlalchemy_bigquery` module:
 
-  from sqlalchemy.ext.declarative import declarative_base
-  from sqlalchemy import Column, String
-  from sqlalchemy_bigquery import GEOGRAPHY
-
-  Base = declarative_base()
-
-  class Lake(Base):
-      __tablename__ = 'lakes'
-
-      name = Column(String)
-      geog = Column(GEOGRAPHY)
+.. literalinclude:: samples/snippets/geography.py
+   :language: python
+   :dedent: 4
+   :start-after: [START bigquery_sqlalchemy_create_table_with_geography]
+   :end-before: [END bigquery_sqlalchemy_create_table_with_geography]
 
 BigQuery has a variety of `SQL geographic functions
 <https://cloud.google.com/bigquery/docs/reference/standard-sql/geography_functions>`_
@@ -47,14 +41,13 @@ Inserting data
 ~~~~~~~~~~~~~~
 
 When inserting geography data, you can pass WKT strings, `WKT` objects,
-or `WKB` objects::
+or `WKB` objects:
 
-  from sqlalchemy_bigquery import WKT
-
-  lake  = Lake(name='Majeur', geom='POLYGON((0 0,1 0,1 1,0 1,0 0))')
-  lake2 = Lake(name='Garde', geom=WKT('POLYGON((1 0,3 0,3 2,1 2,1 0))'))
-  b = WKT('POLYGON((3 0,6 0,6 3,3 3,3 0))').wkb
-  lake3 = Lake(name='Orta', geom=b)
+.. literalinclude:: samples/snippets/geography.py
+   :language: python
+   :dedent: 4
+   :start-after: [START bigquery_sqlalchemy_insert_geography]
+   :end-before: [END bigquery_sqlalchemy_insert_geography]
 
 Note that in the `lake3` example, we got a `WKB` object by creating a
 `WKT` object and getting its `wkb` property.  Normally, we'd get `WKB`
@@ -64,18 +57,23 @@ Queries
 ~~~~~~~
 
 When performing spacial queries, and geography objects are expected,
-you can to pass `WKB` or `WKT` objects::
+you can to pass `WKB` or `WKT` objects:
 
-  query = session.query(Lake).filter(
-      func.ST_Contains(Lake.geom, some_wkb_or_wkt))
+.. literalinclude:: samples/snippets/geography.py
+   :language: python
+   :dedent: 4
+   :start-after: [START bigquery_sqlalchemy_query_geography_wkb]
+   :end-before: [END bigquery_sqlalchemy_query_geography_wkb]
 
-Or you can pass strings in WKT format::
+In this example, we passed the `geog` attribute of `lake2`, which is a WKB object.
 
-  query = session.query(Lake).filter(
-      func.ST_Contains(Lake.geom, 'POINT(4 1)'))
+Or you can pass strings in WKT format:
 
-In this example, `Lake.geom` is a geography column.  The point
-constant needs to be wrapped in a `WKT` object.
+.. literalinclude:: samples/snippets/geography.py
+   :language: python
+   :dedent: 4
+   :start-after: [START bigquery_sqlalchemy_query_geography_text]
+   :end-before: [END bigquery_sqlalchemy_query_geography_text]
 
 Installing geography support
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
