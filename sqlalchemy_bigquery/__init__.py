@@ -16,6 +16,10 @@
 # COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+"""
+SQLAlchemy dialect for Google BigQuery
+"""
+
 from .version import __version__
 
 from .base import BigQueryDialect
@@ -62,6 +66,7 @@ try:
 except ImportError:
     pass
 else:  # pragma: NO COVER
+    import warnings
     warnings.warn(
         "Obsolete pybigquery is installed, which is likely to\n"
         "interfere with sqlalchemy_bigquery.\n"
