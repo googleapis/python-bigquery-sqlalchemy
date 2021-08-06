@@ -93,15 +93,6 @@ SQLAlchemy
     table = Table('dataset.table', MetaData(bind=engine), autoload=True)
     print(select([func.count('*')], from_obj=table).scalar())
 
-API Client
-^^^^^^^^^^
-
-.. code-block:: python
-
-    from sqlalchemy_bigquery.api import ApiClient
-    api_client = ApiClient()
-    print(api_client.dry_run_query(query=sqlstr).total_bytes_processed)
-
 Project
 ^^^^^^^
 
