@@ -62,7 +62,7 @@ __all__ = [
 ]
 
 try:
-    from .geography import GEOGRAPHY, WKB, WKT
+    from .geography import GEOGRAPHY, WKB, WKT  # noqa
 except ImportError:
     pass
 else:
