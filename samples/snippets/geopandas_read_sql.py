@@ -66,7 +66,7 @@ def read_geographic_data_into_pandas_using_read_sql() -> None:
         "EPSG:4326",
     )
 
-    # Don't wrap pr elide:
+    # Don't wrap or elide:
     pd.options.display.max_columns = 2000
     pd.options.display.width = 2000
 
