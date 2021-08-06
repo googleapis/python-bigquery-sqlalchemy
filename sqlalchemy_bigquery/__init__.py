@@ -62,11 +62,12 @@ __all__ = [
 ]
 
 try:
-    import pybigquery
+    import pybigquery  # noqa
 except ImportError:
     pass
 else:  # pragma: NO COVER
     import warnings
+
     warnings.warn(
         "Obsolete pybigquery is installed, which is likely to\n"
         "interfere with sqlalchemy_bigquery.\n"

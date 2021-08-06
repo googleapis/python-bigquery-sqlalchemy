@@ -20,7 +20,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from google.api_core.exceptions import BadRequest
 from sqlalchemy_bigquery import BigQueryDialect
 from sqlalchemy.engine import create_engine
 from sqlalchemy.schema import Table, MetaData, Column
