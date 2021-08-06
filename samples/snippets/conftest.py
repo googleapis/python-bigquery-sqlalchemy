@@ -17,10 +17,9 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import sqlalchemy
-import pytest
-
 from google.cloud import bigquery
+import pytest
+import sqlalchemy
 import test_utils.prefixer
 
 prefixer = test_utils.prefixer.Prefixer("python-bigquery-sqlalchemy", "tests/system")
