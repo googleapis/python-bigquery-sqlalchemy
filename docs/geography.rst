@@ -15,11 +15,11 @@ Geographic data uses the `WGS84
 <https://earth-info.nga.mil/#tab_wgs84-data>`_ coordinate system.
 
 To define a geography column, use the `GEOGRAPHY` data type imported
-from the `pybigquery.sqlalchemy_bigquery` module::
+from the `sqlalchemy_bigquery` module::
 
   from sqlalchemy.ext.declarative import declarative_base
   from sqlalchemy import Column, String
-  from pybigquery.sqlalchemy_bigquery import GEOGRAPHY
+  from sqlalchemy_bigquery import GEOGRAPHY
 
   Base = declarative_base()
 
@@ -80,10 +80,10 @@ constant needs to be wrapped in a `WKT` object.
 Installing geography support
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To get geography support, you need to install `pybigquery`
+To get geography support, you need to install `sqlalchemy-bigquery`
 with the `geography` extra, or separately install `GeoAlchemy2` and
 `shapely`.
 
 .. code-block:: console
 
-    pip install 'pybigquery[geography]'
+    pip install 'sqlalchemy-bigquery[geography]'

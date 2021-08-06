@@ -32,7 +32,7 @@ def test_geoalchemy2_core(faux_conn, last_query):
     # Create the Table
 
     from sqlalchemy import Column, String
-    from pybigquery.sqlalchemy_bigquery import GEOGRAPHY
+    from sqlalchemy_bigquery import GEOGRAPHY
 
     lake_table = setup_table(
         conn, "lake", Column("name", String), Column("geog", GEOGRAPHY)
@@ -112,7 +112,7 @@ def test_geoalchemy2_core(faux_conn, last_query):
 
     # Extra: Make sure we can save a retrieved value back:
 
-    from pybigquery.sqlalchemy_bigquery import WKB, WKT
+    from sqlalchemy_bigquery import WKB, WKT
 
     geog = WKT("point(0 0)").wkb
     assert isinstance(geog, WKB)
@@ -143,21 +143,21 @@ def test_geoalchemy2_core(faux_conn, last_query):
 
 
 def test_GEOGRAPHY_ElementType_bad_srid():
-    from pybigquery.sqlalchemy_bigquery import GEOGRAPHY
+    from sqlalchemy_bigquery import GEOGRAPHY
 
     with pytest.raises(AssertionError, match="Bad srid"):
         GEOGRAPHY.ElementType("data", srid=-1)
 
 
 def test_GEOGRAPHY_ElementType_bad_extended():
-    from pybigquery.sqlalchemy_bigquery import GEOGRAPHY
+    from sqlalchemy_bigquery import GEOGRAPHY
 
     with pytest.raises(AssertionError, match="Extended must be True."):
         GEOGRAPHY.ElementType("data", extended=False)
 
 
 def test_GEOGRAPHY_ElementType():
-    from pybigquery.sqlalchemy_bigquery import GEOGRAPHY, WKB
+    from sqlalchemy_bigquery import GEOGRAPHY, WKB
 
     data = GEOGRAPHY.ElementType("data")
     assert isinstance(data, WKB)

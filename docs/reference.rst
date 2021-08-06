@@ -4,9 +4,9 @@ API Reference
 Geography
 ~~~~~~~~~
 
-.. autoclass::  pybigquery.geography.GEOGRAPHY
+.. autoclass::  sqlalchemy-bigquery.geography.GEOGRAPHY
    :exclude-members: bind_expression, ElementType, bind_processor
 
-.. automodule:: pybigquery.geography
+.. automodule:: sqlalchemy-bigquery.geography
    :members: WKB, WKT
    :exclude-members: GEOGRAPHY

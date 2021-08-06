@@ -41,7 +41,7 @@ def test_geoalchemy2_core(bigquery_dataset):
     # Create the Table
 
     from sqlalchemy import Table, Column, String, MetaData
-    from pybigquery.sqlalchemy_bigquery import GEOGRAPHY
+    from sqlalchemy_bigquery import GEOGRAPHY
 
     metadata = MetaData()
     lake_table = Table(
@@ -109,7 +109,7 @@ def test_geoalchemy2_core(bigquery_dataset):
 
     # and, while we're at it, that we can insert WKTs, although we
     # normally wouldn't want to.
-    from pybigquery.sqlalchemy_bigquery import WKT
+    from sqlalchemy_bigquery import WKT
 
     conn.execute(
         lake_table.insert().values(
@@ -144,7 +144,7 @@ def test_geoalchemy2_orm(bigquery_dataset):
 
     from sqlalchemy.ext.declarative import declarative_base
     from sqlalchemy import Column, Integer, String
-    from pybigquery.sqlalchemy_bigquery import GEOGRAPHY
+    from sqlalchemy_bigquery import GEOGRAPHY
 
     Base = declarative_base()
 
@@ -248,7 +248,7 @@ def test_geoalchemy2_orm_w_relationship(bigquery_dataset):
     engine = create_engine(f"bigquery:///{bigquery_dataset}")
 
     from sqlalchemy import Column, Integer, String
-    from pybigquery.sqlalchemy_bigquery import GEOGRAPHY
+    from sqlalchemy_bigquery import GEOGRAPHY
 
     from sqlalchemy.ext.declarative import declarative_base
 

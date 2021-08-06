@@ -62,6 +62,13 @@ __all__ = [
 ]
 
 try:
+    from .geography import GEOGRAPHY, WKB, WKT
+except ImportError:
+    pass
+else:
+    __all__.extend(["GEOGRAPHY", "WKB", "WKT"])
+
+try:
     import pybigquery  # noqa
 except ImportError:
     pass
