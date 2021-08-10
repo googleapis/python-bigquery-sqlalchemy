@@ -14,7 +14,7 @@ Older versions of this project were distributed as [pybigquery][0].
 [2]: https://pypi.org/project/pybigquery/#history
 
 
-## [0.11.0](https://www.github.com/googleapis/python-bigquery-sqlalchemy/compare/v0.10.1...v0.11.0) (2021-08-10)
+## [1.0.0-a1](https://www.github.com/googleapis/python-bigquery-sqlalchemy/compare/v0.10.1...v1.0.0-a1) (2021-08-10)
 
 
 ### Features
