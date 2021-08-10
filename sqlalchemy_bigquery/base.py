@@ -56,7 +56,7 @@ from .parse_url import parse_url
 from sqlalchemy_bigquery import _helpers
 
 try:
-    from .geography import GEOGRAPHY, WKB, WKT  # noqa
+    from .geography import GEOGRAPHY
 except ImportError:
     pass
 

@@ -20,7 +20,7 @@
 SQLAlchemy dialect for Google BigQuery
 """
 
-from .version import __version__
+from .version import __version__  # noqa
 
 from .base import BigQueryDialect
 from .base import (
@@ -42,7 +42,6 @@ from .base import (
 )
 
 __all__ = [
-    "__version__",
     "BigQueryDialect",
     "STRING",
     "BOOL",
