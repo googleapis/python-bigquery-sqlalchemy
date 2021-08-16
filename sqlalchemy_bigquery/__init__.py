@@ -41,6 +41,9 @@ from .base import (
     BIGNUMERIC,
 )
 
+# Define a "dialect" attribute to follow the common SqlAlchemy convention assumed by some libraries that leverage SqlAlchemy.
+base.dialect = dialect = BigQueryDialect
+
 __all__ = [
     "__version__",
     "BigQueryDialect",
