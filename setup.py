@@ -24,14 +24,14 @@ from setuptools import setup
 # Package metadata.
 
 name = "pybigquery"
-version = "0.10.1"
-description = "SQLAlchemy dialect for BigQuery"
+version = "0.10.2"
+description = "OBSOLETE SQLAlchemy dialect for BigQuery"
 
 # Should be one of:
 # 'Development Status :: 3 - Alpha'
 # 'Development Status :: 4 - Beta'
 # 'Development Status :: 5 - Production/Stable'
-release_status = "Development Status :: 4 - Beta"
+release_status = "Development Status :: 7 - Inactive"
 
 
 def readme():
