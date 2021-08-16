@@ -234,7 +234,7 @@ def test_engine_with_dataset(engine_using_test_dataset, bigquery_dataset):
     table_one_row = Table(
         "sample_one_row", MetaData(bind=engine_using_test_dataset), autoload=True
     )
-    rows = table_one_row.select().execute().fetchall()
+    rows = table_one_row.select(use_labels=True).execute().fetchall()
     assert list(rows[0]) == ONE_ROW_CONTENTS_EXPANDED
 
     table_one_row = Table(
@@ -242,7 +242,7 @@ def test_engine_with_dataset(engine_using_test_dataset, bigquery_dataset):
         MetaData(bind=engine_using_test_dataset),
         autoload=True,
     )
-    rows = table_one_row.select().execute().fetchall()
+    rows = table_one_row.select(use_labels=True).execute().fetchall()
     # verify that we are pulling from the specifically-named dataset,
     # instead of pulling from the default dataset of the engine (which
     # does not have this table at all)
