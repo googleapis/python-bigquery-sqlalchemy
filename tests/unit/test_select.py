@@ -231,8 +231,8 @@ def test_select_in_lit_13(faux_conn):
 def test_select_in_lit(faux_conn, last_query):
     faux_conn.execute(sqlalchemy.select([sqlalchemy.literal(1).in_([1, 2, 3])]))
     last_query(
-        'SELECT %(param_1:INT64)s IN UNNEST(%(param_2:INT64)s) AS `anon_1`',
-        {'param_1': 1, 'param_2': [1, 2, 3]},
+        "SELECT %(param_1:INT64)s IN UNNEST(%(param_2:INT64)s) AS `anon_1`",
+        {"param_1": 1, "param_2": [1, 2, 3]},
     )
 
 
@@ -244,8 +244,9 @@ def test_select_in_param(faux_conn, last_query):
         dict(q=[1, 2, 3]),
     )
     if sqlalchemy_version_info >= (1, 4):
-        last_query('SELECT %(param_1:INT64)s IN UNNEST(%(q:INT64)s) AS `anon_1`',
-                   {'param_1': 1, 'q': [1, 2, 3]},
+        last_query(
+            "SELECT %(param_1:INT64)s IN UNNEST(%(q:INT64)s) AS `anon_1`",
+            {"param_1": 1, "q": [1, 2, 3]},
         )
     else:
         assert isin
@@ -265,15 +266,16 @@ def test_select_in_param1(faux_conn, last_query):
         dict(q=[1]),
     )
     if sqlalchemy_version_info >= (1, 4):
-        last_query('SELECT %(param_1:INT64)s IN UNNEST(%(q:INT64)s) AS `anon_1`',
-                   {'param_1': 1, 'q': [1]},
-                   )
+        last_query(
+            "SELECT %(param_1:INT64)s IN UNNEST(%(q:INT64)s) AS `anon_1`",
+            {"param_1": 1, "q": [1]},
+        )
     else:
         assert isin
         last_query(
             "SELECT %(param_1:INT64)s IN UNNEST(" "[ %(q_1:INT64)s ]" ") AS `anon_1`",
             {"param_1": 1, "q_1": 1},
-            )
+        )
 
 
 @sqlalchemy_1_3_or_higher
@@ -285,13 +287,15 @@ def test_select_in_param_empty(faux_conn, last_query):
         dict(q=[]),
     )
     if sqlalchemy_version_info >= (1, 4):
-        last_query('SELECT %(param_1:INT64)s IN UNNEST(%(q:INT64)s) AS `anon_1`',
-                   {'param_1': 1, 'q': []})
+        last_query(
+            "SELECT %(param_1:INT64)s IN UNNEST(%(q:INT64)s) AS `anon_1`",
+            {"param_1": 1, "q": []},
+        )
     else:
         assert not isin
         last_query(
-            "SELECT %(param_1:INT64)s IN UNNEST([  ]) AS `anon_1`",
-            {"param_1": 1})
+            "SELECT %(param_1:INT64)s IN UNNEST([  ]) AS `anon_1`", {"param_1": 1}
+        )
 
 
 @sqlalchemy_before_1_4
@@ -309,12 +313,11 @@ def test_select_notin_lit13(faux_conn):
 
 @sqlalchemy_1_4_or_higher
 def test_select_notin_lit(faux_conn, last_query):
-    faux_conn.execute(
-        sqlalchemy.select([sqlalchemy.literal(0).notin_([1, 2, 3])])
-    )
+    faux_conn.execute(sqlalchemy.select([sqlalchemy.literal(0).notin_([1, 2, 3])]))
     last_query(
-        'SELECT (%(param_1:INT64)s NOT IN UNNEST(%(param_2:INT64)s)) AS `anon_1`',
-        {'param_1': 0, 'param_2': [1, 2, 3]})
+        "SELECT (%(param_1:INT64)s NOT IN UNNEST(%(param_2:INT64)s)) AS `anon_1`",
+        {"param_1": 0, "param_2": [1, 2, 3]},
+    )
 
 
 def test_select_notin_param(faux_conn, last_query):
@@ -326,15 +329,17 @@ def test_select_notin_param(faux_conn, last_query):
     )
     if sqlalchemy_version_info >= (1, 4):
         last_query(
-            'SELECT (%(param_1:INT64)s NOT IN UNNEST(%(q:INT64)s)) AS `anon_1`',
-            {'param_1': 1, 'q': [1, 2, 3]})
+            "SELECT (%(param_1:INT64)s NOT IN UNNEST(%(q:INT64)s)) AS `anon_1`",
+            {"param_1": 1, "q": [1, 2, 3]},
+        )
     else:
         assert not isnotin
         last_query(
             "SELECT (%(param_1:INT64)s NOT IN UNNEST("
             "[ %(q_1:INT64)s, %(q_2:INT64)s, %(q_3:INT64)s ]"
             ")) AS `anon_1`",
-            {"param_1": 1, "q_1": 1, "q_2": 2, "q_3": 3})
+            {"param_1": 1, "q_1": 1, "q_2": 2, "q_3": 3},
+        )
 
 
 @sqlalchemy_1_3_or_higher
@@ -347,9 +352,11 @@ def test_select_notin_param_empty(faux_conn, last_query):
     )
     if sqlalchemy_version_info >= (1, 4):
         last_query(
-            'SELECT (%(param_1:INT64)s NOT IN UNNEST(%(q:INT64)s)) AS `anon_1`',
-            {'param_1': 1, 'q': []})
+            "SELECT (%(param_1:INT64)s NOT IN UNNEST(%(q:INT64)s)) AS `anon_1`",
+            {"param_1": 1, "q": []},
+        )
     else:
         assert isnotin
-        last_query("SELECT (%(param_1:INT64)s NOT IN UNNEST([  ])) AS `anon_1`",
-                   {"param_1": 1})
+        last_query(
+            "SELECT (%(param_1:INT64)s NOT IN UNNEST([  ])) AS `anon_1`", {"param_1": 1}
+        )

@@ -401,9 +401,9 @@ class BigQueryCompiler(SQLCompiler):
         **kwargs,
     ):
         unnest = False
-        if (bindparam.expanding and not isinstance(bindparam.type, NullType)):
-            if getattr(bindparam, 'expand_op', None) is not None:
-                assert bindparam.expand_op.__name__.endswith('in_op')  # in in
+        if bindparam.expanding and not isinstance(bindparam.type, NullType):
+            if getattr(bindparam, "expand_op", None) is not None:
+                assert bindparam.expand_op.__name__.endswith("in_op")  # in in
                 bindparam.expanding = False
                 unnest = True
 
@@ -451,7 +451,7 @@ class BigQueryCompiler(SQLCompiler):
                     param = f"%({name}:{bq_type})s"
 
         if unnest:
-            param = f'UNNEST({param})'
+            param = f"UNNEST({param})"
 
         return param
 

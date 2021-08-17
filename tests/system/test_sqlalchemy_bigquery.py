@@ -691,17 +691,18 @@ def test_has_table(engine, engine_using_test_dataset, bigquery_dataset):
 
 
 @pytest.mark.skipif(
-    sqlalchemy_version_info < (1, 4),
-    reason="requires sqlalchemy 1.4 or higher",
+    sqlalchemy_version_info < (1, 4), reason="requires sqlalchemy 1.4 or higher",
 )
 def test_huge_in():
     engine = sqlalchemy.create_engine("bigquery://")
     conn = engine.connect()
     try:
-        assert list(conn.execute(
-            sqlalchemy.select([sqlalchemy.literal(-1).in_(list(range(99999)))])
-            )) == [(False,)]
-    except Exception as e:
+        assert list(
+            conn.execute(
+                sqlalchemy.select([sqlalchemy.literal(-1).in_(list(range(99999)))])
+            )
+        ) == [(False,)]
+    except Exception:
         error = True
     else:
         error = False

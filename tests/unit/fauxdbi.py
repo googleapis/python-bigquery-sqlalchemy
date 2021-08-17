@@ -271,9 +271,10 @@ class Cursor:
         )
         \)
         """,
-        flags=re.IGNORECASE | re.VERBOSE)
+        flags=re.IGNORECASE | re.VERBOSE,
+    )
     def __handle_unnest(self, m):
-        return '(' + (m.group('exp') or '?') + ')'
+        return "(" + (m.group("exp") or "?") + ")"
 
     def __handle_true_false(self, operation):
         # Older sqlite versions, like those used on the CI servers
