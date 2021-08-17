@@ -400,6 +400,13 @@ class BigQueryCompiler(SQLCompiler):
         skip_bind_expression=False,
         **kwargs,
     ):
+        unnest = False
+        if (bindparam.expanding and not isinstance(bindparam.type, NullType)):
+            if getattr(bindparam, 'expand_op', None) is not None:
+                assert bindparam.expand_op.__name__.endswith('in_op')  # in in
+                bindparam.expanding = False
+                unnest = True
+
         param = super(BigQueryCompiler, self).visit_bindparam(
             bindparam,
             within_columns_clause,
@@ -409,40 +416,42 @@ class BigQueryCompiler(SQLCompiler):
         )
 
         type_ = bindparam.type
-        if isinstance(type_, NullType):
-            return param
+        if not isinstance(type_, NullType):
 
-        if (
-            isinstance(type_, Numeric)
-            and (type_.precision is None or type_.scale is None)
-            and isinstance(bindparam.value, Decimal)
-        ):
-            t = bindparam.value.as_tuple()
+            if (
+                isinstance(type_, Numeric)
+                and (type_.precision is None or type_.scale is None)
+                and isinstance(bindparam.value, Decimal)
+            ):
+                t = bindparam.value.as_tuple()
 
-            if type_.precision is None:
-                type_.precision = len(t.digits)
+                if type_.precision is None:
+                    type_.precision = len(t.digits)
 
-            if type_.scale is None and t.exponent < 0:
-                type_.scale = -t.exponent
+                if type_.scale is None and t.exponent < 0:
+                    type_.scale = -t.exponent
 
-        bq_type = self.dialect.type_compiler.process(type_)
-        if bq_type[-1] == ">" and bq_type.startswith("ARRAY<"):
-            # Values get arrayified at a lower level.
-            bq_type = bq_type[6:-1]
-        bq_type = self.__remove_type_parameter(bq_type)
+            bq_type = self.dialect.type_compiler.process(type_)
+            if bq_type[-1] == ">" and bq_type.startswith("ARRAY<"):
+                # Values get arrayified at a lower level.
+                bq_type = bq_type[6:-1]
+            bq_type = self.__remove_type_parameter(bq_type)
 
-        assert_(param != "%s", f"Unexpected param: {param}")
+            assert_(param != "%s", f"Unexpected param: {param}")
 
-        if bindparam.expanding:
-            assert_(self.__expanded_param(param), f"Unexpected param: {param}")
-            param = param.replace(")", f":{bq_type})")
+            if bindparam.expanding:
+                assert_(self.__expanded_param(param), f"Unexpected param: {param}")
+                param = param.replace(")", f":{bq_type})")
 
-        else:
-            m = self.__placeholder(param)
-            if m:
-                name, type_ = m.groups()
-                assert_(type_ is None)
-                param = f"%({name}:{bq_type})s"
+            else:
+                m = self.__placeholder(param)
+                if m:
+                    name, type_ = m.groups()
+                    assert_(type_ is None)
+                    param = f"%({name}:{bq_type})s"
+
+        if unnest:
+            param = f'UNNEST({param})'
 
         return param
 

@@ -77,8 +77,7 @@ def last_query(faux_conn):
     def last_query(sql, params=None, offset=1):
         actual_sql, actual_params = faux_conn.test_data["execute"][-offset]
         assert actual_sql == sql
-        if params is not None:
-            assert actual_params == params
+        assert actual_params == params
 
     return last_query
 
