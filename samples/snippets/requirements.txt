@@ -3,7 +3,7 @@ attrs==21.2.0
 cachetools==4.2.2
 certifi==2021.5.30
 cffi==1.14.6
-charset-normalizer==2.0.3
+charset-normalizer==2.0.4
 click==8.0.1
 click-plugins==1.1.1
 cligj==0.7.2
