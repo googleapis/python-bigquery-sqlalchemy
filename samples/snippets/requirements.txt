@@ -52,7 +52,7 @@ requests==2.26.0
 rsa==4.7.2
 Shapely==1.7.1
 six==1.16.0
-SQLAlchemy==1.4.22
+SQLAlchemy==1.4.23
 sqlalchemy-bigquery==1.0.0
 tqdm==4.62.1
 typing-extensions==3.10.0.0
