@@ -8,7 +8,7 @@ click==8.0.1
 click-plugins==1.1.1
 cligj==0.7.2
 contextvars==2.4
-dataclasses==0.6
+dataclasses==0.8
 Deprecated==1.2.12
 Fiona==1.8.20
 future==0.18.2
