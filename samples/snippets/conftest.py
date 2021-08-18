@@ -16,5 +16,33 @@
 # COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+"""
+SQLAlchemy dialect for Google BigQuery
+"""
 
-__version__ = "1.0.0"
+from google.cloud import bigquery
+import pytest
+import sqlalchemy
+import test_utils.prefixer
+
+prefixer = test_utils.prefixer.Prefixer("python-bigquery-sqlalchemy", "tests/system")
+
+
+@pytest.fixture(scope="session")
+def client():
+    return bigquery.Client()
+
+
+@pytest.fixture(scope="session")
+def dataset_id(client: bigquery.Client):
+    project_id = client.project
+    dataset_id = prefixer.create_prefix()
+    dataset = bigquery.Dataset(f"{project_id}.{dataset_id}")
+    dataset = client.create_dataset(dataset)
+    yield dataset_id
+    client.delete_dataset(dataset_id, delete_contents=True)
+
+
+@pytest.fixture(scope="session")
+def engine(dataset_id):
+    return sqlalchemy.create_engine(f"bigquery:///{dataset_id}")

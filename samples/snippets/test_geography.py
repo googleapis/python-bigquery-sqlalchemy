@@ -17,4 +17,11 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-__version__ = "1.0.0"
+
+def test_geography(engine):
+    from . import geography
+
+    lakes_touching_lake2, lakes_containing = geography.example(engine)
+
+    assert sorted(lake.name for lake in lakes_touching_lake2) == ["Majeur", "Orta"]
+    assert [lake.name for lake in lakes_containing] == ["Orta"]
