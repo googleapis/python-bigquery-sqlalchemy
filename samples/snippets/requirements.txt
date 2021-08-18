@@ -30,7 +30,7 @@ importlib-metadata==4.6.1
 libcst==0.3.19
 munch==2.5.0
 mypy-extensions==0.4.3
-numpy==1.19.5
+numpy==1.21.2
 opentelemetry-api==1.4.1
 opentelemetry-instrumentation==0.23b2
 opentelemetry-sdk==1.4.1
