@@ -27,7 +27,7 @@ grpcio==1.39.0
 idna==3.2
 immutables==0.15
 importlib-metadata==4.6.1
-libcst==0.3.19
+libcst==0.3.20
 munch==2.5.0
 mypy-extensions==0.4.3
 numpy==1.19.5
