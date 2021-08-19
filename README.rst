@@ -1,15 +1,19 @@
 SQLAlchemy Dialect for BigQuery
 ===============================
 
-|beta| |pypi| |versions|
+.. attention::
+   pybigquery is **obsolete**.  Use `sqlalchemy-bigquery
+   <https://pypi.org/project/sqlalchemy-bigquery/>`_ instead.  All
+   future changes will be made to sqlalchemy-bigquery.
+
+|obsolete| |pypi| |versions|
 
 `SQLALchemy Dialects`_
 
 - `Dialect Documentation`_
 - `Product Documentation`_
 
-.. |beta| image:: https://img.shields.io/badge/support-beta-orange.svg
-   :target: https://github.com/googleapis/google-cloud-python/blob/master/README.rst#beta-support
+.. |obsolete| image:: https://img.shields.io/badge/support-obsolete-orange.svg
 .. |pypi| image:: https://img.shields.io/pypi/v/pybigquery.svg
    :target: https://pypi.org/project/pybigquery/
 .. |versions| image:: https://img.shields.io/pypi/pyversions/pybigquery.svg
