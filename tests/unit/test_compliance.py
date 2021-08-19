@@ -215,4 +215,4 @@ def test_cast_type_decorator(faux_conn, last_query):
 
     t = setup_table(faux_conn, "t", Column("x", StringAsInt()))
     faux_conn.execute(t.insert(), [{"x": x} for x in [1, 2, 3]])
-    last_query('INSERT INTO `t` (`x`) VALUES (CAST(%(x:STRING)s AS STRING))', {'x': 3})
+    last_query("INSERT INTO `t` (`x`) VALUES (CAST(%(x:STRING)s AS STRING))", {"x": 3})
