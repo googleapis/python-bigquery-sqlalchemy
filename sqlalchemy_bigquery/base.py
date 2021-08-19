@@ -420,7 +420,7 @@ class BigQueryCompiler(SQLCompiler):
         )
 
         type_ = bindparam.type
-        if isinstance(type_, NullType):
+        if literal_binds or isinstance(type_, NullType):
             return param
 
         if (
@@ -451,10 +451,9 @@ class BigQueryCompiler(SQLCompiler):
 
         else:
             m = self.__placeholder(param)
-            if m:
-                name, type_ = m.groups()
-                assert_(type_ is None)
-                param = f"%({name}:{bq_type})s"
+            name, type_ = m.groups()
+            assert_(type_ is None)
+            param = f"%({name}:{bq_type})s"
 
         return param
 
