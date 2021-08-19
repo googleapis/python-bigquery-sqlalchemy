@@ -15,6 +15,7 @@ import sqlalchemy
 
 from conftest import setup_table
 
+
 @pytest.fixture
 def mock_bigquery_client():
     return mock.create_autospec(bigquery.Client, instance=True)
@@ -166,7 +167,7 @@ def test_multi_value_insert(faux_conn, last_query):
     faux_conn.execute(table.insert().values([dict(id=i) for i in range(3)]))
 
     last_query(
-        'INSERT INTO `t` (`id`) VALUES'
-        ' (%(id_m0:INT64)s), (%(id_m1:INT64)s), (%(id_m2:INT64)s)',
-        {'id_m0': 0, 'id_m1': 1, 'id_m2': 2},
+        "INSERT INTO `t` (`id`) VALUES"
+        " (%(id_m0:INT64)s), (%(id_m1:INT64)s), (%(id_m2:INT64)s)",
+        {"id_m0": 0, "id_m1": 1, "id_m2": 2},
     )
