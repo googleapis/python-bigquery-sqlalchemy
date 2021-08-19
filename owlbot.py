@@ -135,11 +135,11 @@ def compliance(session):
         constraints_path,
     )
     if session.python == "3.8":
-        extras = "[alembic]"
+        extras = "[tests,alembic]"
     elif session.python == "3.9":
-        extras = "[geography]"
+        extras = "[tests,geography]"
     else:
-        extras = ""
+        extras = "[tests]"
     session.install("-e", f".{extras}", "-c", constraints_path)
 
     session.run(
