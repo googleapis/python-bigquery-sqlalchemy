@@ -413,9 +413,10 @@ class BigQueryCompiler(SQLCompiler):
     ):
         type_ = bindparam.type
         unnest = False
-        if (bindparam.expanding and
-            not isinstance(type_, NullType) and
-            not literal_binds
+        if (
+            bindparam.expanding
+            and not isinstance(type_, NullType)
+            and not literal_binds
         ):
             if getattr(bindparam, "expand_op", None) is not None:
                 assert bindparam.expand_op.__name__.endswith("in_op")  # in in
