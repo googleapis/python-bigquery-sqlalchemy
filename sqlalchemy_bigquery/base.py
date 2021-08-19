@@ -451,9 +451,10 @@ class BigQueryCompiler(SQLCompiler):
 
         else:
             m = self.__placeholder(param)
-            name, type_ = m.groups()
-            assert_(type_ is None)
-            param = f"%({name}:{bq_type})s"
+            if m:
+                name, type_ = m.groups()
+                assert_(type_ is None)
+                param = f"%({name}:{bq_type})s"
 
         return param
 
