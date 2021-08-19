@@ -45,7 +45,7 @@ def readme():
         return f.read()
 
 
-extras = dict(geography=["GeoAlchemy2", "shapely"], alembic=["alembic"],)
+extras = dict(geography=["GeoAlchemy2", "shapely"], alembic=["alembic"], tests=["pytz"])
 extras["all"] = set(itertools.chain.from_iterable(extras.values()))
 
 setup(
