@@ -693,7 +693,7 @@ def test_has_table(engine, engine_using_test_dataset, bigquery_dataset):
     assert engine_using_test_dataset.has_table("sample_alt") is False
 
 
-def test_distinct_188(engine, bigquery_dataset, metadata):
+def test_distinct_188(engine, bigquery_dataset):
     from sqlalchemy.ext.declarative import declarative_base
     from sqlalchemy import Column, Integer
     from sqlalchemy.orm import sessionmaker
