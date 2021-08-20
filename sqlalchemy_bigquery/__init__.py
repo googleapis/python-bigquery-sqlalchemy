@@ -22,7 +22,7 @@ SQLAlchemy dialect for Google BigQuery
 
 from .version import __version__  # noqa
 
-from .base import BigQueryDialect
+from .base import BigQueryDialect, dialect  # noqa
 from .base import (
     STRING,
     BOOL,
@@ -40,9 +40,6 @@ from .base import (
     NUMERIC,
     BIGNUMERIC,
 )
-
-# Define a "dialect" attribute to follow the common SqlAlchemy convention assumed by some libraries that leverage SqlAlchemy.
-base.dialect = dialect = BigQueryDialect
 
 __all__ = [
     "BigQueryDialect",

@@ -175,5 +175,6 @@ def test_multi_value_insert(faux_conn, last_query):
 
 def test_follow_dialect_attribute_convention():
     import sqlalchemy_bigquery.base
+
     assert sqlalchemy_bigquery.dialect is sqlalchemy_bigquery.BigQueryDialect
     assert sqlalchemy_bigquery.base.dialect is sqlalchemy_bigquery.BigQueryDialect
