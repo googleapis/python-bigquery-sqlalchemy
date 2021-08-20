@@ -62,6 +62,8 @@ except ImportError:
 
 FIELD_ILLEGAL_CHARACTERS = re.compile(r"[^\w]+")
 
+TABLE_VALUED_ALIAS_ALIASES = "bigquery_table_valued_alias_aliases"
+
 
 def assert_(cond, message="Assertion failed"):  # pragma: NO COVER
     if not cond:
@@ -248,6 +250,38 @@ class BigQueryCompiler(SQLCompiler):
             insert_stmt, asfrom=False, **kw
         )
 
+    def visit_table_valued_alias(self, element, **kw):
+        # When using table-valued functions, like UNNEST, BigQuery requires a
+        # FROM for any table referenced in the function, including expressions
+        # in function arguments.
+        #
+        # This is tricky because:
+        # 1. We have to find the table references.
+        # 2. We can't know practically if there's already a FROM for a table.
+        #
+        # We leverage visit_column to find a table reference.  Whenever we find
+        # one, we create an alias for it.
+        #
+        # This requires communicating between this function and visit_column.
+        # We do this by sticking a dictionary in the keyword arguments.
+        # This dictionary:
+        # a. Tells visit_column that it's an a table-valued alias expresssion, and
+        # b. Gives it a place to record the aliases it creates.
+        #
+        # This function creates aliases in the FROM list for any aliases recorded
+        # by visit_column.
+
+        kw[TABLE_VALUED_ALIAS_ALIASES] = {}
+        ret = super().visit_table_valued_alias(element, **kw)
+        aliases = kw.pop(TABLE_VALUED_ALIAS_ALIASES)
+        if aliases:
+            aliases = ", ".join(
+                f"{self.preparer.quote(tablename)} {self.preparer.quote(alias)}"
+                for tablename, alias in aliases.items()
+            )
+            ret = f"{aliases}, {ret}"
+        return ret
+
     def visit_column(
         self, column, add_to_result_map=None, include_table=True, **kwargs
     ):
@@ -273,6 +307,13 @@ class BigQueryCompiler(SQLCompiler):
             tablename = table.name
             if isinstance(tablename, elements._truncated_label):
                 tablename = self._truncated_identifier("alias", tablename)
+            elif TABLE_VALUED_ALIAS_ALIASES in kwargs:
+                aliases = kwargs[TABLE_VALUED_ALIAS_ALIASES]
+                if tablename not in aliases:
+                    aliases[tablename] = self.anon_map[
+                        f"{TABLE_VALUED_ALIAS_ALIASES} {tablename}"
+                    ]
+                tablename = aliases[tablename]
             return self.preparer.quote(tablename) + "." + name
 
     def visit_label(self, *args, within_group_by=False, **kwargs):
