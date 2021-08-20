@@ -271,8 +271,6 @@ class BigQueryCompiler(SQLCompiler):
             add_to_result_map(name, orig_name, targets, column.type)
 
         if is_literal:
-            # note we are not currently accommodating for
-            # literal_column(quoted_name('ident', True)) here
             name = self.escape_literal_column(name)
         else:
             name = self.preparer.quote(name, column=True)
