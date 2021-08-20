@@ -114,39 +114,41 @@ class BigQueryIdentifierPreparer(IdentifierPreparer):
 
 
 _type_map = {
-    "STRING": types.String,
-    "BOOL": types.Boolean,
+    "ARRAY": types.ARRAY,
+    "BIGNUMERIC": types.Numeric,
     "BOOLEAN": types.Boolean,
-    "INT64": types.Integer,
-    "INTEGER": types.Integer,
-    "FLOAT64": types.Float,
-    "FLOAT": types.Float,
-    "TIMESTAMP": types.TIMESTAMP,
+    "BOOL": types.Boolean,
+    "BYTES": types.BINARY,
     "DATETIME": types.DATETIME,
     "DATE": types.DATE,
-    "BYTES": types.BINARY,
-    "TIME": types.TIME,
-    "RECORD": types.JSON,
+    "FLOAT64": types.Float,
+    "FLOAT": types.Float,
+    "INT64": types.Integer,
+    "INTEGER": types.Integer,
     "NUMERIC": types.Numeric,
-    "BIGNUMERIC": types.Numeric,
+    "RECORD": types.JSON,
+    "STRING": types.String,
+    "TIMESTAMP": types.TIMESTAMP,
+    "TIME": types.TIME,
 }
 
 # By convention, dialect-provided types are spelled with all upper case.
-STRING = _type_map["STRING"]
-BOOL = _type_map["BOOL"]
+ARRAY = _type_map["ARRAY"]
+BIGNUMERIC = _type_map["NUMERIC"]
 BOOLEAN = _type_map["BOOLEAN"]
-INT64 = _type_map["INT64"]
-INTEGER = _type_map["INTEGER"]
-FLOAT64 = _type_map["FLOAT64"]
-FLOAT = _type_map["FLOAT"]
-TIMESTAMP = _type_map["TIMESTAMP"]
+BOOL = _type_map["BOOL"]
+BYTES = _type_map["BYTES"]
 DATETIME = _type_map["DATETIME"]
 DATE = _type_map["DATE"]
-BYTES = _type_map["BYTES"]
-TIME = _type_map["TIME"]
-RECORD = _type_map["RECORD"]
+FLOAT64 = _type_map["FLOAT64"]
+FLOAT = _type_map["FLOAT"]
+INT64 = _type_map["INT64"]
+INTEGER = _type_map["INTEGER"]
 NUMERIC = _type_map["NUMERIC"]
-BIGNUMERIC = _type_map["NUMERIC"]
+RECORD = _type_map["RECORD"]
+STRING = _type_map["STRING"]
+TIMESTAMP = _type_map["TIMESTAMP"]
+TIME = _type_map["TIME"]
 
 try:
     _type_map["GEOGRAPHY"] = GEOGRAPHY
