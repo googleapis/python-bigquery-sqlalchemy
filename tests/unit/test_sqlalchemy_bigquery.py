@@ -158,3 +158,9 @@ def test__remove_type_from_empty_in(inp, outp):
 
     r = BigQueryExecutionContext._BigQueryExecutionContext__remove_type_from_empty_in
     assert r(None, inp) == outp
+
+
+def test_follow_dialect_attribute_convention():
+    import sqlalchemy_bigquery.base
+    assert sqlalchemy_bigquery.dialect is sqlalchemy_bigquery.BigQueryDialect
+    assert sqlalchemy_bigquery.base.dialect is sqlalchemy_bigquery.BigQueryDialect
