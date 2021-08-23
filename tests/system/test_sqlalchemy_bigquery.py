@@ -301,7 +301,7 @@ def test_record_content_from_raw_queries(engine, bigquery_dataset):
 
 
 def test_content_from_reflect(engine, table_one_row):
-    rows = table_one_row.select().execute().fetchall()
+    rows = table_one_row.select(use_labels=True).execute().fetchall()
     assert list(rows[0]) == ONE_ROW_CONTENTS_EXPANDED
 
 
@@ -505,7 +505,7 @@ def test_querying_wildcard_tables(engine):
 def test_dml(engine, session, table_dml):
     # test insert
     engine.execute(table_dml.insert(ONE_ROW_CONTENTS_DML))
-    result = table_dml.select().execute().fetchall()
+    result = table_dml.select(use_labels=True).execute().fetchall()
     assert len(result) == 1
 
     # test update
