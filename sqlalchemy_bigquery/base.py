@@ -255,12 +255,30 @@ class BigQueryCompiler(SQLCompiler):
         # FROM for any table referenced in the function, including expressions
         # in function arguments.
         #
+        # For example, given SQLAlchemy code:
+        #
+        #   print(
+        #      select([func.unnest(foo.c.objects).alias('foo_objects').column])
+        #      .compile(engine))
+        #
+        # Left to it's own devices, SQLAlchemy would outout:
+        #
+        #   SELECT `foo_objects`
+        #   FROM unnest(`foo`.`objects`) AS `foo_objects`
+        #
+        # But BigQuery diesn't understand the `foo` reference unless
+        # we add as reference to `foo` in the FROM:
+        #
+        #   SELECT foo_objects
+        #   FROM `foo`, UNNEST(`foo`.`objects`) as foo_objects
+        #
         # This is tricky because:
         # 1. We have to find the table references.
         # 2. We can't know practically if there's already a FROM for a table.
         #
         # We leverage visit_column to find a table reference.  Whenever we find
-        # one, we create an alias for it.
+        # one, we create an alias for it, so as not to conlfict with an existing
+        # reference if one is present.
         #
         # This requires communicating between this function and visit_column.
         # We do this by sticking a dictionary in the keyword arguments.
@@ -283,7 +301,12 @@ class BigQueryCompiler(SQLCompiler):
         return ret
 
     def visit_column(
-        self, column, add_to_result_map=None, include_table=True, **kwargs
+        self,
+        column,
+        add_to_result_map=None,
+        include_table=True,
+        result_map_targets=(),
+        **kwargs,
     ):
         name = orig_name = column.name
         if name is None:
@@ -294,7 +317,12 @@ class BigQueryCompiler(SQLCompiler):
             name = self._truncated_identifier("colident", name)
 
         if add_to_result_map is not None:
-            add_to_result_map(name, orig_name, (column, name, column.key), column.type)
+            targets = (column, name, column.key) + result_map_targets
+            if getattr(column, "_tq_label", None):
+                # _tq_label was added in SQLAlchemy 1.4
+                targets += (column._tq_label,)
+
+            add_to_result_map(name, orig_name, targets, column.type)
 
         if is_literal:
             name = self.escape_literal_column(name)
@@ -314,6 +342,7 @@ class BigQueryCompiler(SQLCompiler):
                         f"{TABLE_VALUED_ALIAS_ALIASES} {tablename}"
                     ]
                 tablename = aliases[tablename]
+
             return self.preparer.quote(tablename) + "." + name
 
     def visit_label(self, *args, within_group_by=False, **kwargs):
@@ -463,7 +492,7 @@ class BigQueryCompiler(SQLCompiler):
         )
 
         type_ = bindparam.type
-        if isinstance(type_, NullType):
+        if literal_binds or isinstance(type_, NullType):
             return param
 
         if (
@@ -1028,6 +1057,8 @@ class BigQueryDialect(DefaultDialect):
         view = client.get_table(view_name)
         return view.view_query
 
+
+dialect = BigQueryDialect
 
 try:
     import alembic  # noqa

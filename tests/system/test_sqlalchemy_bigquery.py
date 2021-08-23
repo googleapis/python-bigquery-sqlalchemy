@@ -302,7 +302,7 @@ def test_record_content_from_raw_queries(engine, bigquery_dataset):
 
 
 def test_content_from_reflect(engine, table_one_row):
-    rows = table_one_row.select().execute().fetchall()
+    rows = table_one_row.select(use_labels=True).execute().fetchall()
     assert list(rows[0]) == ONE_ROW_CONTENTS_EXPANDED
 
 
@@ -506,21 +506,21 @@ def test_querying_wildcard_tables(engine):
 def test_dml(engine, session, table_dml):
     # test insert
     engine.execute(table_dml.insert(ONE_ROW_CONTENTS_DML))
-    result = table_dml.select().execute().fetchall()
+    result = table_dml.select(use_labels=True).execute().fetchall()
     assert len(result) == 1
 
     # test update
     session.query(table_dml).filter(table_dml.c.string == "test").update(
         {"string": "updated_row"}, synchronize_session=False
     )
-    updated_result = table_dml.select().execute().fetchone()
+    updated_result = table_dml.select(use_labels=True).execute().fetchone()
     assert updated_result[table_dml.c.string] == "updated_row"
 
     # test delete
     session.query(table_dml).filter(table_dml.c.string == "updated_row").delete(
         synchronize_session=False
     )
-    result = table_dml.select().execute().fetchall()
+    result = table_dml.select(use_labels=True).execute().fetchall()
     assert len(result) == 0
 
 
@@ -692,6 +692,40 @@ def test_has_table(engine, engine_using_test_dataset, bigquery_dataset):
     assert engine_using_test_dataset.has_table(f"{bigquery_dataset}.sample") is True
 
     assert engine_using_test_dataset.has_table("sample_alt") is False
+
+
+def test_distinct_188(engine, bigquery_dataset):
+    from sqlalchemy.ext.declarative import declarative_base
+    from sqlalchemy import Column, Integer
+    from sqlalchemy.orm import sessionmaker
+
+    Base = declarative_base()
+
+    class MyTable(Base):
+        __tablename__ = f"{bigquery_dataset}.test_distinct_188"
+        id = Column(Integer, primary_key=True)
+        my_column = Column(Integer)
+
+    MyTable.__table__.create(engine)
+
+    Session = sessionmaker(bind=engine)
+    db = Session()
+    db.add_all([MyTable(id=i, my_column=i % 2) for i in range(9)])
+    db.commit()
+
+    expected = [(0,), (1,)]
+
+    assert sorted(db.query(MyTable.my_column).distinct().all()) == expected
+    assert (
+        sorted(
+            db.query(
+                sqlalchemy.distinct(MyTable.my_column).label("just_a_random_label")
+            ).all()
+        )
+        == expected
+    )
+
+    assert sorted(db.query(sqlalchemy.distinct(MyTable.my_column)).all()) == expected
 
 
 @pytest.mark.skipif(
