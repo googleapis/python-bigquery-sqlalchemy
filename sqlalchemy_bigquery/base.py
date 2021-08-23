@@ -418,6 +418,27 @@ class BigQueryCompiler(SQLCompiler):
             and not isinstance(type_, NullType)
             and not literal_binds
         ):
+            # Normally, when performing an IN operation, like:
+            #
+            #  foo IN (some_sequence)
+            #
+            # SQAlchemy passes `foo` as a parameter and unpacks
+            # `some_sequence` and passes each element as a parameter.
+            # This mechanism is refered to as "expanding".  It's
+            # inefficient and can't handle large arrays. (It's also
+            # very complicated, but that's not the issue we care about
+            # here. :) ) BigQuery lets us use arrays directly in this
+            # context, we just need to call UNNEST on an array when
+            # it's used in IN.
+            #
+            # So, if we get an `expanding` flag, and if we have a known type
+            # (and don't have literal binds, which are implemented in-line in
+            # in the SQL), we turn off expanding and we set an unnest flag
+            # so that we add an UNNEST() call (below).
+            #
+            # The NullType/known-type check has to do with some extreme
+            # edge cases having to do with empty in-lists that get special
+            # hijinks from SQLAlchemy that we don't want to disturb. :)
             if getattr(bindparam, "expand_op", None) is not None:
                 assert bindparam.expand_op.__name__.endswith("in_op")  # in in
                 bindparam.expanding = False
