@@ -373,6 +373,7 @@ def test_literal_binds_kwarg_with_an_IN_operator_252(faux_conn):
     assert (
         nstr(q.compile(faux_conn.engine, compile_kwargs={"literal_binds": True}))
         == "SELECT `test`.`val` FROM `test` WHERE `test`.`val` IN (2)"
+    )
 
 
 @sqlalchemy_1_4_or_higher
