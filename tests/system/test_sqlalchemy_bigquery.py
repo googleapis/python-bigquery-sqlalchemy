@@ -512,14 +512,14 @@ def test_dml(engine, session, table_dml):
     session.query(table_dml).filter(table_dml.c.string == "test").update(
         {"string": "updated_row"}, synchronize_session=False
     )
-    updated_result = table_dml.select().execute().fetchone()
+    updated_result = table_dml.select(use_labels=True).execute().fetchone()
     assert updated_result[table_dml.c.string] == "updated_row"
 
     # test delete
     session.query(table_dml).filter(table_dml.c.string == "updated_row").delete(
         synchronize_session=False
     )
-    result = table_dml.select().execute().fetchall()
+    result = table_dml.select(use_labels=True).execute().fetchall()
     assert len(result) == 0
 
 
