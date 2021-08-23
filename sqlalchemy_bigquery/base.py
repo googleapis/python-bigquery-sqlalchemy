@@ -999,6 +999,8 @@ class BigQueryDialect(DefaultDialect):
         return view.view_query
 
 
+dialect = BigQueryDialect
+
 try:
     import alembic  # noqa
 except ImportError:
