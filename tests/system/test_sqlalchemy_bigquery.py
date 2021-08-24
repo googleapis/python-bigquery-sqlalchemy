@@ -28,13 +28,12 @@ from sqlalchemy import types, func, case, inspect
 from sqlalchemy.sql import expression, select, literal_column
 from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy.orm import sessionmaker
+import packaging.version
 from pytz import timezone
 import pytest
 import sqlalchemy
 import datetime
 import decimal
-
-sqlalchemy_version_info = tuple(map(int, sqlalchemy.__version__.split(".")))
 
 ONE_ROW_CONTENTS_EXPANDED = [
     588,
@@ -729,7 +728,7 @@ def test_distinct_188(engine, bigquery_dataset):
 
 
 @pytest.mark.skipif(
-    sqlalchemy_version_info < (1, 4),
+    packaging.version.parse(sqlalchemy.__version__) < packaging.version.parse('1.4'),
     reason="unnest (and other table-valued-function) support required version 1.4",
 )
 def test_unnest(engine, bigquery_dataset):

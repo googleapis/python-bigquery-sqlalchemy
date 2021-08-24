@@ -80,6 +80,7 @@ setup(
         # https://github.com/googleapis/google-cloud-python/issues/10566
         "google-auth>=1.25.0,<3.0.0dev",  # Work around pip wack.
         "google-cloud-bigquery>=2.24.1",
+        "packaging",
         "sqlalchemy>=1.2.0,<1.5.0dev",
         "future",
     ],
