@@ -277,7 +277,7 @@ class BigQueryCompiler(SQLCompiler):
         # 2. We can't know practically if there's already a FROM for a table.
         #
         # We leverage visit_column to find a table reference.  Whenever we find
-        # one, we create an alias for it, so as not to conlfict with an existing
+        # one, we create an alias for it, so as not to conflict with an existing
         # reference if one is present.
         #
         # This requires communicating between this function and visit_column.
