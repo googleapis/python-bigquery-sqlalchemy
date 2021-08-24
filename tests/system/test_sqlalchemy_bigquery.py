@@ -728,7 +728,7 @@ def test_distinct_188(engine, bigquery_dataset):
 
 
 @pytest.mark.skipif(
-    packaging.version.parse(sqlalchemy.__version__) < packaging.version.parse('1.4'),
+    packaging.version.parse(sqlalchemy.__version__) < packaging.version.parse("1.4"),
     reason="unnest (and other table-valued-function) support required version 1.4",
 )
 def test_unnest(engine, bigquery_dataset):

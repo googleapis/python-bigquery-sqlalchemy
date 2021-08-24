@@ -29,16 +29,16 @@ import fauxdbi
 
 sqlalchemy_version = packaging.version.parse(sqlalchemy.__version__)
 sqlalchemy_1_3_or_higher = pytest.mark.skipif(
-    sqlalchemy_version < packaging.version.parse('1.3'),
-    reason="requires sqlalchemy 1.3 or higher"
+    sqlalchemy_version < packaging.version.parse("1.3"),
+    reason="requires sqlalchemy 1.3 or higher",
 )
 sqlalchemy_1_4_or_higher = pytest.mark.skipif(
-    sqlalchemy_version < packaging.version.parse('1.4'),
-    reason="requires sqlalchemy 1.4 or higher"
+    sqlalchemy_version < packaging.version.parse("1.4"),
+    reason="requires sqlalchemy 1.4 or higher",
 )
 sqlalchemy_before_1_4 = pytest.mark.skipif(
-    sqlalchemy_version >= packaging.version.parse('1.4'),
-    reason="requires sqlalchemy 1.3 or lower"
+    sqlalchemy_version >= packaging.version.parse("1.4"),
+    reason="requires sqlalchemy 1.3 or lower",
 )
 
 

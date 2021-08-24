@@ -42,9 +42,7 @@ from sqlalchemy.testing.suite import (
 )
 
 
-if (packaging.version.parse(sqlalchemy.__version__)
-    < packaging.version.parse("1.4")
-):
+if packaging.version.parse(sqlalchemy.__version__) < packaging.version.parse("1.4"):
     from sqlalchemy.testing.suite import LimitOffsetTest as _LimitOffsetTest
 
     class LimitOffsetTest(_LimitOffsetTest):
