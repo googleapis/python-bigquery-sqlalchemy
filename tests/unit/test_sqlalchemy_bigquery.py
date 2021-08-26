@@ -201,6 +201,8 @@ def test_follow_dialect_attribute_convention():
     ],
 )
 def test_unnest_function_errors(args, kw, error):
+    # Make sure the unnest function is registered with SQLAlchemy, which
+    # happens when sqlalchemy_bigquery is imported.
     import sqlalchemy_bigquery  # noqa
 
     with pytest.raises(TypeError, match=error):
@@ -215,6 +217,8 @@ def test_unnest_function_errors(args, kw, error):
     ],
 )
 def test_unnest_function(args, kw):
+    # Make sure the unnest function is registered with SQLAlchemy, which
+    # happens when sqlalchemy_bigquery is imported.
     import sqlalchemy_bigquery  # noqa
 
     f = sqlalchemy.func.unnest(*args, **kw)
