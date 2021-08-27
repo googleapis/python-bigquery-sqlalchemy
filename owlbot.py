@@ -172,7 +172,6 @@ s.replace(["noxfile.py"], '"alabaster"', '"alabaster", "geoalchemy2", "shapely"'
 
 
 # Add DB config for SQLAlchemy dialect test suite.
-# https://github.com/sqlalchemy/sqlalchemy/blob/master/README.dialects.rst
 # https://github.com/googleapis/python-bigquery-sqlalchemy/issues/89
 s.replace(
     ["setup.cfg"],
