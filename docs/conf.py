@@ -76,8 +76,8 @@ source_suffix = [".rst", ".md"]
 # The encoding of source files.
 # source_encoding = 'utf-8-sig'
 
-# The main toctree document.
-main_doc = "index"
+# The master toctree document.
+master_doc = "index"
 
 # General information about the project.
 project = "sqlalchemy-bigquery"
@@ -280,7 +280,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (
-        main_doc,
+        master_doc,
         "sqlalchemy-bigquery.tex",
         "sqlalchemy-bigquery Documentation",
         author,
@@ -314,7 +314,13 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (main_doc, "sqlalchemy-bigquery", "sqlalchemy-bigquery Documentation", [author], 1,)
+    (
+        master_doc,
+        "sqlalchemy-bigquery",
+        "sqlalchemy-bigquery Documentation",
+        [author],
+        1,
+    )
 ]
 
 # If true, show URL addresses after external links.
@@ -328,7 +334,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (
-        main_doc,
+        master_doc,
         "sqlalchemy-bigquery",
         "sqlalchemy-bigquery Documentation",
         author,
