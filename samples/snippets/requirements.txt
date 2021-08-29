@@ -26,7 +26,7 @@ greenlet==1.1.1
 grpcio==1.39.0
 idna==3.2
 immutables==0.16
-importlib-metadata==4.7.1
+importlib-metadata==4.8.1
 libcst==0.3.20
 munch==2.5.0
 mypy-extensions==0.4.3
