@@ -24,7 +24,7 @@ import importlib
 def test_types_import():
     """Demonstrate behavior of importing types independent of any other import."""
     dialect_module = importlib.import_module("sqlalchemy_bigquery")
-    base_module = importlib.import_module("sqlalchemy_bigquery.base")
-    custom_types = getattr(base_module, "_type_map")
+    _types_module = importlib.import_module("sqlalchemy_bigquery._types")
+    custom_types = getattr(_types_module, "_type_map")
     for type_name, type_value in custom_types.items():
         assert getattr(dialect_module, type_name) == type_value

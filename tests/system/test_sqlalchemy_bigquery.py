@@ -20,7 +20,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from sqlalchemy_bigquery import BigQueryDialect
 from sqlalchemy.engine import create_engine
 from sqlalchemy.schema import Table, MetaData, Column
 from sqlalchemy.ext.declarative import declarative_base
@@ -131,17 +130,6 @@ SAMPLE_COLUMNS = [
         "default": None,
     },
 ]
-
-
-@pytest.fixture(scope="session")
-def engine():
-    engine = create_engine("bigquery://", echo=True)
-    return engine
-
-
-@pytest.fixture(scope="session")
-def dialect():
-    return BigQueryDialect()
 
 
 @pytest.fixture(scope="session")
