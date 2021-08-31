@@ -106,11 +106,14 @@ SAMPLE_COLUMNS = [
     },
     {"name": "record.name", "type": types.String(), "nullable": True, "default": None},
     {"name": "record.age", "type": types.Integer(), "nullable": True, "default": None},
-    {"name": "nested_record",
-     "type": sqlalchemy_bigquery.STRUCT(
-         record=sqlalchemy_bigquery.STRUCT(name=types.String, age=types.Integer)),
-     "nullable": True,
-     "default": None},
+    {
+        "name": "nested_record",
+        "type": sqlalchemy_bigquery.STRUCT(
+            record=sqlalchemy_bigquery.STRUCT(name=types.String, age=types.Integer)
+        ),
+        "nullable": True,
+        "default": None,
+    },
     {
         "name": "nested_record.record",
         "type": sqlalchemy_bigquery.STRUCT(name=types.String, age=types.Integer),

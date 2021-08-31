@@ -34,37 +34,58 @@ def test_struct(engine, bigquery_dataset, metadata):
             sqlalchemy_bigquery.STRUCT(
                 name=sqlalchemy.String,
                 children=sqlalchemy.ARRAY(
-                    sqlalchemy_bigquery.STRUCT(name=sqlalchemy.String,
-                                               bdate=sqlalchemy.DATE)
-                    ),
-                )),
+                    sqlalchemy_bigquery.STRUCT(
+                        name=sqlalchemy.String, bdate=sqlalchemy.DATE
+                    )
+                ),
+            ),
+        ),
     )
     metadata.create_all(engine)
 
     conn.execute(
-        table.insert()
-        .values(
+        table.insert().values(
             person=dict(
                 name="bob",
                 children=[dict(name="billy", bdate=datetime.date(2020, 1, 1))],
+            )
+        )
+    )
+
+    assert list(conn.execute(sqlalchemy.select([table]))) == [
+        (
+            {
+                "name": "bob",
+                "children": [{"name": "billy", "bdate": datetime.date(2020, 1, 1)}],
+            },
+        )
+    ]
+    assert list(conn.execute(sqlalchemy.select([table.c.person.NAME]))) == [("bob",)]
+    assert list(conn.execute(sqlalchemy.select([table.c.person.children[0]]))) == [
+        ({"name": "billy", "bdate": datetime.date(2020, 1, 1)},)
+    ]
+    assert list(
+        conn.execute(sqlalchemy.select([table.c.person.children[0].bdate]))
+    ) == [(datetime.date(2020, 1, 1),)]
+    assert list(
+        conn.execute(
+            sqlalchemy.select([table]).where(table.c.person.children[0].NAME == "billy")
+        )
+    ) == [
+        (
+            {
+                "name": "bob",
+                "children": [{"name": "billy", "bdate": datetime.date(2020, 1, 1)}],
+            },
+        )
+    ]
+    assert (
+        list(
+            conn.execute(
+                sqlalchemy.select([table]).where(
+                    table.c.person.children[0].NAME == "sally"
                 )
             )
         )
-
-    assert list(conn.execute(sqlalchemy.select([table]))) == [
-        ({'name': 'bob',
-          'children': [{'name': 'billy', 'bdate': datetime.date(2020, 1, 1)}]},)]
-    assert list(conn.execute(sqlalchemy.select([table.c.person.NAME]))) == [('bob',)]
-    assert list(conn.execute(sqlalchemy.select([table.c.person.children[0]]))) == [
-        ({'name': 'billy', 'bdate': datetime.date(2020, 1, 1)},)]
-    assert list(conn.execute(sqlalchemy.select([table.c.person.children[0].bdate]))
-                ) == [(datetime.date(2020, 1, 1),)]
-    assert list(conn.execute(sqlalchemy.select([table])
-                             .where(table.c.person.children[0].NAME == 'billy'))
-                ) == [({'name': 'bob',
-                        'children': [{'name': 'billy',
-                                      'bdate': datetime.date(2020, 1, 1)}]},)]
-    assert list(conn.execute(sqlalchemy.select([table])
-                             .where(table.c.person.children[0].NAME == 'sally')
-                             )
-                ) == []
+        == []
+    )
