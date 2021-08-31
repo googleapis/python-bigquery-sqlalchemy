@@ -494,9 +494,6 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
                 type_.scale = -t.exponent
 
         bq_type = self.dialect.type_compiler.process(type_)
-        if bq_type[-1] == ">" and bq_type.startswith("ARRAY<"):
-            # Values get arrayified at a lower level.
-            bq_type = bq_type[6:-1]
         bq_type = self.__remove_type_parameter(bq_type)
 
         assert_(param != "%s", f"Unexpected param: {param}")

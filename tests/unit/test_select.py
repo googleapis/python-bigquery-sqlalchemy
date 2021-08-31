@@ -129,9 +129,6 @@ def test_typed_parameters(faux_conn, type_, val, btype, vrep):
 
     faux_conn.execute(table.insert().values(**{col_name: val}))
 
-    if btype.startswith("ARRAY<"):
-        btype = btype[6:-1]
-
     ptype = btype[: btype.index("(")] if "(" in btype else btype
 
     assert faux_conn.test_data["execute"][-1] == (
