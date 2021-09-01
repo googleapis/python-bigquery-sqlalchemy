@@ -18,10 +18,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-def test_geography(engine):
-    from . import geography
+def test_struct(engine):
+    from . import STRUCT
 
-    lakes_touching_lake2, lakes_containing = geography.example(engine)
+    sixeses = STRUCT.example(engine)
 
-    assert sorted(lake.name for lake in lakes_touching_lake2) == ["Majeur", "Orta"]
-    assert [lake.name for lake in lakes_containing] == ["Orta"]
+    for sixes in sixeses:
+        assert sorted(car.model for car in sixes) == ["Sebring", "Town and Counttry"]
