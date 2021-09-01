@@ -19,6 +19,7 @@
 
 
 def example(engine):
+    # fmt: off
     # [START bigquery_sqlalchemy_create_table_with_struct]
     from sqlalchemy.ext.declarative import declarative_base
     from sqlalchemy import Column, String, Integer, Float
@@ -83,6 +84,7 @@ def example(engine):
     # [START bigquery_sqlalchemy_query_getitem]
     sixes = session.query(Car).filter(Car.engine["cylinder"]["count"] == 6)
     # [END bigquery_sqlalchemy_query_getitem]
+    # fmt: on
     sixes3 = list(sixes)
 
     return sixes1, sixes2, sixes3
