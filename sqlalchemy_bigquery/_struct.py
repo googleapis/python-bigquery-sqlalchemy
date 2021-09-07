@@ -45,11 +45,16 @@ class STRUCT(sqlalchemy.sql.sqltypes.Indexable, sqlalchemy.types.UserDefinedType
     See https://googleapis.dev/python/sqlalchemy-bigquery/latest/struct.html
     """
 
+    # See https://docs.sqlalchemy.org/en/14/core/custom_types.html#creating-new-types
+
     def __init__(
         self,
         *fields: Tuple[str, sqlalchemy.types.TypeEngine],
         **kwfields: Mapping[str, sqlalchemy.types.TypeEngine],
     ):
+        # Note that because:
+        # https://docs.python.org/3/whatsnew/3.6.html#pep-468-preserving-keyword-argument-order
+        # We know that `kwfields` preserves order.
         self.__fields = tuple(
             (
                 name,
