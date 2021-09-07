@@ -34,6 +34,12 @@ type_compiler = None
 
 
 class STRUCT(sqlalchemy.sql.sqltypes.Indexable, sqlalchemy.types.UserDefinedType):
+    """
+    A type for BigQuery STRUCT/RECORD data
+
+    See https://googleapis.dev/python/sqlalchemy-bigquery/latest/struct.html
+    """
+
     def __init__(
         self,
         *fields: Tuple[str, sqlalchemy.types.TypeEngine],
