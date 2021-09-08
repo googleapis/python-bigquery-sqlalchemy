@@ -90,6 +90,7 @@ class STRUCT(sqlalchemy.sql.sqltypes.Indexable, sqlalchemy.types.UserDefinedType
                     f"STRUCT fields can only be accessed with strings field names,"
                     f" not {name}."
                 )
+            # Note that type._STRUCT__byname is accessing the __byname private variable.
             subtype = self.expr.type._STRUCT__byname.get(name.lower())
             if subtype is None:
                 raise KeyError(name)
