@@ -93,7 +93,7 @@ class STRUCT(sqlalchemy.sql.sqltypes.Indexable, sqlalchemy.types.UserDefinedType
             if not isinstance(name, str):
                 raise TypeError(
                     f"STRUCT fields can only be accessed with strings field names,"
-                    f" not {name}."
+                    f" not {repr(name)}."
                 )
             subtype = self.expr.type._STRUCT_byname.get(name.lower())
             if subtype is None:
