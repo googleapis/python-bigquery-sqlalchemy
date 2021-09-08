@@ -109,6 +109,10 @@ class STRUCT(sqlalchemy.sql.sqltypes.Indexable, sqlalchemy.types.UserDefinedType
     comparator_factory = Comparator
 
 
+# In the implementations of _field_index below, we're stealing from
+# the JSON type implementation, but the code to steal changed in
+# 1.4. :/
+
 if sqlalchemy_1_4_or_more:
 
     def _field_index(self, name, operator):
