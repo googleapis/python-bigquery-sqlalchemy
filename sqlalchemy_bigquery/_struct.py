@@ -60,7 +60,7 @@ class STRUCT(sqlalchemy.sql.sqltypes.Indexable, sqlalchemy.types.UserDefinedType
         # Note that because:
         # https://docs.python.org/3/whatsnew/3.6.html#pep-468-preserving-keyword-argument-order
         # We know that `kwfields` preserves order.
-        self.__fields = tuple(
+        self._STRUCT_fields = tuple(
             (
                 name,
                 type_ if isinstance(type_, sqlalchemy.types.TypeEngine) else type_(),
@@ -68,15 +68,20 @@ class STRUCT(sqlalchemy.sql.sqltypes.Indexable, sqlalchemy.types.UserDefinedType
             for (name, type_) in (fields + tuple(kwfields.items()))
         )
 
-        self.__byname = {name.lower(): type_ for (name, type_) in self.__fields}
+        self._STRUCT_byname = {
+            name.lower(): type_ for (name, type_) in self._STRUCT_fields
+        }
 
     def __repr__(self):
-        fields = ", ".join(f"{name}={repr(type_)}" for name, type_ in self.__fields)
+        fields = ", ".join(
+            f"{name}={repr(type_)}" for name, type_ in self._STRUCT_fields
+        )
         return f"STRUCT({fields})"
 
     def get_col_spec(self, **kw):
         fields = ", ".join(
-            f"{name} {_get_subtype_col_spec(type_)}" for name, type_ in self.__fields
+            f"{name} {_get_subtype_col_spec(type_)}"
+            for name, type_ in self._STRUCT_fields
         )
         return f"STRUCT<{fields}>"
 
@@ -90,8 +95,7 @@ class STRUCT(sqlalchemy.sql.sqltypes.Indexable, sqlalchemy.types.UserDefinedType
                     f"STRUCT fields can only be accessed with strings field names,"
                     f" not {name}."
                 )
-            # Note that type._STRUCT__byname is accessing the __byname private variable.
-            subtype = self.expr.type._STRUCT__byname.get(name.lower())
+            subtype = self.expr.type._STRUCT_byname.get(name.lower())
             if subtype is None:
                 raise KeyError(name)
             operator = struct_getitem_op
@@ -99,7 +103,7 @@ class STRUCT(sqlalchemy.sql.sqltypes.Indexable, sqlalchemy.types.UserDefinedType
             return operator, index, subtype
 
         def __getattr__(self, name):
-            if name.lower() in self.expr.type._STRUCT__byname:
+            if name.lower() in self.expr.type._STRUCT_byname:
                 return self[name]
 
     comparator_factory = Comparator
