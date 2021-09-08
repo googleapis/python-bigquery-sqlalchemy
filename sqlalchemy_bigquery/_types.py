@@ -72,8 +72,10 @@ try:
 except NameError:
     pass
 
+STRUCT_FIELD_TYPES = "RECORD", "STRUCT"
 
-def _get_transitive_schema_fields(fields, cur_fields):
+
+def _get_transitive_schema_fields(fields):
     """
     Recurse into record type and return all the nested field names.
     As contributed by @sumedhsakdeo on issue #17
@@ -81,16 +83,14 @@ def _get_transitive_schema_fields(fields, cur_fields):
     results = []
     for field in fields:
         results += [field]
-        if field.field_type == "RECORD":
-            cur_fields.append(field)
+        if field.field_type in STRUCT_FIELD_TYPES:
             sub_fields = [
                 SchemaField.from_api_repr(
                     dict(f.to_api_repr(), name=f"{field.name}.{f.name}")
                 )
                 for f in field.fields
             ]
-            results += _get_transitive_schema_fields(sub_fields, cur_fields)
-            cur_fields.pop()
+            results += _get_transitive_schema_fields(sub_fields)
     return results
 
 
@@ -125,7 +125,7 @@ def _get_sqla_column_type(field):
 
 
 def get_columns(bq_schema):
-    fields = _get_transitive_schema_fields(bq_schema, [])
+    fields = _get_transitive_schema_fields(bq_schema)
     return [
         {
             "name": field.name,
