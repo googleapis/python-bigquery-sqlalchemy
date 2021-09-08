@@ -64,8 +64,10 @@ def _col():
         (_col().NAME, "`t`.`person`.NAME"),
         (_col().children, "`t`.`person`.children"),
         (
-            _col().children[0].label("anon_1"),  # SQLAlchemy doesn't add the label
-            # in this case for some reason
+            # SQLAlchemy doesn't add the label in this case for some reason.
+            # TODO: why?
+            # https://github.com/googleapis/python-bigquery-sqlalchemy/issues/336
+            _col().children[0].label("anon_1"),
             "(`t`.`person`.children)[OFFSET(%(param_1:INT64)s)]",
         ),
         (
