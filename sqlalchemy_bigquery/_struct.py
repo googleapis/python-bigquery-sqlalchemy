@@ -34,8 +34,13 @@ if sqlalchemy_1_4_or_more:
     import sqlalchemy.sql.coercions
     import sqlalchemy.sql.roles
 
-# We have to delay getting the type compiler, because of circular imports. :(
-type_compiler = None
+
+def _get_subtype_col_spec(type_):
+    global _get_subtype_col_spec
+
+    type_compiler = base.dialect.type_compiler(base.dialect())
+    _get_subtype_col_spec = type_compiler.process
+    return _get_subtype_col_spec(type_)
 
 
 class STRUCT(sqlalchemy.sql.sqltypes.Indexable, sqlalchemy.types.UserDefinedType):
@@ -70,15 +75,9 @@ class STRUCT(sqlalchemy.sql.sqltypes.Indexable, sqlalchemy.types.UserDefinedType
         return f"STRUCT({fields})"
 
     def get_col_spec(self, **kw):
-        global type_compiler
-
-        try:
-            process = type_compiler.process
-        except AttributeError:
-            type_compiler = base.dialect.type_compiler(base.dialect())
-            process = type_compiler.process
-
-        fields = ", ".join(f"{name} {process(type_)}" for name, type_ in self.__fields)
+        fields = ", ".join(
+            f"{name} {_get_subtype_col_spec(type_)}" for name, type_ in self.__fields
+        )
         return f"STRUCT<{fields}>"
 
     def bind_processor(self, dialect):
