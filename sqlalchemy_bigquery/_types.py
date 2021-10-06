@@ -83,14 +83,14 @@ def _get_transitive_schema_fields(fields):
     results = []
     for field in fields:
         results += [field]
-        if field.field_type in STRUCT_FIELD_TYPES:
-            sub_fields = [
-                SchemaField.from_api_repr(
-                    dict(f.to_api_repr(), name=f"{field.name}.{f.name}")
-                )
-                for f in field.fields
-            ]
-            results += _get_transitive_schema_fields(sub_fields)
+        # if field.field_type in STRUCT_FIELD_TYPES:
+        #     sub_fields = [
+        #         SchemaField.from_api_repr(
+        #             dict(f.to_api_repr(), name=f"{field.name}.{f.name}")
+        #         )
+        #         for f in field.fields
+        #     ]
+        #     results += _get_transitive_schema_fields(sub_fields)
     return results
 
 
@@ -126,10 +126,11 @@ def _get_sqla_column_type(field):
 
 def get_columns(bq_schema):
     fields = _get_transitive_schema_fields(bq_schema)
-    return [
-        {
+    col_list = []
+    for field in fields:
+        col_obj = {
             "name": field.name,
-            "type": _get_sqla_column_type(field),
+            "type": _get_sqla_column_type(field) if 'STRUCT' or 'RECORD' not in field else STRUCT,
             "nullable": field.mode == "NULLABLE" or field.mode == "REPEATED",
             "comment": field.description,
             "default": None,
@@ -137,5 +138,7 @@ def get_columns(bq_schema):
             "scale": field.scale,
             "max_length": field.max_length,
         }
-        for field in fields
-    ]
+        if field.field_type == "RECORD" or field.field_type == "STRUCT":
+            col_obj["raw_data_type"]= str(_get_sqla_column_type(field)).replace(', ',',').replace(' ',':').lower()
+        col_list.append(a)
+    return col_list
