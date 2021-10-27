@@ -50,6 +50,7 @@ from sqlalchemy.sql.sqltypes import Integer, String, NullType, Numeric
 from sqlalchemy.engine.default import DefaultDialect, DefaultExecutionContext
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.sql.schema import Column
+from sqlalchemy.sql.schema import Table
 from sqlalchemy.sql import elements, selectable
 import re
 
@@ -289,12 +290,18 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
             if isinstance(tablename, elements._truncated_label):
                 tablename = self._truncated_identifier("alias", tablename)
             elif TABLE_VALUED_ALIAS_ALIASES in kwargs:
-                aliases = kwargs[TABLE_VALUED_ALIAS_ALIASES]
-                if tablename not in aliases:
-                    aliases[tablename] = self.anon_map[
-                        f"{TABLE_VALUED_ALIAS_ALIASES} {tablename}"
-                    ]
-                tablename = aliases[tablename]
+                known_tables = set(
+                    from_.name
+                    for from_ in self.compile_state.froms
+                    if isinstance(from_, Table)
+                )
+                if tablename not in known_tables:
+                    aliases = kwargs[TABLE_VALUED_ALIAS_ALIASES]
+                    if tablename not in aliases:
+                        aliases[tablename] = self.anon_map[
+                            f"{TABLE_VALUED_ALIAS_ALIASES} {tablename}"
+                        ]
+                    tablename = aliases[tablename]
 
             return self.preparer.quote(tablename) + "." + name
 
@@ -464,8 +471,14 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
             # The NullType/known-type check has to do with some extreme
             # edge cases having to do with empty in-lists that get special
             # hijinks from SQLAlchemy that we don't want to disturb. :)
+            #
+            # Note that we do *not* want to overwrite the "real" bindparam
+            # here, because then we can't do a recompile later (e.g., first
+            # print the statment, then execute it).  See issue #357.
+            #
             if getattr(bindparam, "expand_op", None) is not None:
                 assert bindparam.expand_op.__name__.endswith("in_op")  # in in
+                bindparam = bindparam._clone(maintain_key=True)
                 bindparam.expanding = False
                 unnest = True
 
@@ -789,7 +802,7 @@ class BigQueryDialect(DefaultDialect):
         )
         return ([client], {})
 
-    def _get_table_or_view_names(self, connection, table_type, schema=None):
+    def _get_table_or_view_names(self, connection, item_types, schema=None):
         current_schema = schema or self.dataset_id
         get_table_name = (
             self._build_formatted_table_id
@@ -810,7 +823,7 @@ class BigQueryDialect(DefaultDialect):
                     dataset.reference, page_size=self.list_tables_page_size
                 )
                 for table in tables:
-                    if table_type == table.table_type:
+                    if table.table_type in item_types:
                         result.append(get_table_name(table))
             except google.api_core.exceptions.NotFound:
                 # It's possible that the dataset was deleted between when we
@@ -963,13 +976,15 @@ class BigQueryDialect(DefaultDialect):
         if isinstance(connection, Engine):
             connection = connection.connect()
 
-        return self._get_table_or_view_names(connection, "TABLE", schema)
+        item_types = ["TABLE", "EXTERNAL"]
+        return self._get_table_or_view_names(connection, item_types, schema)
 
     def get_view_names(self, connection, schema=None, **kw):
         if isinstance(connection, Engine):
             connection = connection.connect()
 
-        return self._get_table_or_view_names(connection, "VIEW", schema)
+        item_types = ["VIEW", "MATERIALIZED_VIEW"]
+        return self._get_table_or_view_names(connection, item_types, schema)
 
     def do_rollback(self, dbapi_connection):
         # BigQuery has no support for transactions.
