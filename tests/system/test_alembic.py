@@ -76,9 +76,9 @@ def test_alembic_scenario(alembic_table):
         Column("description", String(200)),
     )
     assert alembic_table("account", "schema") == [
-        SchemaField('id', 'INTEGER', 'REQUIRED'),
-        SchemaField('name', 'STRING(50)', 'REQUIRED', description='The name'),
-        SchemaField('description', 'STRING(200)'),
+        SchemaField("id", "INTEGER", "REQUIRED"),
+        SchemaField("name", "STRING(50)", "REQUIRED", description="The name"),
+        SchemaField("description", "STRING(200)"),
     ]
 
     op.bulk_insert(
@@ -101,10 +101,10 @@ def test_alembic_scenario(alembic_table):
     )
 
     assert alembic_table("account", "schema") == [
-        SchemaField('id', 'INTEGER', 'REQUIRED'),
-        SchemaField('name', 'STRING(50)', 'REQUIRED', description="The name"),
-        SchemaField('description', 'STRING(200)'),
-        SchemaField('last_transaction_date', 'DATETIME', description='when updated'),
+        SchemaField("id", "INTEGER", "REQUIRED"),
+        SchemaField("name", "STRING(50)", "REQUIRED", description="The name"),
+        SchemaField("description", "STRING(200)"),
+        SchemaField("last_transaction_date", "DATETIME", description="when updated"),
     ]
 
     op.create_table(
@@ -120,8 +120,8 @@ def test_alembic_scenario(alembic_table):
 
     op.drop_column("account_w_comment", "description")
     assert alembic_table("account_w_comment", "schema") == [
-        SchemaField('id', 'INTEGER', 'REQUIRED'),
-        SchemaField('name', 'STRING(50)', 'REQUIRED', description='The name'),
+        SchemaField("id", "INTEGER", "REQUIRED"),
+        SchemaField("name", "STRING(50)", "REQUIRED", description="The name"),
     ]
 
     op.drop_table("account_w_comment")
@@ -130,10 +130,10 @@ def test_alembic_scenario(alembic_table):
     op.rename_table("account", "accounts")
     assert alembic_table("account") is None
     assert alembic_table("accounts", "schema") == [
-        SchemaField('id', 'INTEGER', 'REQUIRED'),
-        SchemaField('name', 'STRING(50)', 'REQUIRED', description='The name'),
-        SchemaField('description', 'STRING(200)'),
-        SchemaField('last_transaction_date', 'DATETIME', description='when updated'),
+        SchemaField("id", "INTEGER", "REQUIRED"),
+        SchemaField("name", "STRING(50)", "REQUIRED", description="The name"),
+        SchemaField("description", "STRING(200)"),
+        SchemaField("last_transaction_date", "DATETIME", description="when updated"),
     ]
     op.drop_table("accounts")
     assert alembic_table("accounts") is None
@@ -153,9 +153,9 @@ def test_alembic_scenario(alembic_table):
     # nullable:
     op.alter_column("transactions", "amount", True)
     assert alembic_table("transactions", "schema") == [
-        SchemaField('account', 'INTEGER', 'REQUIRED'),
-        SchemaField('transaction_time', 'DATETIME', 'REQUIRED'),
-        SchemaField('amount', 'NUMERIC(11, 2)'),
+        SchemaField("account", "INTEGER", "REQUIRED"),
+        SchemaField("transaction_time", "DATETIME", "REQUIRED"),
+        SchemaField("amount", "NUMERIC(11, 2)"),
     ]
 
     op.create_table_comment("transactions", "Transaction log")
