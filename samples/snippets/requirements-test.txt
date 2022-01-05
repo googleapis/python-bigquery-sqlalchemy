@@ -1,5 +1,4 @@
 attrs==21.4.0
-cachetools==5.0.0
 click==8.0.3
 google-auth==2.3.3
 google-cloud-testutils==1.3.1
@@ -16,4 +15,3 @@ rsa==4.8
 six==1.16.0
 toml==0.10.2
 typing-extensions==4.0.1
-zipp==3.7.0
