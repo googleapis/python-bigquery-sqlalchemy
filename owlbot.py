@@ -15,6 +15,7 @@
 """This script is used to synthesize generated parts of this library."""
 
 import pathlib
+from noxfile import prerelease
 
 import synthtool as s
 from synthtool import gcp
@@ -63,6 +64,12 @@ s.replace(
 )
 
 s.replace(
+    ["noxfile.py"],
+    r"import shutil",
+    "import re\nimport shutil",
+)
+
+s.replace(
     ["noxfile.py"], "--cov=google", "--cov=sqlalchemy_bigquery",
 )
 
@@ -102,6 +109,76 @@ new_sessions = '''
 '''
 
 s.replace( ["noxfile.py"], old_sessions, new_sessions)
+
+prerelease = '''
+@nox.session(python=DEFAULT_PYTHON_VERSION)
+def prerelease(session):
+    # TODO: Geoalchemy, Shapely, Alembic from extras
+    session.install(
+        "--prefer-binary",
+        "--pre",
+        "--upgrade",
+        "google-api-core",
+        "google-cloud-bigquery",
+        "google-cloud-bigquery-storage",
+        "google-cloud-core",
+        "google-resumable-media",
+        "grpcio",
+    )
+    session.install(
+        "freezegun",
+        "google-cloud-testutils",
+        "mock",
+        "psutil",
+        "pytest",
+        "pytest-cov",
+        "pytz",
+    )
+
+    # Because we test minimum dependency versions on the minimum Python
+    # version, the first version we test with in the unit tests sessions has a
+    # constraints file containing all dependencies and extras.
+    with open(
+        CURRENT_DIRECTORY
+        / "testing"
+        / f"constraints-{UNIT_TEST_PYTHON_VERSIONS[0]}.txt",
+        encoding="utf-8",
+    ) as constraints_file:
+        constraints_text = constraints_file.read()
+
+    # Ignore leading whitespace and comment lines.
+    deps = [
+        match.group(1)
+        for match in re.finditer(
+            r"^\s*(\S+)(?===\S+)", constraints_text, flags=re.MULTILINE
+        )
+    ]
+
+    # We use --no-deps to ensure that pre-release versions aren't overwritten
+    # by the version ranges in setup.py.
+    session.install(*deps)
+    session.install("--no-deps", "-e", ".[all]")
+
+    # Print out prerelease package versions.
+    session.run("python", "-m", "pip", "freeze")
+
+    # Run all tests, except a few samples tests which require extra dependencies.
+    session.run(
+        "py.test",
+        "--quiet",
+        f"--junitxml=prerelease_unit_{session.python}_sponge_log.xml",
+        os.path.join("tests", "unit"),
+    )
+    session.run(
+        "py.test",
+        "--quiet",
+        f"--junitxml=prerelease_system_{session.python}_sponge_log.xml",
+        os.path.join("tests", "system"),
+    )
+    # TODO: should we add compliance test suite, too? It takes quite a lot longer than our other tests, though.
+
+
+'''
 
 # Maybe we can get rid of this when we don't need pytest-rerunfailures,
 # which we won't need when BQ retries itself:
@@ -163,7 +240,7 @@ place_before(
      "noxfile.py",
      "@nox.session(python=DEFAULT_PYTHON_VERSION)\n"
      "def cover(session):",
-     compliance,
+     prerelease + compliance,
      escape="()",
      )
 
