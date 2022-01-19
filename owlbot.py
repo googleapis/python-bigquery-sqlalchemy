@@ -15,7 +15,6 @@
 """This script is used to synthesize generated parts of this library."""
 
 import pathlib
-from noxfile import prerelease
 
 import synthtool as s
 from synthtool import gcp
@@ -66,8 +65,7 @@ s.replace(
 s.replace(
     ["noxfile.py"],
     r"import shutil",
-    """import re
-import shutil""",
+    "import re\nimport shutil",
 )
 
 s.replace(
@@ -94,7 +92,7 @@ place_before(
     "nox.options.stop_on_first_error = True",
 )
 
-prerelease = '''
+prerelease = r'''
 @nox.session(python=DEFAULT_PYTHON_VERSION)
 def prerelease(session):
     session.install(
@@ -137,7 +135,7 @@ def prerelease(session):
     deps = [
         match.group(1)
         for match in re.finditer(
-            r"^\s*(\S+)(?===\S+)", constraints_text, flags=re.MULTILINE
+            r"^\\s*(\\S+)(?===\\S+)", constraints_text, flags=re.MULTILINE
         )
     ]
 
