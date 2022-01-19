@@ -142,7 +142,7 @@ def prerelease(session):
     # We use --no-deps to ensure that pre-release versions aren't overwritten
     # by the version ranges in setup.py.
     session.install(*deps)
-    session.install("--no-deps", "-e", ".[all]")
+    session.install("--no-deps", "-e", ".")
 
     # Print out prerelease package versions.
     session.run("python", "-m", "pip", "freeze")
