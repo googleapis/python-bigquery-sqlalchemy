@@ -66,7 +66,8 @@ s.replace(
 s.replace(
     ["noxfile.py"],
     r"import shutil",
-    "import re\nimport shutil",
+    """import re
+import shutil""",
 )
 
 s.replace(
