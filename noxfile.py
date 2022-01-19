@@ -38,10 +38,10 @@ CURRENT_DIRECTORY = pathlib.Path(__file__).parent.absolute()
 
 # 'docfx' is excluded since it only needs to run in 'docs-presubmit'
 nox.options.sessions = [
-    "lint",
     "unit",
-    "cover",
     "system",
+    "cover",
+    "lint",
     "lint_setup_py",
     "blacken",
     "docs",
