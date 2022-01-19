@@ -93,37 +93,23 @@ place_before(
     "nox.options.stop_on_first_error = True",
 )
 
-old_sessions = '''
-    "unit",
-    "system",
-    "cover",
-    "lint",
-'''
-
-new_sessions = '''
-    "lint",
-    "unit",
-    "cover",
-    "system",
-    "compliance",
-'''
-
-s.replace( ["noxfile.py"], old_sessions, new_sessions)
-
 prerelease = '''
 @nox.session(python=DEFAULT_PYTHON_VERSION)
 def prerelease(session):
-    # TODO: Geoalchemy, Shapely, Alembic from extras
     session.install(
         "--prefer-binary",
         "--pre",
         "--upgrade",
+        "alembic",
+        "geoalchemy2",
         "google-api-core",
         "google-cloud-bigquery",
         "google-cloud-bigquery-storage",
         "google-cloud-core",
         "google-resumable-media",
         "grpcio",
+        "sqlalchemy",
+        "shapely",
     )
     session.install(
         "freezegun",
@@ -175,7 +161,6 @@ def prerelease(session):
         f"--junitxml=prerelease_system_{session.python}_sponge_log.xml",
         os.path.join("tests", "system"),
     )
-    # TODO: should we add compliance test suite, too? It takes quite a lot longer than our other tests, though.
 
 
 '''
