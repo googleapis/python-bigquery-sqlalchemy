@@ -41,7 +41,6 @@ def create_bigquery_client(
 
     if credentials_base64:
         credentials_info = json.loads(base64.b64decode(credentials_base64))
-        print('got credentials')
 
     if credentials_path:
         credentials = service_account.Credentials.from_service_account_file(
