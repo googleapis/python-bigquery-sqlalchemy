@@ -252,7 +252,7 @@ def prerelease(session):
     )
 
 
-@nox.session(python=SYSTEM_TEST_PYTHON_VERSIONS)
+@nox.session(python=SYSTEM_TEST_PYTHON_VERSIONS[-1])
 def compliance(session):
     """Run the SQLAlchemy dialect-compliance system tests"""
     constraints_path = str(

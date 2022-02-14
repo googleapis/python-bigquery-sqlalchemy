@@ -171,7 +171,7 @@ def prerelease(session):
 # which we won't need when BQ retries itself:
 # https://github.com/googleapis/python-bigquery/pull/837
 compliance = '''
-@nox.session(python=SYSTEM_TEST_PYTHON_VERSIONS)
+@nox.session(python=SYSTEM_TEST_PYTHON_VERSIONS[-1])
 def compliance(session):
     """Run the SQLAlchemy dialect-compliance system tests"""
     constraints_path = str(
