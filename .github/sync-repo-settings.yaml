@@ -10,8 +10,6 @@ branchProtectionRules:
     - 'cla/google'
     - 'OwlBot Post Processor'
     - 'Kokoro'
-    - 'Kokoro SQLAlchemy compliance'
-    - 'Kokoro prerelease'
     - 'Samples - Lint'
     - 'Samples - Python 3.7'
     - 'Samples - Python 3.8'
