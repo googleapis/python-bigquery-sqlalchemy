@@ -181,8 +181,6 @@ def compliance(session):
 
     if os.environ.get("RUN_COMPLIANCE_TESTS", "true") == "false":
         session.skip("RUN_COMPLIANCE_TESTS is set to false, skipping")
-    if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", ""):
-        session.skip("Credentials must be set via environment variable")
     if os.environ.get("GOOGLE_API_USE_CLIENT_CERTIFICATE", "false") == "true":
         session.install("pyopenssl")
     if not os.path.exists(system_test_folder_path):
@@ -192,7 +190,9 @@ def compliance(session):
 
     session.install(
         "mock",
-        "pytest",
+        # TODO: Allow latest version of pytest once SQLAlchemy 1.4.28+ is supported.
+        # See: https://github.com/googleapis/python-bigquery-sqlalchemy/issues/413
+        "pytest<=7.0.0dev",
         "pytest-rerunfailures",
         "google-cloud-testutils",
         "-c",
