@@ -115,7 +115,7 @@ def test_create_bigquery_client_with_credentials_base64(monkeypatch, module_unde
     monkeypatch.setattr(service_account, "Credentials", mock_service_account)
 
     credentials_info = (
-        {"type": "service_account", "project_id": "service-account-project",},
+        {"type": "service_account", "project_id": "service-account-project"},
     )
 
     credentials_base64 = base64.b64encode(json.dumps(credentials_info).encode())
@@ -141,7 +141,7 @@ def test_create_bigquery_client_with_credentials_base64_respects_project(
     monkeypatch.setattr(service_account, "Credentials", mock_service_account)
 
     credentials_info = (
-        {"type": "service_account", "project_id": "service-account-project",},
+        {"type": "service_account", "project_id": "service-account-project"},
     )
 
     credentials_base64 = base64.b64encode(json.dumps(credentials_info).encode())
