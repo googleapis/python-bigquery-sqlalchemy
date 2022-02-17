@@ -194,11 +194,12 @@ def prerelease(session):
         "google-api-core",
         "google-cloud-bigquery",
         "google-cloud-bigquery-storage",
-        "google-cloud-core",
-        "google-resumable-media",
-        "grpcio",
         "sqlalchemy",
         "shapely",
+        # These are transitive dependencies, but we'd still like to know if a
+        # change in a prerelease there breaks this connector.
+        "google-cloud-core",
+        "grpcio",
     )
     session.install(
         "freezegun",
