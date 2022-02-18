@@ -526,7 +526,7 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
 
         assert_(param != "%s", f"Unexpected param: {param}")
 
-        if bindparam.expanding:
+        if bindparam.expanding:  # pragma: NO COVER
             assert_(self.__expanded_param(param), f"Unexpected param: {param}")
             if self.__sqlalchemy_version_info < (1, 4, 27):
                 param = param.replace(")", f":{bq_type})")
