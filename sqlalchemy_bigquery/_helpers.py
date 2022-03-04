@@ -14,7 +14,7 @@ from google.oauth2 import service_account
 import sqlalchemy
 import base64
 import json
-
+import logging
 
 USER_AGENT_TEMPLATE = "sqlalchemy/{}"
 SCOPES = (
@@ -28,6 +28,7 @@ def google_client_info():
     user_agent = USER_AGENT_TEMPLATE.format(sqlalchemy.__version__)
     return client_info.ClientInfo(user_agent=user_agent)
 
+logger = logging.getLogger()
 
 def create_bigquery_client(
     credentials_info=None,
@@ -37,8 +38,11 @@ def create_bigquery_client(
     location=None,
     project_id=None,
 ):
+    logger.critical(
+        'yooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo')
+   
     default_project = None
-
+    
     if credentials_base64:
         credentials_info = json.loads(base64.b64decode(credentials_base64))
 
@@ -59,6 +63,17 @@ def create_bigquery_client(
 
     if project_id is None:
         project_id = default_project
+        
+    logger.critical("client_info")
+    logger.critical(google_client_info())
+    logger.critical("projectid")
+    logger.critical(project_id)
+    logger.critical("credentials")
+    logger.critical(credentials)
+    logger.critical("location")
+    logger.critical(location)
+    logger.critical("queryjobconfig")
+    logger.critical(default_query_job_config)
 
     return bigquery.Client(
         client_info=google_client_info(),
