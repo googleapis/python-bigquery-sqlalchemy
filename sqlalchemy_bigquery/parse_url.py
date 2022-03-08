@@ -64,12 +64,13 @@ def parse_url(url):  # noqa: C901
     if "maximum_billing_tier" in query:
         raise ValueError("maximum_billing_tier is a deprecated argument")
     
-    
-    username = url.username or None
-    email = url.email or None
-    
-    logger.critical('parse_url.py username', username)
-    logger.critical('parse_url.py email', email)
+    if hasattr(url, 'username'):
+        username = url.username or None
+        logger.critical('parse_url.py username', username)
+        
+    if hasattr(url, 'email'):
+        email = url.email or None
+        logger.critical('parse_url.py email', email)
     
     project_id = url.host
     location = None
