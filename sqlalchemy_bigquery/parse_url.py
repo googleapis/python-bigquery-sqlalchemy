@@ -66,11 +66,11 @@ def parse_url(url):  # noqa: C901
     
     if hasattr(url, 'username'):
         username = url.username or None
-        logger.critical('parse_url.py username', username)
+        logger.critical(f'parse_url.py username: {username}')
         
     if hasattr(url, 'email'):
         email = url.email or None
-        logger.critical('parse_url.py email', email)
+        logger.critical(f'parse_url.py email: {email}')
     
     project_id = url.host
     location = None
