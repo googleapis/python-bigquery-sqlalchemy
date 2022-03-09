@@ -66,14 +66,15 @@ def create_bigquery_client(
     if project_id is None:
         project_id = default_project
     
-    logger.critical(email, username)
     if email is not None:
         logger.critical("WE IN BOYS")
+        logger.critical(email)
         # credentials = credentials.with_scopes(['email'])
         # credentials = credentials.with_subject("vedantprajapati@geotab.com")    
-        
+
     if username is not None:
         logger.critical("another one")
+        logger.critical(username)
 
 
     logger.critical("client_info")
