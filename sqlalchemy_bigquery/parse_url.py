@@ -126,6 +126,8 @@ def parse_url(url):  # noqa: C901
                 credentials_base64,
                 QueryJobConfig(),
                 list_tables_page_size,
+                username,
+                email,
             )
         else:
             return (
@@ -137,6 +139,8 @@ def parse_url(url):  # noqa: C901
                 credentials_base64,
                 None,
                 list_tables_page_size,
+                username,
+                email,
             )
 
     job_config = QueryJobConfig()
@@ -286,6 +290,6 @@ def parse_url(url):  # noqa: C901
         credentials_base64,
         job_config,
         list_tables_page_size,
-        # username,
-        # email,
+        username,
+        email,
     )
