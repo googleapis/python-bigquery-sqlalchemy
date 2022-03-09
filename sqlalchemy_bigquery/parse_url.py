@@ -286,6 +286,6 @@ def parse_url(url):  # noqa: C901
         credentials_base64,
         job_config,
         list_tables_page_size,
-        username,
-        email,
+        # username,
+        # email,
     )
