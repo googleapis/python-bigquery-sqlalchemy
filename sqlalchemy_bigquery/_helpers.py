@@ -69,8 +69,8 @@ def create_bigquery_client(
     logger.critical(email, username)
     if email is not None and username is not None:
         logger.critical("WE IN BOYS")
-        credentials = credentials.with_scopes(['email'])
-        credentials = credentials.with_subject("vedantprajapati@geotab.com")    
+        # credentials = credentials.with_scopes(['email'])
+        # credentials = credentials.with_subject("vedantprajapati@geotab.com")    
 
     logger.critical("client_info")
     logger.critical(google_client_info())
