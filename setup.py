@@ -86,13 +86,13 @@ setup(
         "google-auth>=1.25.0,<3.0.0dev",  # Work around pip wack.
         "google-cloud-bigquery>=2.25.2,<4.0.0dev",
         "google-cloud-bigquery-storage>=2.0.0,<3.0.0dev",
-        "pyarrow>=7,<7.1",
+        "pyarrow>=3.0.0,<7.0dev",
         # Temporarily set maximimum sqlalchemy to a known-working version while
         # we debug failing compliance tests. See:
         # https://github.com/googleapis/python-bigquery-sqlalchemy/issues/386
         # and
         # https://github.com/googleapis/python-bigquery-sqlalchemy/issues/385
-        "sqlalchemy>=1.4.32,<=1.4.32",
+        "sqlalchemy>=1.2.0,<=1.4.27",
         "future",
     ],
     extras_require=extras,
