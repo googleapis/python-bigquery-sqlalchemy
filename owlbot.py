@@ -259,6 +259,8 @@ python_files=tests/*test_*.py
 
 python.py_samples(skip_readmes=True)
 
+python.configure_previous_major_version_branches()
+
 # ----------------------------------------------------------------------------
 # Final cleanup
 # ----------------------------------------------------------------------------
