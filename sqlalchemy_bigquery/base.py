@@ -759,6 +759,7 @@ class BigQueryDialect(DefaultDialect):
         location=None,
         credentials_info=None,
         credentials_base64=None,
+        credentials_access_token=None,
         list_tables_page_size=1000,
         *args,
         **kwargs,
@@ -768,6 +769,7 @@ class BigQueryDialect(DefaultDialect):
         self.credentials_path = credentials_path
         self.credentials_info = credentials_info
         self.credentials_base64 = credentials_base64
+        self.credentials_access_token = credentials_access_token
         self.location = location
         self.dataset_id = None
         self.list_tables_page_size = list_tables_page_size
@@ -816,6 +818,7 @@ class BigQueryDialect(DefaultDialect):
             credentials_path=self.credentials_path,
             credentials_info=self.credentials_info,
             credentials_base64=self.credentials_base64,
+            credentials_access_token=self.credentials_access_token,
             project_id=project_id,
             location=self.location,
             default_query_job_config=default_query_job_config,

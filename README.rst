@@ -180,7 +180,7 @@ Connection String Parameters
 
 There are many situations where you can't call ``create_engine`` directly, such as when using tools like `Flask SQLAlchemy <http://flask-sqlalchemy.pocoo.org/2.3/>`_. For situations like these, or for situations where you want the ``Client`` to have a `default_query_job_config <https://googlecloudplatform.github.io/google-cloud-python/latest/bigquery/generated/google.cloud.bigquery.client.Client.html#google.cloud.bigquery.client.Client>`_, you can pass many arguments in the query of the connection string.
 
-The ``credentials_path``, ``credentials_info``, ``credentials_base64``, ``location``, ``arraysize`` and ``list_tables_page_size`` parameters are used by this library, and the rest are used to create a `QueryJobConfig <https://googlecloudplatform.github.io/google-cloud-python/latest/bigquery/generated/google.cloud.bigquery.job.QueryJobConfig.html#google.cloud.bigquery.job.QueryJobConfig>`_
+The ``credentials_path``, ``credentials_info``, ``credentials_base64``, ``credentials_access_token``, ``location``, ``arraysize`` and ``list_tables_page_size`` parameters are used by this library, and the rest are used to create a `QueryJobConfig <https://googlecloudplatform.github.io/google-cloud-python/latest/bigquery/generated/google.cloud.bigquery.job.QueryJobConfig.html#google.cloud.bigquery.job.QueryJobConfig>`_
 
 Note that if you want to use query strings, it will be more reliable if you use three slashes, so ``'bigquery:///?a=b'`` will work reliably, but ``'bigquery://?a=b'`` might be interpreted as having a "database" of ``?a=b``, depending on the system being used to parse the connection string.
 
@@ -233,6 +233,15 @@ In cases where you wish to include the full credentials in the connection URI yo
 To create the base64 encoded string you can use the command line tool ``base64``, or ``openssl base64``, or ``python -m base64``.
 
 Alternatively, you can use an online generator like `www.base64encode.org <https://www.base64encode.org>_` to paste your credentials JSON file to be encoded.
+
+Also for authentication GCP Access Token can be used as a credentials by using ``credentials_access_token`` parameter.
+
+.. code-block:: python
+
+    engine = create_engine('bigquery://', credentials_access_token='YM5/mbURNVpTzK2QC6LoHiaPQgszwchg4XdgcSNADPzYRIMeA3khUHTb30zkvV77kD3kCg5cgSn9buzX5dxJaUYCVwpjOfD/OvNqRTOJV2C')
+
+To generate access token use `google.oauth2.credentials.UserAccessTokenCredentials <https://google-auth.readthedocs.io/en/stable/reference/google.oauth2.credentials.html#google.oauth2.credentials.UserAccessTokenCredentials>` function.
+Keep in mind that Access Tokens have a maximum expiration time of 1 hour.
 
 Creating tables
 ^^^^^^^^^^^^^^^

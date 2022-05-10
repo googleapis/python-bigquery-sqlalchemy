@@ -10,7 +10,7 @@ import re
 from google.api_core import client_info
 import google.auth
 from google.cloud import bigquery
-from google.oauth2 import service_account
+from google.oauth2 import service_account, credentials as oauth_credentials
 import sqlalchemy
 import base64
 import json
@@ -33,6 +33,7 @@ def create_bigquery_client(
     credentials_info=None,
     credentials_path=None,
     credentials_base64=None,
+    credentials_access_token=None,
     default_query_job_config=None,
     location=None,
     project_id=None,
@@ -54,6 +55,9 @@ def create_bigquery_client(
         )
         credentials = credentials.with_scopes(SCOPES)
         default_project = credentials.project_id
+    elif credentials_access_token:
+        credentials = oauth_credentials.Credentials(credentials_access_token)
+        _, default_project = google.auth.default(scopes=SCOPES)
     else:
         credentials, default_project = google.auth.default(scopes=SCOPES)
 
