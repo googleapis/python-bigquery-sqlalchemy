@@ -234,7 +234,7 @@ To create the base64 encoded string you can use the command line tool ``base64``
 
 Alternatively, you can use an online generator like `www.base64encode.org <https://www.base64encode.org>_` to paste your credentials JSON file to be encoded.
 
-Also for authentication GCP Access Token can be used as a credentials by using ``credentials_access_token`` parameter.
+Also, for authentication can be used GCP Access Token as credentials by passing ``credentials_access_token`` parameter.
 
 .. code-block:: python
 
