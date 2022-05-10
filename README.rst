@@ -240,7 +240,7 @@ Also for authentication GCP Access Token can be used as a credentials by using `
 
     engine = create_engine('bigquery://', credentials_access_token='YM5/mbURNVpTzK2QC6LoHiaPQgszwchg4XdgcSNADPzYRIMeA3khUHTb30zkvV77kD3kCg5cgSn9buzX5dxJaUYCVwpjOfD/OvNqRTOJV2C')
 
-To generate access token use `google.oauth2.credentials.UserAccessTokenCredentials <https://google-auth.readthedocs.io/en/stable/reference/google.oauth2.credentials.html#google.oauth2.credentials.UserAccessTokenCredentials>` function.
+To generate access token use `google.oauth2.credentials.UserAccessTokenCredentials <https://google-auth.readthedocs.io/en/stable/reference/google.oauth2.credentials.html#google.oauth2.credentials.UserAccessTokenCredentials>`_ function.
 Keep in mind that Access Tokens have a maximum expiration time of 1 hour.
 
 Creating tables
