@@ -34,7 +34,7 @@ def module_under_test():
 
 @pytest.fixture
 def credentials_access_token():
-    return 'ya29.A0ARrdaM_6l22-UPEnsTN_fcID0fDPzTuyQcrPypTgD093TPF2s1ocJyy919JOzd-xfZMWktC5Xc5TOCB2Ux3Afn9nGLVI9ONyNDH8wFWJc5jTzlMLAh0ZvzBfr44zhMqCX8ZDDUy4UK6n4qm9swFry0md1QXMaGSQGCQBj94'
+    return 'access_token'
 
 
 def test_create_bigquery_client_with_credentials_path(monkeypatch, module_under_test):
