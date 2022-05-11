@@ -7,6 +7,7 @@
 import base64
 import os
 import json
+import google.auth
 
 import pytest
 
@@ -23,6 +24,11 @@ def credentials_path():
     if "GOOGLE_APPLICATION_CREDENTIALS" not in os.environ:
         pytest.skip("GOOGLE_APPLICATION_CREDENTIALS must be set")
     return os.environ["GOOGLE_APPLICATION_CREDENTIALS"]
+
+
+@pytest.fixture
+def credentials_access_token():
+    return 'ya29.A0ARrdaM_6l22-UPEnsTN_fcID0fDPzTuyQcrPypTgD093TPF2s1ocJyy919JOzd-xfZMWktC5Xc5TOCB2Ux3Afn9nGLVI9ONyNDH8wFWJc5jTzlMLAh0ZvzBfr44zhMqCX8ZDDUy4UK6n4qm9swFry0md1QXMaGSQGCQBj94'
 
 
 @pytest.fixture
@@ -78,6 +84,30 @@ def test_create_bigquery_client_with_credentials_info_respects_project(
     """
     bqclient = module_under_test.create_bigquery_client(
         credentials_info=credentials_info,
+        project_id="connection-url-project",
+    )
+    assert bqclient.project == "connection-url-project"
+
+
+def test_create_bigquery_client_with_credentials_access_token(
+    module_under_test, credentials_access_token
+):
+    bqclient = module_under_test.create_bigquery_client(
+        credentials_access_token=credentials_access_token
+    )
+    _, default_project = google.auth.default()
+    assert bqclient.project == default_project
+
+
+def test_create_bigquery_client_with_credentials_access_token_respects_project(
+    module_under_test, credentials_access_token
+):
+    """Test that project_id is used, even when there is a default project.
+
+    https://github.com/googleapis/python-bigquery-sqlalchemy/issues/48
+    """
+    bqclient = module_under_test.create_bigquery_client(
+        credentials_access_token=credentials_access_token,
         project_id="connection-url-project",
     )
     assert bqclient.project == "connection-url-project"
