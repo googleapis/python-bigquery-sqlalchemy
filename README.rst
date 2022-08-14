@@ -189,7 +189,7 @@ Here are examples of all the supported arguments. Any not present are either for
 .. code-block:: python
 
     engine = create_engine(
-        'bigquery://some-project/some-dataset' '?'
+        'bigquery://some-project/some-dataset' '&'
         'credentials_path=/some/path/to.json' '&'
         'location=some-location' '&'
         'arraysize=1000' '&'
@@ -212,7 +212,7 @@ In cases where you wish to include the full credentials in the connection URI yo
 .. code-block:: python
 
     engine = create_engine(
-        'bigquery://some-project/some-dataset' '?'
+        'bigquery://some-project/some-dataset' '&'
         'credentials_base64=eyJrZXkiOiJ2YWx1ZSJ9Cg==' '&'
         'location=some-location' '&'
         'arraysize=1000' '&'
