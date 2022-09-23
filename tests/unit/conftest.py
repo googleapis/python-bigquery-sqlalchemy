@@ -25,7 +25,7 @@ import packaging.version
 import pytest
 import sqlalchemy
 
-import fauxdbi
+from . import fauxdbi
 
 sqlalchemy_version = packaging.version.parse(sqlalchemy.__version__)
 sqlalchemy_1_3_or_higher = pytest.mark.skipif(
@@ -40,11 +40,6 @@ sqlalchemy_before_1_4 = pytest.mark.skipif(
     sqlalchemy_version >= packaging.version.parse("1.4"),
     reason="requires sqlalchemy 1.3 or lower",
 )
-
-
-@pytest.fixture()
-def engine():
-    return sqlalchemy.create_engine("bigquery://myproject/mydataset")
 
 
 @pytest.fixture()

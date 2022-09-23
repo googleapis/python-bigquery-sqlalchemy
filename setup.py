@@ -69,7 +69,6 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
@@ -84,7 +83,9 @@ setup(
         # Until this issue is closed
         # https://github.com/googleapis/google-cloud-python/issues/10566
         "google-auth>=1.25.0,<3.0.0dev",  # Work around pip wack.
-        "google-cloud-bigquery>=2.25.2,<3.0.0dev",
+        "google-cloud-bigquery>=2.25.2,<4.0.0dev",
+        "google-cloud-bigquery-storage>=2.0.0,<3.0.0dev",
+        "pyarrow>=3.0.0,<7.0dev",
         # Temporarily set maximimum sqlalchemy to a known-working version while
         # we debug failing compliance tests. See:
         # https://github.com/googleapis/python-bigquery-sqlalchemy/issues/386
@@ -94,7 +95,7 @@ setup(
         "future",
     ],
     extras_require=extras,
-    python_requires=">=3.6, <3.11",
+    python_requires=">=3.7, <3.11",
     tests_require=["packaging", "pytz"],
     entry_points={
         "sqlalchemy.dialects": ["bigquery = sqlalchemy_bigquery:BigQueryDialect"]

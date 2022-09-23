@@ -52,7 +52,9 @@ def test_bind_processor():
 
 def _col():
     return sqlalchemy.Table(
-        "t", sqlalchemy.MetaData(), sqlalchemy.Column("person", _test_struct()),
+        "t",
+        sqlalchemy.MetaData(),
+        sqlalchemy.Column("person", _test_struct()),
     ).c.person
 
 
@@ -80,9 +82,9 @@ def _col():
         ),
     ],
 )
-def test_struct_traversal_project(engine, expr, sql):
+def test_struct_traversal_project(faux_conn, expr, sql):
     sql = f"SELECT {sql} AS `anon_1` \nFROM `t`"
-    assert str(sqlalchemy.select([expr]).compile(engine)) == sql
+    assert str(sqlalchemy.select([expr]).compile(faux_conn.engine)) == sql
 
 
 @pytest.mark.parametrize(
@@ -113,13 +115,13 @@ def test_struct_traversal_project(engine, expr, sql):
         ),
     ],
 )
-def test_struct_traversal_filter(engine, expr, sql, param=1):
+def test_struct_traversal_filter(faux_conn, expr, sql, param=1):
     want = f"SELECT `t`.`person` \nFROM `t`, `t` \nWHERE {sql}"
-    got = str(sqlalchemy.select([_col()]).where(expr).compile(engine))
+    got = str(sqlalchemy.select([_col()]).where(expr).compile(faux_conn.engine))
     assert got == want
 
 
-def test_struct_insert_type_info(engine, metadata):
+def test_struct_insert_type_info(faux_conn, metadata):
     t = sqlalchemy.Table("t", metadata, sqlalchemy.Column("person", _test_struct()))
     got = str(
         t.insert()
@@ -129,7 +131,7 @@ def test_struct_insert_type_info(engine, metadata):
                 children=[dict(name="billy", bdate=datetime.date(2020, 1, 1))],
             )
         )
-        .compile(engine)
+        .compile(faux_conn.engine)
     )
 
     assert got == (
@@ -139,7 +141,7 @@ def test_struct_insert_type_info(engine, metadata):
     )
 
 
-def test_struct_non_string_field_access(engine):
+def test_struct_non_string_field_access(faux_conn):
     with pytest.raises(
         TypeError,
         match="STRUCT fields can only be accessed with strings field names, not 42",
@@ -147,6 +149,6 @@ def test_struct_non_string_field_access(engine):
         _col()[42]
 
 
-def test_struct_bad_name(engine):
+def test_struct_bad_name(faux_conn):
     with pytest.raises(KeyError, match="42"):
         _col()["42"]

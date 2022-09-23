@@ -19,7 +19,7 @@
 
 import sqlalchemy
 
-from conftest import setup_table
+from .conftest import setup_table
 
 
 def test_inline_comments(faux_conn):
@@ -39,7 +39,9 @@ def test_inline_comments(faux_conn):
 
 def test_set_drop_table_comment(faux_conn):
     table = setup_table(
-        faux_conn, "some_table", sqlalchemy.Column("id", sqlalchemy.Integer),
+        faux_conn,
+        "some_table",
+        sqlalchemy.Column("id", sqlalchemy.Integer),
     )
 
     dialect = faux_conn.dialect
