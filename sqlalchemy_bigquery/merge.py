@@ -5,8 +5,9 @@
 # https://opensource.org/licenses/MIT.
 
 import textwrap
+from copy import copy
 from dataclasses import dataclass
-from typing import Any, ClassVar, Optional, Type, Union
+from typing import Any, ClassVar, Dict, Optional, Tuple, Type, Union
 
 import sqlalchemy as sa
 from sqlalchemy.ext.compiler import compiles
@@ -15,101 +16,131 @@ from sqlalchemy.sql.expression import ClauseElement, ColumnElement
 from sqlalchemy.sql.selectable import Subquery  # noqa
 from sqlalchemy.sql.selectable import Alias, Select, TableClause
 
-
-class MergeThen:
-    pass
-
-
-@dataclass(frozen=True)
-class MergeThenUpdate(MergeThen):
-    fields: dict[str, ColumnElement[Any]]
-
-
-@dataclass(frozen=True)
-class MergeThenInsert(MergeThen):
-    fields: dict[str, ColumnElement[Any]]
-
-
-@dataclass(frozen=True)
-class MergeThenDelete(MergeThen):
-    pass
+MergeConditionType = Optional[ColumnElement[sa.Boolean]]
 
 
 class Merge(ClauseElement):
-    Then: ClassVar[Type[MergeThen]] = MergeThen
-    ThenInsert: ClassVar[Type[MergeThenInsert]] = MergeThenInsert
-    ThenUpdate: ClassVar[Type[MergeThenUpdate]] = MergeThenUpdate
-    ThenDelete: ClassVar[Type[MergeThenDelete]] = MergeThenDelete
-
     def __init__(
         self,
+        target: Union[Alias, TableClause],
+        source: Union[Alias, TableClause, Subquery, Select],
         *,
-        into: Union[Alias, TableClause],
-        using: Union[Alias, TableClause, Subquery, Select],
         on: ColumnElement[sa.Boolean],
-        when_matched_and: Optional[ColumnElement[sa.Boolean]] = None,
-        when_matched: Optional["MergeThen"] = None,
-        when_not_matched: Optional["MergeThen"] = None,
-        when_not_matched_by_source: Optional["MergeThen"] = None,
     ):
         super().__init__()
         if not (
-            isinstance(into, TableClause)
+            isinstance(target, TableClause)
             or (
-                isinstance(into, Alias)
-                and isinstance(getattr(into, "element"), TableClause)
+                isinstance(target, Alias)
+                and isinstance(getattr(target, "element"), TableClause)
             )
         ):
             raise Exception(
-                "Parameter `into` must be a table, or an aliased table,"
-                f" instead received:\n{repr(into)}"
+                "Parameter `target` must be a table, or an aliased table,"
+                f" instead received:\n{repr(target)}"
             )
-        if not isinstance(into, (Alias, TableClause, Subquery, Select)):
+        if not isinstance(target, (Alias, TableClause, Subquery, Select)):
             raise Exception(
-                "Parameter `using` must be a table, alias, subquery, or selectable,"
-                f" instead received:\n{repr(into)}"
+                "Parameter `source` must be a table, alias, subquery, or selectable,"
+                f" instead received:\n{repr(target)}"
             )
 
-        if when_matched is None and when_matched_and is not None:
-            raise TypeError(f"Must supply `when_matched` if `when_matched_and` is set.")
-        if when_matched_and is None and when_matched is not None:
-            raise TypeError(f"Must supply `when_matched_and` if `when_matched` is set.")
-
-        self.into = into
-        self.using = using
+        self.when = tuple()
+        self.target = target
+        self.source = source
         self.on = on
-        self.when_matched_and = when_matched_and
-        self.when_matched = when_matched
-        self.when_not_matched = when_not_matched
-        self.when_not_matched_by_source = when_not_matched_by_source
+        self.when: Tuple[WhenBase] = tuple()
+
+    def when_matched(self, condition: MergeConditionType = None):
+        return MergeWhenMatched(self, condition)
+
+    def when_matched_not_matched_by_target(self, condition: MergeConditionType = None):
+        return MergeWhenNotMatchedByTarget(self, condition)
+
+    def when_matched_not_matched_by_source(self, condition: MergeConditionType = None):
+        return MergeWhenNotMatchedBySource(self, condition)
+
+    def _add_when(self, when: "WhenBase"):
+        cloned = copy(self)
+        cloned.when = tuple(cloned.when) + (when,)
+        return cloned
 
 
-@compiles(MergeThenUpdate)
-def _compile_merge_then_update(self: MergeThenUpdate, compiler: SQLCompiler, **kwargs):
-    code = "UPDATE SET"
-    code += ",".join(
-        "\n    " + _indent(f"{key} = {compiler.process(value, **kwargs)}", 2).strip()
-        for key, value in self.fields.items()
-    )
-    return code
+class ThenBase:
+    pass
 
 
-@compiles(MergeThenInsert)
-def _compile_merge_then_insert(self: MergeThenInsert, compiler: SQLCompiler, **kwargs):
-    code = "INSERT ("
-    code += ",".join(f"\n    {key}" for key in self.fields.keys())
-    code += "\n) VALUES ("
-    code += ",".join(
-        "\n    " + _indent(compiler.process(value, **kwargs), 2).strip()
-        for value in self.fields.values()
-    )
-    code += "\n)"
-    return code
+@dataclass(frozen=True)
+class ThenUpdate(ThenBase):
+    fields: Dict[str, ColumnElement[Any]]
 
 
-@compiles(MergeThenDelete)
-def _compile_merge_then_delete(self: MergeThenDelete, compiler: SQLCompiler, **kwargs):
-    return "DELETE"
+@dataclass(frozen=True)
+class ThenInsert(ThenBase):
+    fields: Dict[str, ColumnElement[Any]]
+
+
+@dataclass(frozen=True)
+class ThenDelete(ThenBase):
+    pass
+
+
+class WhenBase:
+    then: ThenBase
+    condition: MergeConditionType
+
+
+@dataclass(frozen=True)
+class WhenMatched(WhenBase):
+    then: Union[ThenUpdate, ThenDelete]
+    condition: MergeConditionType = None
+
+
+@dataclass(frozen=True)
+class WhenNotMatchedByTarget(WhenBase):
+    then: ThenInsert
+    condition: MergeConditionType = None
+
+
+@dataclass(frozen=True)
+class WhenNotMatchedBySource(WhenBase):
+    then: Union[ThenUpdate, ThenDelete]
+    condition: MergeConditionType = None
+
+
+class MergeThenUpdateDeleteBase:
+    merge_cls: ClassVar[Union[Type[WhenMatched], Type[WhenNotMatchedBySource]]]
+
+    def __init__(self, stmt: "Merge", condition: MergeConditionType = None) -> None:
+        super().__init__()
+        self.stmt = stmt
+        self.condition = condition
+
+    def then_update(self, fields: Dict[str, ColumnElement[Any]]):
+        return self.stmt._add_when(self.merge_cls(ThenUpdate(fields), self.condition))
+
+    def then_delete(self):
+        return self.stmt._add_when(self.merge_cls(ThenDelete(), self.condition))
+
+
+class MergeWhenMatched(MergeThenUpdateDeleteBase):
+    merge_cls = WhenMatched
+
+
+class MergeWhenNotMatchedBySource(MergeThenUpdateDeleteBase):
+    merge_cls = WhenNotMatchedBySource
+
+
+class MergeWhenNotMatchedByTarget:
+    def __init__(self, stmt: "Merge", condition: MergeConditionType = None) -> None:
+        super().__init__()
+        self.stmt = stmt
+        self.condition = condition
+
+    def then_insert(self, fields: Dict[str, ColumnElement[Any]]):
+        return self.stmt._add_when(
+            WhenNotMatchedByTarget(ThenInsert(fields), self.condition)
+        )
 
 
 @compiles(Merge)
@@ -125,37 +156,75 @@ def _compile_merge(self: Merge, compiler: SQLCompiler, **kwargs):
             return " " + code
         return "\n" + _indent(code, 2)
 
-    into = _compile_select(self.into)
-    using = _compile_select(self.using)
+    target = _compile_select(self.target)
+    source = _compile_select(self.source)
     on = compiler.process(self.on, **kwargs)
-    code = f"MERGE\n    INTO{into}"
-    code += f"\n    USING{using}"
+
+    code = f"MERGE\n    INTO{target}"
+    code += f"\n    USING{source}"
     code += f"\n    ON {on}"
-
-    if self.when_matched is not None:
-        when_matched = _indent(compiler.process(self.when_matched, **kwargs))
-        if self.when_matched_and is not None:
-            when_matched_and = _indent(
-                compiler.process(self.when_matched_and, **kwargs), 2
-            )
-            code += (
-                f"\nWHEN MATCHED\n    AND (\n{when_matched_and}\n    )\n    THEN\n"
-                + when_matched
-            )
-        else:
-            code += f"\nWHEN MATCHED THEN\n" + when_matched
-
-    if self.when_not_matched is not None:
-        when_not_matched = _indent(compiler.process(self.when_not_matched, **kwargs))
-        code += "\nWHEN NOT MATCHED\n    THEN\n" + when_not_matched
-
-    if self.when_not_matched_by_source is not None:
-        when_not_matched_by_source = _indent(
-            compiler.process(self.when_not_matched_by_source, **kwargs)
-        )
-        code += "\nWHEN NOT MATCHED BY SOURCE\n    THEN\n" + when_not_matched_by_source
-
+    for when in self.when:
+        code += "\n" + compiler.process(when, **kwargs)
     return code.rstrip() + ";"
+
+
+@compiles(WhenMatched)
+def _compile_when_matched(self: WhenMatched, compiler: SQLCompiler, **kwargs):
+    return "WHEN MATCHED" + _compile_when(self, compiler, **kwargs)
+
+
+@compiles(WhenNotMatchedByTarget)
+def _compile_when_not_matched_by_target(
+    self: WhenNotMatchedByTarget, compiler: SQLCompiler, **kwargs
+):
+    return "WHEN NOT MATCHED BY TARGET" + _compile_when(self, compiler, **kwargs)
+
+
+@compiles(WhenNotMatchedBySource)
+def _compile_when_not_matched_by_source(
+    self: WhenNotMatchedBySource, compiler: SQLCompiler, **kwargs
+):
+    return "WHEN MATCHED NOT MATCHED BY SOURCE" + _compile_when(
+        self, compiler, **kwargs
+    )
+
+
+def _compile_when(when: WhenBase, compiler: SQLCompiler, **kwargs):
+    code = ""
+    if when.condition is not None:
+        code += "\n    AND "
+        code += _indent(compiler.process(when.condition, **kwargs)).strip()
+    code += "\n    THEN "
+    code += _indent(compiler.process(when.then, **kwargs)).strip()
+    return code
+
+
+@compiles(ThenUpdate)
+def _compile_then_update(self: ThenUpdate, compiler: SQLCompiler, **kwargs):
+    code = "UPDATE SET"
+    code += ",".join(
+        "\n    " + _indent(f"{key} = {compiler.process(value, **kwargs)}", 2).strip()
+        for key, value in self.fields.items()
+    )
+    return code
+
+
+@compiles(ThenInsert)
+def _compile_then_insert(self: ThenInsert, compiler: SQLCompiler, **kwargs):
+    code = "INSERT ("
+    code += ",".join(f"\n    {key}" for key in self.fields.keys())
+    code += "\n) VALUES ("
+    code += ",".join(
+        "\n    " + _indent(compiler.process(value, **kwargs), 2).strip()
+        for value in self.fields.values()
+    )
+    code += "\n)"
+    return code
+
+
+@compiles(ThenDelete)
+def _compile_then_delete(self: ThenDelete, compiler: SQLCompiler, **kwargs):
+    return "DELETE"
 
 
 def _indent(text: str, amount: int = 1) -> str:
