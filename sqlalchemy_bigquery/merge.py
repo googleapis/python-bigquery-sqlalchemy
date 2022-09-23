@@ -1,4 +1,9 @@
-import textwrap
+# Copyright 2021 Google LLC
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 import textwrap
 from dataclasses import dataclass
 from typing import Any, ClassVar, Optional, Type, Union
@@ -12,7 +17,7 @@ from sqlalchemy.sql.selectable import Alias, Select, TableClause
 
 
 class MergeThen:
-    ...
+    pass
 
 
 @dataclass(frozen=True)
@@ -27,7 +32,7 @@ class MergeThenInsert(MergeThen):
 
 @dataclass(frozen=True)
 class MergeThenDelete(MergeThen):
-    ...
+    pass
 
 
 class Merge(ClauseElement):

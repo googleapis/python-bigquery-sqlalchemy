@@ -1,8 +1,15 @@
-import sqlalchemy as sa
+# Copyright 2021 Google LLC
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 import re
+
+import pytest
+import sqlalchemy as sa
 from sqlalchemy_bigquery import BigQueryDialect
 from sqlalchemy_bigquery.merge import Merge
-import pytest
 
 
 def test_merge():
@@ -63,13 +70,11 @@ def test_maybe_confusing_api():
 
     with pytest.raises(TypeError):
         # Maybe we can help the developer prevent this gotchya?
-        str(
-            Merge(
-                into=into,
-                using=using,
-                on=into.c.b == using.c.b,
-                when_not_matched=Merge.ThenDelete,
-            )
+        Merge(
+            into=into,
+            using=using,
+            on=into.c.b == using.c.b,
+            when_not_matched=Merge.ThenDelete,  # type: ignore
         )
 
     str(
