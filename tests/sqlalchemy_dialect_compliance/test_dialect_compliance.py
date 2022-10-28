@@ -69,6 +69,24 @@ if packaging.version.parse(sqlalchemy.__version__) < packaging.version.parse("1.
             with mock.patch("sqlalchemy.testing.suite.test_types.literal", literal):
                 super(TimestampMicrosecondsTest, self).test_literal()
 
+        def test_select_direct(self, connection):
+            # Added because this test was failing when passed the
+            # UTC timezone.
+            data = datetime.datetime(2012, 10, 15, 12, 57, 18, 396)
+
+            def literal(value, type_=None):
+                assert value == self.data
+
+                if type_ is not None:
+                    assert type_ is self.datatype
+
+                import sqlalchemy.sql.sqltypes
+
+                return sqlalchemy.sql.elements.literal(value, self.datatype)
+
+            with mock.patch("sqlalchemy.testing.suite.test_types.literal", literal):
+                super(TimestampMicrosecondsTest, self).test_select_direct(connection)
+
 else:
     from sqlalchemy.testing.suite import (
         FetchLimitOffsetTest as _FetchLimitOffsetTest,
@@ -109,7 +127,7 @@ else:
     del PostCompileParamsTest
 
     class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
-
+        print("HERE: ELSE")
         data = datetime.datetime(2012, 10, 15, 12, 57, 18, 396, tzinfo=pytz.UTC)
 
         def test_literal(self, literal_round_trip):
@@ -127,6 +145,27 @@ else:
 
             with mock.patch("sqlalchemy.testing.suite.test_types.literal", literal):
                 super(TimestampMicrosecondsTest, self).test_literal(literal_round_trip)
+
+        def test_select_direct(self, connection):
+            # Added because this test was failing when passed the
+            # UTC timezone.
+            print("HERE: my test select direct")
+            data = datetime.datetime(2012, 10, 15, 12, 57, 18, 396)
+
+            def literal(value, type_=None):
+                assert value == self.data
+
+                if type_ is not None:
+                    assert type_ is self.datatype
+
+                import sqlalchemy.sql.sqltypes
+
+                return sqlalchemy.sql.elements.literal(value, self.datatype)
+
+            with mock.patch("sqlalchemy.testing.suite.test_types.literal", literal):
+                super(TimestampMicrosecondsTest, self).test_select_direct(connection)
+
+
 
     def test_round_trip_executemany(self, connection):
         unicode_table = self.tables.unicode_table
