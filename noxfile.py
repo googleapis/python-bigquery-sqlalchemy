@@ -57,8 +57,6 @@ UNIT_TEST_EXTRAS_BY_PYTHON = {
     ],
 }
 
-
-# We're using two Python versions to test with sqlalchemy 1.3 and 1.4.
 SYSTEM_TEST_PYTHON_VERSIONS = ["3.8", "3.10"]
 SYSTEM_TEST_STANDARD_DEPENDENCIES = [
     "mock",
@@ -424,7 +422,11 @@ def docs(session):
 
     session.install("-e", ".")
     session.install(
-        "sphinx==4.0.1", "alabaster", "geoalchemy2", "shapely", "recommonmark"
+        "sphinx==4.0.1",
+        "alabaster",
+        "geoalchemy2",
+        "shapely",
+        "recommonmark",
     )
 
     shutil.rmtree(os.path.join("docs", "_build"), ignore_errors=True)
