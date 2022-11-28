@@ -25,7 +25,7 @@ import decimal
 from sqlalchemy.engine import create_engine
 from sqlalchemy.schema import Table, MetaData, Column
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import types, func, case, inspect
+from sqlalchemy import types, func, case, inspect, not_
 from sqlalchemy.sql import expression, select, literal_column
 from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy.orm import sessionmaker
@@ -774,3 +774,27 @@ def test_unnest(engine, bigquery_dataset):
         f" unnest(`{bigquery_dataset}.test_unnest_1`.`objects`) AS `foo_objects`"
     )
     assert sorted(r[0] for r in conn.execute(query)) == ["a", "b", "c", "x", "y"]
+
+
+@pytest.mark.skipif(
+    packaging.version.parse(sqlalchemy.__version__) < packaging.version.parse("1.4"),
+    reason="regexp_match support requires version 1.4",
+)
+def test_regexp_match(session, table):
+    results = session.query(table.c.string).where(
+        table.c.string.regexp_match(".*foo.*")
+    )
+
+    assert results > 0
+
+
+@pytest.mark.skipif(
+    packaging.version.parse(sqlalchemy.__version__) < packaging.version.parse("1.4"),
+    reason="regexp_match support requires version 1.4",
+)
+def test_not_regexp_match(session, table):
+    results = session.query(table.c.string).where(
+        not_(table.c.string.regexp_match(".*foo.*"))
+    )
+
+    assert results > 0
