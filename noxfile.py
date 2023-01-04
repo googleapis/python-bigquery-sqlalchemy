@@ -32,7 +32,7 @@ LINT_PATHS = ["docs", "sqlalchemy_bigquery", "tests", "noxfile.py", "setup.py"]
 
 DEFAULT_PYTHON_VERSION = "3.8"
 
-UNIT_TEST_PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10", "3.11"]
+UNIT_TEST_PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10"]
 UNIT_TEST_STANDARD_DEPENDENCIES = [
     "mock",
     "asyncmock",
@@ -56,6 +56,7 @@ UNIT_TEST_EXTRAS_BY_PYTHON = {
         "geography",
     ],
 }
+
 SYSTEM_TEST_PYTHON_VERSIONS = ["3.8", "3.11"]
 SYSTEM_TEST_STANDARD_DEPENDENCIES = [
     "mock",
@@ -381,7 +382,7 @@ def compliance(session):
     )
     if session.python == "3.8":
         extras = "[tests,alembic]"
-    elif session.python == "3.10":
+    elif session.python == "3.11":
         extras = "[tests,geography]"
     else:
         extras = "[tests]"
