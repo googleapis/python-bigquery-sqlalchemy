@@ -33,6 +33,7 @@ extras_by_python = {
     "3.11": ["tests", "geography"],
 }
 templated_files = common.py_library(
+    unit_test_python_versions=["3.7", "3.8", "3.9", "3.10", "3.11"],
     system_test_python_versions=["3.8", "3.11"],
     cov_level=100,
     unit_test_extras=extras,
