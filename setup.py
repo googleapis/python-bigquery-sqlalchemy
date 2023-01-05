@@ -88,7 +88,6 @@ setup(
         "packaging",
         "pyarrow>=3.0.0",
         "sqlalchemy>=1.2.0,<2.0.0dev",
-        "future",
     ],
     extras_require=extras,
     python_requires=">=3.7, <3.11",
