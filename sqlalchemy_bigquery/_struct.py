@@ -54,8 +54,8 @@ class STRUCT(sqlalchemy.sql.sqltypes.Indexable, sqlalchemy.types.UserDefinedType
 
     def __init__(
         self,
-        *fields: Tuple[str, sqlalchemy.types.TypeEngine],
-        **kwfields: Mapping[str, sqlalchemy.types.TypeEngine],
+        *fields,
+        **kwfields,
     ):
         # Note that because:
         # https://docs.python.org/3/whatsnew/3.6.html#pep-468-preserving-keyword-argument-order
