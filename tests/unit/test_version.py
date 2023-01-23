@@ -1,4 +1,4 @@
-# Copyright (c) 2021 The sqlalchemy-bigquery Authors
+# Copyright (c) 2022 The sqlalchemy-bigquery Authors
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of
 # this software and associated documentation files (the "Software"), to deal in
@@ -17,4 +17,13 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-__version__ = "1.5.0"
+import sqlalchemy_bigquery
+import sqlalchemy_bigquery.version
+
+
+def test_sqlalchemy_bigquery_has_version():
+    assert isinstance(sqlalchemy_bigquery.__version__, str)
+
+
+def test_version_module_has_version():
+    assert isinstance(sqlalchemy_bigquery.version.__version__, str)
