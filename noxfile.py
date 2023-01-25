@@ -294,7 +294,7 @@ def prerelease(session):
         "google-api-core",
         "google-cloud-bigquery",
         "google-cloud-bigquery-storage",
-        "sqlalchemy<2.0.0",
+        "sqlalchemy",
         "shapely",
         # These are transitive dependencies, but we'd still like to know if a
         # change in a prerelease there breaks this connector.
@@ -377,7 +377,6 @@ def compliance(session):
         "pytest<=7.0.0dev",
         "pytest-rerunfailures",
         "google-cloud-testutils",
-        "sqlalchemy<2.0.0",
         "-c",
         constraints_path,
     )
