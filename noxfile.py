@@ -425,7 +425,7 @@ def prerelease_deps(session):
     system_deps_all = (
         SYSTEM_TEST_STANDARD_DEPENDENCIES
         + SYSTEM_TEST_EXTERNAL_DEPENDENCIES
-        #+ SYSTEM_TEST_EXTRAS
+        + SYSTEM_TEST_EXTRAS
     )
     session.install(*system_deps_all)
 
