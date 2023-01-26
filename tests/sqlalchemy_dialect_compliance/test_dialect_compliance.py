@@ -42,6 +42,9 @@ from sqlalchemy.testing.suite import (
     TimestampMicrosecondsTest as _TimestampMicrosecondsTest,
 )
 
+# To suppress the "Deprecated API features detected!" warning when features 
+# not compatible with 2.0 are detected:
+SQLALCHEMY_SILENCE_UBER_WARNING=1
 
 if packaging.version.parse(sqlalchemy.__version__) < packaging.version.parse("1.4"):
     from sqlalchemy.testing.suite import LimitOffsetTest as _LimitOffsetTest
