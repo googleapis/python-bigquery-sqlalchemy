@@ -300,6 +300,8 @@ def compliance(session):
 
     session.install("--pre", "grpcio")
 
+    session.install("--pre", "--no-deps", "--upgrade", "sqlalchemy<2.0.0")
+
     session.install(
         "mock",
         # TODO: Allow latest version of pytest once SQLAlchemy 1.4.28+ is supported.
@@ -425,7 +427,6 @@ def prerelease_deps(session):
     system_deps_all = (
         SYSTEM_TEST_STANDARD_DEPENDENCIES
         + SYSTEM_TEST_EXTERNAL_DEPENDENCIES
-        + SYSTEM_TEST_EXTRAS
     )
     session.install(*system_deps_all)
 
