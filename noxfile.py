@@ -461,6 +461,7 @@ def prerelease_deps(session):
         "google-api-core",
         "proto-plus",
         "google-cloud-testutils",
+        "sqlalchemy<2.0.0"
         # dependencies of google-cloud-testutils"
         "click",
     ]
