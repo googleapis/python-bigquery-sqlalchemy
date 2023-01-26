@@ -101,12 +101,21 @@ Project
 Authentication
 ^^^^^^^^^^^^^^
 
-Follow the `Google Cloud library guide <https://google-cloud-python.readthedocs.io/en/latest/core/auth.html>`_ for authentication. Alternatively, you can provide the path to a service account JSON file in ``create_engine()``:
+Follow the `Google Cloud library guide <https://google-cloud-python.readthedocs.io/en/latest/core/auth.html>`_ for authentication. 
+Alternatively, you can provide the path to a service account JSON file in ``create_engine()`` using the ``credentials_path`` parameter or 
+passing the credentials as a Python dictionary using the ``credentials_info`` parameter:
 
 .. code-block:: python
 
+    # provide the path to a service account JSON file
     engine = create_engine('bigquery://', credentials_path='/path/to/keyfile.json')
 
+    # provide credentials as a Python dictionary
+    credentials_info = {
+        "type": "service_account", 
+        "project_id": "service-account-project"
+    },
+    engine = create_engine('bigquery://', credentials_info=credentials_info)
 
 Location
 ^^^^^^^^
