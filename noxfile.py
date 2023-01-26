@@ -283,6 +283,76 @@ def system(session):
         )
 
 
+@nox.session(python=DEFAULT_PYTHON_VERSION)
+def prerelease(session):
+    session.install(
+        "--prefer-binary",
+        "--pre",
+        "--upgrade",
+        "alembic",
+        "geoalchemy2",
+        "google-api-core",
+        "google-cloud-bigquery",
+        "google-cloud-bigquery-storage",
+        "sqlalchemy",
+        "shapely",
+        # These are transitive dependencies, but we'd still like to know if a
+        # change in a prerelease there breaks this connector.
+        "google-cloud-core",
+        "grpcio",
+    )
+    session.install(
+        "freezegun",
+        "google-cloud-testutils",
+        "mock",
+        "psutil",
+        "pytest",
+        "pytest-cov",
+        "pytz",
+    )
+
+    # Because we test minimum dependency versions on the minimum Python
+    # version, the first version we test with in the unit tests sessions has a
+    # constraints file containing all dependencies and extras.
+    with open(
+        CURRENT_DIRECTORY
+        / "testing"
+        / f"constraints-{UNIT_TEST_PYTHON_VERSIONS[0]}.txt",
+        encoding="utf-8",
+    ) as constraints_file:
+        constraints_text = constraints_file.read()
+
+    # Ignore leading whitespace and comment lines.
+    deps = [
+        match.group(1)
+        for match in re.finditer(
+            r"^\s*(\S+)(?===\S+)", constraints_text, flags=re.MULTILINE
+        )
+    ]
+
+    # We use --no-deps to ensure that pre-release versions aren't overwritten
+    # by the version ranges in setup.py.
+    session.install(*deps)
+    session.install("--no-deps", "-e", ".")
+
+    # Print out prerelease package versions.
+    session.run("python", "-m", "pip", "freeze")
+
+    # Run all tests, except a few samples tests which require extra dependencies.
+    session.run(
+        "py.test",
+        "--quiet",
+        f"--junitxml=prerelease_unit_{session.python}_sponge_log.xml",
+        os.path.join("tests", "unit"),
+    )
+    session.run(
+        "py.test",
+        "--quiet",
+        f"--junitxml=prerelease_system_{session.python}_sponge_log.xml",
+        os.path.join("tests", "system"),
+    )
+
+
 @nox.session(python=SYSTEM_TEST_PYTHON_VERSIONS[-1])
 def compliance(session):
     """Run the SQLAlchemy dialect-compliance system tests"""
