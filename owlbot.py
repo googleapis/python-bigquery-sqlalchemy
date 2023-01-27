@@ -109,7 +109,7 @@ place_before(
 place_before(
     "noxfile.py",
     "protobuf",
-    "sqlalchemy<2.0.0",
+    "sqlalchemy<2.0.0,",
 )
 
 
