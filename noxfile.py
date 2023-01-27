@@ -283,6 +283,61 @@ def system(session):
         )
 
 
+@nox.session(python=SYSTEM_TEST_PYTHON_VERSIONS[-1])
+def compliance(session):
+    """Run the SQLAlchemy dialect-compliance system tests"""
+    constraints_path = str(
+        CURRENT_DIRECTORY / "testing" / f"constraints-{session.python}.txt"
+    )
+    system_test_folder_path = os.path.join("tests", "sqlalchemy_dialect_compliance")
+
+    if os.environ.get("RUN_COMPLIANCE_TESTS", "true") == "false":
+        session.skip("RUN_COMPLIANCE_TESTS is set to false, skipping")
+    if os.environ.get("GOOGLE_API_USE_CLIENT_CERTIFICATE", "false") == "true":
+        session.install("pyopenssl")
+    if not os.path.exists(system_test_folder_path):
+        session.skip("Compliance tests were not found")
+
+    session.install("--pre", "grpcio")
+    session.install("--pre", "--no-deps", "--upgrade", "sqlalchemy<2.0.0")
+    session.install(
+        "mock",
+        # TODO: Allow latest version of pytest once SQLAlchemy 1.4.28+ is supported.
+        # See: https://github.com/googleapis/python-bigquery-sqlalchemy/issues/413
+        "pytest<=7.0.0dev",
+        "pytest-rerunfailures",
+        "google-cloud-testutils",
+        "-c",
+        constraints_path,
+    )
+    if session.python == "3.8":
+        extras = "[tests,alembic]"
+    elif session.python == "3.11":
+        extras = "[tests,geography]"
+    else:
+        extras = "[tests]"
+    session.install("-e", f".{extras}", "-c", constraints_path)
+
+    session.run(
+        "py.test",
+        "-vv",
+        f"--junitxml=compliance_{session.python}_sponge_log.xml",
+        "--reruns=3",
+        "--reruns-delay=60",
+        "--only-rerun=403 Exceeded rate limits",
+        "--only-rerun=409 Already Exists",
+        "--only-rerun=404 Not found",
+        "--only-rerun=400 Cannot execute DML over a non-existent table",
+        system_test_folder_path,
+        *session.posargs,
+        # To suppress the "Deprecated API features detected!" warning when
+        # features not compatible with 2.0 are detected, use a value of "1"
+        env={
+            "SQLALCHEMY_SILENCE_UBER_WARNING": "1",
+        },
+    )
+
+
 @nox.session(python=DEFAULT_PYTHON_VERSION)
 def cover(session):
     """Run the final coverage report.
@@ -304,6 +359,8 @@ def docs(session):
     session.install(
         "sphinx==4.0.1",
         "alabaster",
+        "geoalchemy2",
+        "shapely",
         "recommonmark",
     )
 
@@ -330,6 +387,8 @@ def docfx(session):
     session.install(
         "sphinx==4.0.1",
         "alabaster",
+        "geoalchemy2",
+        "shapely",
         "recommonmark",
         "gcp-sphinx-docfx-yaml",
     )
@@ -369,9 +428,7 @@ def prerelease_deps(session):
     unit_deps_all = UNIT_TEST_STANDARD_DEPENDENCIES + UNIT_TEST_EXTERNAL_DEPENDENCIES
     session.install(*unit_deps_all)
     system_deps_all = (
-        SYSTEM_TEST_STANDARD_DEPENDENCIES
-        + SYSTEM_TEST_EXTERNAL_DEPENDENCIES
-        + SYSTEM_TEST_EXTRAS
+        SYSTEM_TEST_STANDARD_DEPENDENCIES + SYSTEM_TEST_EXTERNAL_DEPENDENCIES
     )
     session.install(*system_deps_all)
 
@@ -397,8 +454,8 @@ def prerelease_deps(session):
     session.install(*constraints_deps)
 
     prerel_deps = [
-        "sqlalchemy<2.0.0
-protobuf",
+        "protobuf",
+        "sqlalchemy<2.0.0",
         # dependency of grpc
         "six",
         "googleapis-common-protos",
@@ -424,9 +481,7 @@ protobuf",
 
     # Print out prerelease package versions
     session.run(
-        "python", "-c", "import google.sqlalchemy<2.0.0
-protobuf; print(google.sqlalchemy<2.0.0
-protobuf.__version__)"
+        "python", "-c", "import google.protobuf; print(google.protobuf.__version__)"
     )
     session.run("python", "-c", "import grpc; print(grpc.__version__)")
 
