@@ -84,6 +84,12 @@ s.replace(
     ["noxfile.py"], "--cov=google", "--cov=sqlalchemy_bigquery",
 )
 
+s.replace(
+    ["noxfile.py"],
+    "protobuf",
+    '''protobuf",
+        "sqlalchemy<2.0.0''',
+)
 
 def place_before(path, text, *before_text, escape=None):
     replacement = "\n".join(before_text) + "\n" + text
@@ -103,13 +109,6 @@ place_before(
     "noxfile.py",
     "nox.options.error_on_missing_interpreters = True",
     "nox.options.stop_on_first_error = True",
-)
-
-
-place_before(
-    "noxfile.py",
-    "protobuf",
-    "sqlalchemy<2.0.0,",
 )
 
 
