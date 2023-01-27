@@ -88,7 +88,7 @@ s.replace(
     ["noxfile.py"],
     "protobuf",
     '''protobuf",
-        "sqlalchemy<2.0.0''',
+        "sqlalchemy<2.0.0TEST''',
 )
 
 def place_before(path, text, *before_text, escape=None):
