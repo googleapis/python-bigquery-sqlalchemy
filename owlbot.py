@@ -72,23 +72,26 @@ s.replace(
     "import re\nimport shutil",
 )
 
-s.replace(
-    ["noxfile.py"], 
-    """SYSTEM_TEST_STANDARD_DEPENDENCIES
-        + SYSTEM_TEST_EXTERNAL_DEPENDENCIES
-        + SYSTEM_TEST_EXTRAS""",
-"SYSTEM_TEST_STANDARD_DEPENDENCIES + SYSTEM_TEST_EXTERNAL_DEPENDENCIES",
-)
 
 s.replace(
     ["noxfile.py"], "--cov=google", "--cov=sqlalchemy_bigquery",
 )
 
+
+s.replace(
+    ["noxfile.py"], 
+    "\+ SYSTEM_TEST_EXTRAS",
+    "",
+)
+
+
 s.replace(
     ["noxfile.py"],
-    "protobuf",
-    '''protobuf",
-        "sqlalchemy<2.0.0''',
+    '''"protobuf",
+        # dependency of grpc''',
+    '''"protobuf",
+        "sqlalchemy<2.0.0",
+        # dependency of grpc''',
 )
 
 def place_before(path, text, *before_text, escape=None):
@@ -177,7 +180,7 @@ place_before(
      "noxfile.py",
      "@nox.session(python=DEFAULT_PYTHON_VERSION)\n"
      "def cover(session):",
-     prerelease_deps + compliance,
+     compliance,
      escape="()",
      )
 
