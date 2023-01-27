@@ -332,6 +332,11 @@ def compliance(session):
         "--only-rerun=400 Cannot execute DML over a non-existent table",
         system_test_folder_path,
         *session.posargs,
+        # To suppress the "Deprecated API features detected!" warning when
+        # features not compatible with 2.0 are detected, use a value of "1"
+        env={
+            "SQLALCHEMY_SILENCE_UBER_WARNING": "1",
+        },
     )
 
 
