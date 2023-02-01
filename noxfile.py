@@ -283,6 +283,7 @@ def system(session):
         )
 
 
+
 @nox.session(python=SYSTEM_TEST_PYTHON_VERSIONS[-1])
 def compliance(session):
     """Run the SQLAlchemy dialect-compliance system tests"""
@@ -299,7 +300,7 @@ def compliance(session):
         session.skip("Compliance tests were not found")
 
     session.install("--pre", "grpcio")
-    session.install("--pre", "--no-deps", "--upgrade", "sqlalchemy<2.0.0")
+    session.install("--pre", "--no-deps", "--upgrade", "sqlalchemy<2.0.0") 
     session.install(
         "mock",
         # TODO: Allow latest version of pytest once SQLAlchemy 1.4.28+ is supported.
@@ -338,6 +339,7 @@ def compliance(session):
     )
 
 
+
 @nox.session(python=DEFAULT_PYTHON_VERSION)
 def cover(session):
     """Run the final coverage report.
@@ -358,9 +360,7 @@ def docs(session):
     session.install("-e", ".")
     session.install(
         "sphinx==4.0.1",
-        "alabaster",
-        "geoalchemy2",
-        "shapely",
+        "alabaster", "geoalchemy2", "shapely",
         "recommonmark",
     )
 
@@ -386,9 +386,7 @@ def docfx(session):
     session.install("-e", ".")
     session.install(
         "sphinx==4.0.1",
-        "alabaster",
-        "geoalchemy2",
-        "shapely",
+        "alabaster", "geoalchemy2", "shapely",
         "recommonmark",
         "gcp-sphinx-docfx-yaml",
     )
@@ -428,7 +426,8 @@ def prerelease_deps(session):
     unit_deps_all = UNIT_TEST_STANDARD_DEPENDENCIES + UNIT_TEST_EXTERNAL_DEPENDENCIES
     session.install(*unit_deps_all)
     system_deps_all = (
-        SYSTEM_TEST_STANDARD_DEPENDENCIES + SYSTEM_TEST_EXTERNAL_DEPENDENCIES
+        SYSTEM_TEST_STANDARD_DEPENDENCIES
+        + SYSTEM_TEST_EXTERNAL_DEPENDENCIES
     )
     session.install(*system_deps_all)
 
