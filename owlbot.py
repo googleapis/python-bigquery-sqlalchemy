@@ -228,8 +228,6 @@ s.replace(
 # Final cleanup
 # ----------------------------------------------------------------------------
 
-"""
 s.shell.run(["nox", "-s", "blacken"], hide_output=False)
 for noxfile in REPO_ROOT.glob("samples/**/noxfile.py"):
     s.shell.run(["nox", "-s", "blacken"], cwd=noxfile.parent, hide_output=False)
-"""
