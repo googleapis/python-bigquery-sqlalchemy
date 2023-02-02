@@ -46,7 +46,7 @@ def readme():
 
 
 extras = dict(
-    geography=["GeoAlchemy2==0.12.5", "shapely"],
+    geography=["GeoAlchemy2", "shapely"],    
     alembic=["alembic"],
     tests=["packaging", "pytz"],
 )
