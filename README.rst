@@ -34,6 +34,9 @@ In order to use this library, you first need to go through the following steps:
 .. _Enable the BigQuery Storage API.: https://console.cloud.google.com/apis/library/bigquery.googleapis.com
 .. _Setup Authentication.: https://googleapis.dev/python/google-api-core/latest/auth.html
 
+.. note::
+   This library is only compatible with SQLAlchemy versions < 2.0.0
+
 Installation
 ------------
 
@@ -101,12 +104,27 @@ Project
 Authentication
 ^^^^^^^^^^^^^^
 
-Follow the `Google Cloud library guide <https://google-cloud-python.readthedocs.io/en/latest/core/auth.html>`_ for authentication. Alternatively, you can provide the path to a service account JSON file in ``create_engine()``:
+Follow the `Google Cloud library guide <https://google-cloud-python.readthedocs.io/en/latest/core/auth.html>`_ for authentication. 
+
+Alternatively, you can choose either of the following approaches:
+
+* provide the path to a service account JSON file in ``create_engine()`` using the ``credentials_path`` parameter:
 
 .. code-block:: python
 
+    # provide the path to a service account JSON file
     engine = create_engine('bigquery://', credentials_path='/path/to/keyfile.json')
 
+* pass the credentials in ``create_engine()`` as a Python dictionary using the ``credentials_info`` parameter:
+
+.. code-block:: python
+    
+    # provide credentials as a Python dictionary
+    credentials_info = {
+        "type": "service_account", 
+        "project_id": "your-service-account-project-id"
+    },
+    engine = create_engine('bigquery://', credentials_info=credentials_info)
 
 Location
 ^^^^^^^^
