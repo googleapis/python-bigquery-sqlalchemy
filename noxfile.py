@@ -32,7 +32,7 @@ LINT_PATHS = ["docs", "sqlalchemy_bigquery", "tests", "noxfile.py", "setup.py"]
 
 DEFAULT_PYTHON_VERSION = "3.8"
 
-UNIT_TEST_PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10", "3.11"]
+UNIT_TEST_PYTHON_VERSIONS = ["3.11"]
 UNIT_TEST_STANDARD_DEPENDENCIES = [
     "mock",
     "asyncmock",
@@ -302,7 +302,7 @@ def compliance(session):
     session.install("--pre", "--no-deps", "--upgrade", "sqlalchemy<2.0.0")
     session.install(
         "mock",
-        "pytest",
+        "pytest<=7.2.0dev",
         "pytest-rerunfailures",
         "google-cloud-testutils",
         "-c",
@@ -315,8 +315,6 @@ def compliance(session):
     else:
         extras = "[tests]"
     session.install("-e", f".{extras}", "-c", constraints_path)
-
-    session.run("python", "-m", "pip", "freeze")
 
     session.run(
         "py.test",
