@@ -32,7 +32,7 @@ LINT_PATHS = ["docs", "sqlalchemy_bigquery", "tests", "noxfile.py", "setup.py"]
 
 DEFAULT_PYTHON_VERSION = "3.8"
 
-UNIT_TEST_PYTHON_VERSIONS = ["3.11"]
+UNIT_TEST_PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10", "3.11"]
 UNIT_TEST_STANDARD_DEPENDENCIES = [
     "mock",
     "asyncmock",
@@ -304,7 +304,7 @@ def compliance(session):
         "mock",
         # TODO: Allow latest version of pytest once SQLAlchemy 1.4.28+ is supported.
         # See: https://github.com/googleapis/python-bigquery-sqlalchemy/issues/413
-        "pytest<=7.0.0dev",
+        "pytest",
         "pytest-rerunfailures",
         "google-cloud-testutils",
         "-c",
@@ -317,6 +317,8 @@ def compliance(session):
     else:
         extras = "[tests]"
     session.install("-e", f".{extras}", "-c", constraints_path)
+
+    session.run("python", "-m", "pip", "freeze")
 
     session.run(
         "py.test",
