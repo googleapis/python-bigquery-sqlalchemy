@@ -782,8 +782,8 @@ def test_unnest(engine, bigquery_dataset):
 )
 def test_regexp_match(session, table):
     results = session.query(table.c.string).where(
-        table.c.string.regexp_match(".*52 St &.*").all()
-    )
+        table.c.string.regexp_match(".*52 St &.*")
+    ).all()
 
     assert len(results) == 12
 
@@ -795,6 +795,6 @@ def test_regexp_match(session, table):
 def test_not_regexp_match(session, table):
     results = session.query(table.c.string).where(
         not_(table.c.string.regexp_match("^Barrow St & Hudson St$"))
-    )
+    ).all()
 
     assert len(results) == 993
