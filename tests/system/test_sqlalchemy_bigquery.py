@@ -30,7 +30,6 @@ from sqlalchemy.sql import expression, select, literal_column
 from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy.orm import sessionmaker
 import packaging.version
-from pytz import timezone
 import pytest
 import sqlalchemy
 
@@ -38,7 +37,7 @@ import sqlalchemy_bigquery
 
 ONE_ROW_CONTENTS_EXPANDED = [
     588,
-    datetime.datetime(2013, 10, 10, 11, 27, 16, tzinfo=timezone("UTC")),
+    datetime.datetime(2013, 10, 10, 11, 27, 16),
     "W 52 St & 11 Ave",
     40.76727216,
     decimal.Decimal("40.76727216"),
@@ -59,7 +58,7 @@ ONE_ROW_CONTENTS_EXPANDED = [
 
 ONE_ROW_CONTENTS = [
     588,
-    datetime.datetime(2013, 10, 10, 11, 27, 16, tzinfo=timezone("UTC")),
+    datetime.datetime(2013, 10, 10, 11, 27, 16),
     "W 52 St & 11 Ave",
     40.76727216,
     decimal.Decimal("40.76727216"),
@@ -75,7 +74,7 @@ ONE_ROW_CONTENTS = [
 
 ONE_ROW_CONTENTS_DML = [
     588,
-    datetime.datetime(2013, 10, 10, 11, 27, 16, tzinfo=timezone("UTC")),
+    datetime.datetime(2013, 10, 10, 11, 27, 16),
     "test",
     40.76727216,
     decimal.Decimal("40.76727216"),
