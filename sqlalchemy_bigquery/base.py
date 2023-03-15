@@ -774,6 +774,7 @@ class BigQueryDialect(DefaultDialect):
         self.credentials_info = credentials_info
         self.credentials_base64 = credentials_base64
         self.location = location
+        self.identifier_preparer = self.preparer(self)
         self.dataset_id = None
         self.list_tables_page_size = list_tables_page_size
 
