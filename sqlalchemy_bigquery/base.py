@@ -1053,13 +1053,3 @@ class unnest(sqlalchemy.sql.functions.GenericFunction):
 
 
 dialect = BigQueryDialect
-
-try:
-    import alembic  # noqa
-except ImportError:
-    pass
-else:
-    from alembic.ddl import impl
-
-    class SqlalchemyBigqueryImpl(impl.DefaultImpl):
-        __dialect__ = "bigquery"
