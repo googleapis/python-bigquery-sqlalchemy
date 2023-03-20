@@ -221,13 +221,6 @@ def unit(session):
     default(session)
 
 
-@nox.session(python=[UNIT_TEST_PYTHON_VERSIONS[0], UNIT_TEST_PYTHON_VERSIONS[-1]])
-def unit_noextras(session):
-    """Run the unit test suite."""
-
-    default(session, install_extras=False)
-
-
 def install_systemtest_dependencies(session, *constraints):
 
     # Use pre-release gRPC for system tests.
