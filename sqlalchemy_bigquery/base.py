@@ -1055,7 +1055,7 @@ dialect = BigQueryDialect
 
 try:
     import alembic  # noqa
-except ImportError: # pragma: NO COVER
+except ImportError:  # pragma: NO COVER
     pass
 else:
     from alembic.ddl import impl
