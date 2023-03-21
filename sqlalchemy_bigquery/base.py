@@ -1053,9 +1053,9 @@ class unnest(sqlalchemy.sql.functions.GenericFunction):
 
 dialect = BigQueryDialect
 
-try:    # pragma: no cover
+try:
     import alembic  # noqa
-except ImportError:  # pragma: no cover
+except ImportError: # pragma: NO COVER
     pass
 else:
     from alembic.ddl import impl

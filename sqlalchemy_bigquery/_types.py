@@ -24,7 +24,7 @@ from google.cloud.bigquery.schema import SchemaField
 
 try:
     from .geography import GEOGRAPHY
-except ImportError:  # pragma: no cover
+except ImportError:  # pragma: NO COVER
     pass
 
 from ._struct import STRUCT
@@ -69,7 +69,7 @@ TIME = _type_map["TIME"]
 
 try:
     _type_map["GEOGRAPHY"] = GEOGRAPHY
-except NameError:  # pragma: no cover
+except NameError:  # pragma: NO COVER
     pass
 
 STRUCT_FIELD_TYPES = "RECORD", "STRUCT"

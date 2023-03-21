@@ -68,7 +68,7 @@ __all__ = [
 
 try:
     from .geography import GEOGRAPHY, WKB, WKT  # noqa
-except ImportError:  # pragma: no cover
+except ImportError:  # pragma: NO COVER
     pass
 else:
     __all__.extend(["GEOGRAPHY", "WKB", "WKT"])
