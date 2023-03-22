@@ -778,23 +778,29 @@ def test_unnest(engine, bigquery_dataset):
 
 @pytest.mark.skipif(
     packaging.version.parse(sqlalchemy.__version__) < packaging.version.parse("1.4"),
-    reason="regexp_match support requires version 1.4",
+    reason="regexp_match support requires version 1.4 or higher",
 )
 def test_regexp_match(session, table):
-    results = session.query(table.c.string).where(
-        table.c.string.regexp_match(".*52 St &.*")
-    ).all()
+    results = (
+        session.query(table.c.string)
+        .where(table.c.string.regexp_match(".*52 St &.*"))
+        .all()
+    )
 
-    assert len(results) == 12
+    number_of_52st_records = 12
+    assert len(results) == number_of_52st_records
 
 
 @pytest.mark.skipif(
     packaging.version.parse(sqlalchemy.__version__) < packaging.version.parse("1.4"),
-    reason="regexp_match support requires version 1.4",
+    reason="regexp_match support requires version 1.4 or higher",
 )
 def test_not_regexp_match(session, table):
-    results = session.query(table.c.string).where(
-        not_(table.c.string.regexp_match("^Barrow St & Hudson St$"))
-    ).all()
+    results = (
+        session.query(table.c.string)
+        .where(not_(table.c.string.regexp_match("^Barrow St & Hudson St$")))
+        .all()
+    )
 
-    assert len(results) == 993
+    number_of_non_barrowst_records = 993
+    assert len(results) == number_of_non_barrowst_records
