@@ -276,8 +276,6 @@ def system(session):
 
     install_systemtest_dependencies(session, "-c", constraints_path)
 
-    session.run("python", "-m", "pip", "freeze")
-
     # Run py.test against the system tests.
     if system_test_exists:
         session.run(
