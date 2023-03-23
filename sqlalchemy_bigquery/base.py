@@ -1068,6 +1068,10 @@ else:
 
     @compiles(ColumnType, "bigquery")
     def visit_column_type(element: ColumnType, compiler: DDLCompiler, **kw) -> str:
+        """Replaces the visit_column_type() function in alembic/alembic/ddl/base.py.
+        
+        The alembic version ends in TYPE <element type>, but bigquery requires this syntax:
+        SET DATA TYPE <element type>"""
         return "%s %s %s" % (
             alter_table(compiler, element.table_name, element.schema),
             alter_column(compiler, element.column_name),
