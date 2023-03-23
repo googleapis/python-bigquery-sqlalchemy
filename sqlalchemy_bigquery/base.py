@@ -1072,6 +1072,7 @@ else:
         
         The alembic version ends in TYPE <element type>, but bigquery requires this syntax:
         SET DATA TYPE <element type>"""
+        
         return "%s %s %s" % (
             alter_table(compiler, element.table_name, element.schema),
             alter_column(compiler, element.column_name),
