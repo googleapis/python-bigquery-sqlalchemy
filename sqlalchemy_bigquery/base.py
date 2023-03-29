@@ -1083,8 +1083,8 @@ else:
         """Replaces the visit_column_type() function in alembic/alembic/ddl/base.py.
         The alembic version ends in TYPE <element type>, but bigquery requires this syntax:
         SET DATA TYPE <element type>"""
-        
-        return "%s %s %s" % (    # pragma: NO COVER
+
+        return "%s %s %s" % (  # pragma: NO COVER
             alter_table(compiler, element.table_name, element.schema),
             alter_column(compiler, element.column_name),
             "SET DATA TYPE %s" % format_type(compiler, element.type_),
