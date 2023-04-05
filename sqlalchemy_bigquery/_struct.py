@@ -78,7 +78,7 @@ class STRUCT(sqlalchemy.sql.sqltypes.Indexable, sqlalchemy.types.UserDefinedType
 
     def get_col_spec(self, **kw):
         fields = ", ".join(
-            f"{name} {_get_subtype_col_spec(type_)}"
+            f"`{name}` {_get_subtype_col_spec(type_)}"
             for name, type_ in self._STRUCT_fields
         )
         return f"STRUCT<{fields}>"
