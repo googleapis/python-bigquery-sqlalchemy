@@ -29,11 +29,12 @@ common = gcp.CommonTemplates()
 # ----------------------------------------------------------------------------
 extras = ["tests"]
 extras_by_python = {
-    "3.8": ["tests", "alembic"],
-    "3.10": ["tests", "geography"],
+    "3.8": ["tests", "alembic", "bqstorage"],
+    "3.11": ["tests", "geography", "bqstorage"],
 }
 templated_files = common.py_library(
-    system_test_python_versions=["3.8", "3.10"],
+    unit_test_python_versions=["3.7", "3.8", "3.9", "3.10", "3.11"],
+    system_test_python_versions=["3.8", "3.11"],
     cov_level=100,
     unit_test_extras=extras,
     unit_test_extras_by_python=extras_by_python,
@@ -71,9 +72,37 @@ s.replace(
     "import re\nimport shutil",
 )
 
+
 s.replace(
     ["noxfile.py"], "--cov=google", "--cov=sqlalchemy_bigquery",
 )
+
+
+s.replace(
+    ["noxfile.py"], 
+    "\+ SYSTEM_TEST_EXTRAS",
+    "",
+)
+
+
+s.replace(
+    ["noxfile.py"],
+    '''"protobuf",
+        # dependency of grpc''',
+    '''"protobuf",
+        "sqlalchemy<2.0.0",
+        # dependency of grpc''',
+)
+
+
+s.replace(
+    ["noxfile.py"],
+    r"def default\(session\)",
+    "def default(session, install_extras=True)",    
+)
+
+
+
 
 def place_before(path, text, *before_text, escape=None):
     replacement = "\n".join(before_text) + "\n" + text
@@ -95,78 +124,23 @@ place_before(
     "nox.options.stop_on_first_error = True",
 )
 
-prerelease = r'''
-@nox.session(python=DEFAULT_PYTHON_VERSION)
-def prerelease(session):
-    session.install(
-        "--prefer-binary",
-        "--pre",
-        "--upgrade",
-        "alembic",
-        "geoalchemy2",
-        "google-api-core",
-        "google-cloud-bigquery",
-        "google-cloud-bigquery-storage",
-        "sqlalchemy",
-        "shapely",
-        # These are transitive dependencies, but we'd still like to know if a
-        # change in a prerelease there breaks this connector.
-        "google-cloud-core",
-        "grpcio",
-    )
-    session.install(
-        "freezegun",
-        "google-cloud-testutils",
-        "mock",
-        "psutil",
-        "pytest",
-        "pytest-cov",
-        "pytz",
-    )
 
-    # Because we test minimum dependency versions on the minimum Python
-    # version, the first version we test with in the unit tests sessions has a
-    # constraints file containing all dependencies and extras.
-    with open(
-        CURRENT_DIRECTORY
-        / "testing"
-        / f"constraints-{UNIT_TEST_PYTHON_VERSIONS[0]}.txt",
-        encoding="utf-8",
-    ) as constraints_file:
-        constraints_text = constraints_file.read()
-
-    # Ignore leading whitespace and comment lines.
-    deps = [
-        match.group(1)
-        for match in re.finditer(
-            r"^\\s*(\\S+)(?===\\S+)", constraints_text, flags=re.MULTILINE
-        )
-    ]
-
-    # We use --no-deps to ensure that pre-release versions aren't overwritten
-    # by the version ranges in setup.py.
-    session.install(*deps)
-    session.install("--no-deps", "-e", ".")
-
-    # Print out prerelease package versions.
-    session.run("python", "-m", "pip", "freeze")
-
-    # Run all tests, except a few samples tests which require extra dependencies.
-    session.run(
-        "py.test",
-        "--quiet",
-        f"--junitxml=prerelease_unit_{session.python}_sponge_log.xml",
-        os.path.join("tests", "unit"),
-    )
-    session.run(
-        "py.test",
-        "--quiet",
-        f"--junitxml=prerelease_system_{session.python}_sponge_log.xml",
-        os.path.join("tests", "system"),
-    )
-
-
+install_logic = '''
+    if install_extras and session.python == "3.11":
+        install_target = ".[geography,alembic,tests,bqstorage]"
+    elif install_extras:
+        install_target = ".[all]"
+    else:
+        install_target = "."
+    session.install("-e", install_target, "-c", constraints_path)
 '''
+
+place_before(
+    "noxfile.py",
+    "# Run py.test against the unit tests.",
+    install_logic,
+)
+
 
 # Maybe we can get rid of this when we don't need pytest-rerunfailures,
 # which we won't need when BQ retries itself:
@@ -188,12 +162,10 @@ def compliance(session):
         session.skip("Compliance tests were not found")
 
     session.install("--pre", "grpcio")
-
+    session.install("--pre", "--no-deps", "--upgrade", "sqlalchemy<2.0.0") 
     session.install(
         "mock",
-        # TODO: Allow latest version of pytest once SQLAlchemy 1.4.28+ is supported.
-        # See: https://github.com/googleapis/python-bigquery-sqlalchemy/issues/413
-        "pytest<=7.0.0dev",
+        "pytest",
         "pytest-rerunfailures",
         "google-cloud-testutils",
         "-c",
@@ -201,11 +173,13 @@ def compliance(session):
     )
     if session.python == "3.8":
         extras = "[tests,alembic]"
-    elif session.python == "3.10":
+    elif session.python == "3.11":
         extras = "[tests,geography]"
     else:
         extras = "[tests]"
     session.install("-e", f".{extras}", "-c", constraints_path)
+
+    session.run("python", "-m", "pip", "freeze")
 
     session.run(
         "py.test",
@@ -219,6 +193,11 @@ def compliance(session):
         "--only-rerun=400 Cannot execute DML over a non-existent table",
         system_test_folder_path,
         *session.posargs,
+        # To suppress the "Deprecated API features detected!" warning when
+        # features not compatible with 2.0 are detected, use a value of "1"
+        env={
+            "SQLALCHEMY_SILENCE_UBER_WARNING": "1",
+        },
     )
 
 
@@ -228,12 +207,69 @@ place_before(
      "noxfile.py",
      "@nox.session(python=DEFAULT_PYTHON_VERSION)\n"
      "def cover(session):",
-     prerelease + compliance,
+     compliance,
      escape="()",
      )
 
 s.replace(["noxfile.py"], '"alabaster"', '"alabaster", "geoalchemy2", "shapely"')
 
+
+system_noextras = '''
+@nox.session(python=SYSTEM_TEST_PYTHON_VERSIONS)
+def system_noextras(session):
+    """Run the system test suite."""
+    constraints_path = str(
+        CURRENT_DIRECTORY / "testing" / f"constraints-{session.python}.txt"
+    )
+    system_test_path = os.path.join("tests", "system.py")
+    system_test_folder_path = os.path.join("tests", "system")
+
+    # Check the value of `RUN_SYSTEM_TESTS` env var. It defaults to true.
+    if os.environ.get("RUN_SYSTEM_TESTS", "true") == "false":
+        session.skip("RUN_SYSTEM_TESTS is set to false, skipping")
+    # Install pyopenssl for mTLS testing.
+    if os.environ.get("GOOGLE_API_USE_CLIENT_CERTIFICATE", "false") == "true":
+        session.install("pyopenssl")
+
+    system_test_exists = os.path.exists(system_test_path)
+    system_test_folder_exists = os.path.exists(system_test_folder_path)
+    # Sanity check: only run tests if found.
+    if not system_test_exists and not system_test_folder_exists:
+        session.skip("System tests were not found")
+
+    global SYSTEM_TEST_EXTRAS_BY_PYTHON
+    SYSTEM_TEST_EXTRAS_BY_PYTHON = False
+    install_systemtest_dependencies(session, "-c", constraints_path)
+
+    # Run py.test against the system tests.
+    if system_test_exists:
+        session.run(
+            "py.test",
+            "--quiet",
+            f"--junitxml=system_{session.python}_sponge_log.xml",
+            system_test_path,
+            *session.posargs,
+        )
+    if system_test_folder_exists:
+        session.run(
+            "py.test",
+            "--quiet",
+            f"--junitxml=system_{session.python}_sponge_log.xml",
+            system_test_folder_path,
+            *session.posargs,
+        )
+
+        
+'''
+
+
+place_before(
+    "noxfile.py",
+    "@nox.session(python=SYSTEM_TEST_PYTHON_VERSIONS[-1])\n"
+    "def compliance(session):", 
+    system_noextras,
+    escape="()[]",
+    )
 
 
 # Add DB config for SQLAlchemy dialect test suite.
@@ -258,6 +294,17 @@ python_files=tests/*test_*.py
 # ----------------------------------------------------------------------------
 
 python.py_samples(skip_readmes=True)
+
+s.replace(
+    ["./samples/snippets/noxfile.py"], 
+    """session.install\("-e", _get_repo_root\(\)\)""",
+    """session.install("-e", _get_repo_root())
+    else:
+        # ensure that sqlalchemy_bigquery gets installed
+        # for tests that are not based on source
+        session.install("sqlalchemy_bigquery")""",
+)
+
 
 # ----------------------------------------------------------------------------
 # Final cleanup

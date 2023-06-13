@@ -19,9 +19,6 @@
 
 """Integration between SQLAlchemy and BigQuery."""
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 from decimal import Decimal
 import random
 import operator
@@ -32,7 +29,7 @@ import google.api_core.exceptions
 from google.cloud.bigquery import dbapi
 from google.cloud.bigquery.table import TableReference
 from google.api_core.exceptions import NotFound
-
+import packaging.version
 import sqlalchemy
 import sqlalchemy.sql.expression
 import sqlalchemy.sql.functions
@@ -40,6 +37,7 @@ import sqlalchemy.sql.sqltypes
 import sqlalchemy.sql.type_api
 from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy import util
+from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.compiler import (
     SQLCompiler,
     GenericTypeCompiler,
@@ -340,14 +338,18 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
     # no way to tell sqlalchemy that, so it works harder than
     # necessary and makes us do the same.
 
-    __sqlalchemy_version_info = tuple(map(int, sqlalchemy.__version__.split(".")))
+    __sqlalchemy_version_info = packaging.version.parse(sqlalchemy.__version__)
 
     __expanding_text = (
-        "EXPANDING" if __sqlalchemy_version_info < (1, 4) else "POSTCOMPILE"
+        "EXPANDING"
+        if __sqlalchemy_version_info < packaging.version.parse("1.4")
+        else "POSTCOMPILE"
     )
 
     # https://github.com/sqlalchemy/sqlalchemy/commit/f79df12bd6d99b8f6f09d4bf07722638c4b4c159
-    __expanding_conflict = "" if __sqlalchemy_version_info < (1, 4, 27) else "__"
+    __expanding_conflict = (
+        "" if __sqlalchemy_version_info < packaging.version.parse("1.4.27") else "__"
+    )
 
     __in_expanding_bind = _helpers.substitute_string_re_method(
         rf"""
@@ -529,7 +531,7 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
 
         if bindparam.expanding:  # pragma: NO COVER
             assert_(self.__expanded_param(param), f"Unexpected param: {param}")
-            if self.__sqlalchemy_version_info < (1, 4, 27):
+            if self.__sqlalchemy_version_info < packaging.version.parse("1.4.27"):
                 param = param.replace(")", f":{bq_type})")
 
         else:
@@ -548,6 +550,18 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
         left = self.process(binary.left, **kw)
         right = self.process(binary.right, **kw)
         return f"{left}[OFFSET({right})]"
+
+    def _get_regexp_args(self, binary, kw):
+        string = self.process(binary.left, **kw)
+        pattern = self.process(binary.right, **kw)
+        return string, pattern
+
+    def visit_regexp_match_op_binary(self, binary, operator, **kw):
+        string, pattern = self._get_regexp_args(binary, kw)
+        return "REGEXP_CONTAINS(%s, %s)" % (string, pattern)
+
+    def visit_not_regexp_match_op_binary(self, binary, operator, **kw):
+        return "NOT %s" % self.visit_regexp_match_op_binary(binary, operator, **kw)
 
 
 class BigQueryTypeCompiler(GenericTypeCompiler):
@@ -770,6 +784,7 @@ class BigQueryDialect(DefaultDialect):
         self.credentials_info = credentials_info
         self.credentials_base64 = credentials_base64
         self.location = location
+        self.identifier_preparer = self.preparer(self)
         self.dataset_id = None
         self.list_tables_page_size = list_tables_page_size
 
@@ -1051,10 +1066,23 @@ dialect = BigQueryDialect
 
 try:
     import alembic  # noqa
-except ImportError:
+except ImportError:  # pragma: NO COVER
     pass
 else:
     from alembic.ddl import impl
+    from alembic.ddl.base import ColumnType, format_type, alter_table, alter_column
 
     class SqlalchemyBigqueryImpl(impl.DefaultImpl):
         __dialect__ = "bigquery"
+
+    @compiles(ColumnType, "bigquery")
+    def visit_column_type(element: ColumnType, compiler: DDLCompiler, **kw) -> str:
+        """Replaces the visit_column_type() function in alembic/alembic/ddl/base.py.
+        The alembic version ends in TYPE <element type>, but bigquery requires this syntax:
+        SET DATA TYPE <element type>"""
+
+        return "%s %s %s" % (  # pragma: NO COVER
+            alter_table(compiler, element.table_name, element.schema),
+            alter_column(compiler, element.column_name),
+            "SET DATA TYPE %s" % format_type(compiler, element.type_),
+        )
