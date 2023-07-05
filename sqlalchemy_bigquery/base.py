@@ -19,9 +19,6 @@
 
 """Integration between SQLAlchemy and BigQuery."""
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 from decimal import Decimal
 import random
 import operator
@@ -40,6 +37,7 @@ import sqlalchemy.sql.sqltypes
 import sqlalchemy.sql.type_api
 from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy import util
+from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.compiler import (
     SQLCompiler,
     GenericTypeCompiler,
@@ -554,6 +552,18 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
         right = self.process(binary.right, **kw)
         return f"{left}[OFFSET({right})]"
 
+    def _get_regexp_args(self, binary, kw):
+        string = self.process(binary.left, **kw)
+        pattern = self.process(binary.right, **kw)
+        return string, pattern
+
+    def visit_regexp_match_op_binary(self, binary, operator, **kw):
+        string, pattern = self._get_regexp_args(binary, kw)
+        return "REGEXP_CONTAINS(%s, %s)" % (string, pattern)
+
+    def visit_not_regexp_match_op_binary(self, binary, operator, **kw):
+        return "NOT %s" % self.visit_regexp_match_op_binary(binary, operator, **kw)
+
 
 class BigQueryTypeCompiler(GenericTypeCompiler):
     def visit_INTEGER(self, type_, **kw):
@@ -775,6 +785,7 @@ class BigQueryDialect(DefaultDialect):
         self.credentials_info = credentials_info
         self.credentials_base64 = credentials_base64
         self.location = location
+        self.identifier_preparer = self.preparer(self)
         self.dataset_id = None
         self.list_tables_page_size = list_tables_page_size
 
@@ -1056,10 +1067,23 @@ dialect = BigQueryDialect
 
 try:
     import alembic  # noqa
-except ImportError:
+except ImportError:  # pragma: NO COVER
     pass
 else:
     from alembic.ddl import impl
+    from alembic.ddl.base import ColumnType, format_type, alter_table, alter_column
 
     class SqlalchemyBigqueryImpl(impl.DefaultImpl):
         __dialect__ = "bigquery"
+
+    @compiles(ColumnType, "bigquery")
+    def visit_column_type(element: ColumnType, compiler: DDLCompiler, **kw) -> str:
+        """Replaces the visit_column_type() function in alembic/alembic/ddl/base.py.
+        The alembic version ends in TYPE <element type>, but bigquery requires this syntax:
+        SET DATA TYPE <element type>"""
+
+        return "%s %s %s" % (  # pragma: NO COVER
+            alter_table(compiler, element.table_name, element.schema),
+            alter_column(compiler, element.column_name),
+            "SET DATA TYPE %s" % format_type(compiler, element.type_),
+        )
