@@ -159,6 +159,7 @@ def test_GEOGRAPHY_ElementType_bad_extended():
 
 def test_GEOGRAPHY_ElementType():
     from sqlalchemy_bigquery import GEOGRAPHY, WKB
+
     # The data argument here should be composed of hex characters:
     # 1-0 and a-f
     data = GEOGRAPHY.ElementType("123def")
