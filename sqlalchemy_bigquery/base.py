@@ -72,24 +72,32 @@ class TimePartitioning(sqlalchemy.sql.sqltypes.TypeEngine):
     
     TimePartitioningType = TimePartitioningType
     
-    def __init__(self, timetype: str, field: str, expiration_ms: int = 31536000000, require_partition_filter: bool = True):
-        self.type = timetype
+    def __init__(self, type_: str, field: str, expiration_ms: int = 31536000000, require_partition_filter: bool = True):
+        self.type_ = type_
         self.field = field
-        self.expiration = expiration_ms//(1000*60*60*24)
-        self.require = require_partition_filter
+        self.expiration_ms = expiration_ms
+        self.require_partition_filter = require_partition_filter
     
     def __str__(self):
         return 'DATE_TRUNC(`%s`, %s)' % ( 
-            self.field, self.type)
+            self.field, self.type_)
     
     def __iter__(self) -> typing.Iterable[str]:
-        yield 'partition_expiration_days = {}'.format(self.expiration)
-        if self.require:
+        yield 'partition_expiration_days = {}'.format(self.expiration_ms//(1000*60*60*24))
+        if self.require_partition_filter:
             yield 'require_partition_filter = true'
     
     @property
     def oprtions(self) -> list[str]:
         return list(self)
+
+    @classmethod
+    def frombigquery_time_partitioning(cls, partition) -> typing.Self:
+        return cls(
+            partition.type_,
+            partition.field,
+            partition.expiration_ms,
+            partition.require_partition_filter)
     
 def assert_(cond, message="Assertion failed"):  # pragma: NO COVER
     if not cond:
