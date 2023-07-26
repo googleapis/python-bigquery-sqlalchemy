@@ -76,28 +76,33 @@ class TimePartitioning(sqlalchemy.sql.sqltypes.TypeEngine):
         self.type_ = type_
         self.field = field
         self.expiration_ms = expiration_ms
-        self.require_partition_filter = require_partition_filter
+        self.require = require_partition_filter
     
+    def __bool__(self) -> bool:
+        return self.field is not None
+    
+    @classmethod
+    def frombigquery_time_partitioning(cls, partition) -> typing.Self:
+        if partition:
+            return cls(
+                partition.type_,
+                partition.field,
+                partition.expiration_ms,
+                partition.require_partition_filter)
+        return cls(TimePartitioningType.DAY, None)
+        
     def __str__(self):
         return 'DATE_TRUNC(`%s`, %s)' % ( 
             self.field, self.type_)
     
     def __iter__(self) -> typing.Iterable[str]:
         yield 'partition_expiration_days = {}'.format(self.expiration_ms//(1000*60*60*24))
-        if self.require_partition_filter:
+        if self.require:
             yield 'require_partition_filter = true'
     
     @property
     def oprtions(self) -> list[str]:
         return list(self)
-
-    @classmethod
-    def frombigquery_time_partitioning(cls, partition) -> typing.Self:
-        return cls(
-            partition.type_,
-            partition.field,
-            partition.expiration_ms,
-            partition.require_partition_filter)
     
 def assert_(cond, message="Assertion failed"):  # pragma: NO COVER
     if not cond:
@@ -689,11 +694,15 @@ class BigQueryDDLCompiler(DDLCompiler):
         text = ""
         if 'time_partitioning' in bq_opts and bq_opts['time_partitioning']:
             partition = bq_opts['time_partitioning']
+            if partition.field not in table.c:
+                raise sqlalchemy.exc.NoSuchColumnError(partition.field)
             text += '\nPARTITION BY %s' % partition
             opts.extend(partition)
-        
         if 'clustering_fields' in bq_opts and bq_opts['clustering_fields']:
             cluster = bq_opts['clustering_fields']
+            for n in cluster:
+                if n not in table.c:
+                    raise sqlalchemy.exc.NoSuchColumnError(n)
             text += '\nCLUSTER BY ({})'.format(
                 ','.join([
                     self.preparer.format_column(
