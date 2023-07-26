@@ -37,6 +37,7 @@ import sqlalchemy.sql.functions
 import sqlalchemy.sql.sqltypes
 import sqlalchemy.sql.type_api
 from sqlalchemy.exc import NoSuchTableError
+from sqlalchemy.exc import NoSuchColumnError
 from sqlalchemy import util
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.compiler import (
@@ -695,14 +696,15 @@ class BigQueryDDLCompiler(DDLCompiler):
         if 'time_partitioning' in bq_opts and bq_opts['time_partitioning']:
             partition = bq_opts['time_partitioning']
             if partition.field not in table.c:
-                raise sqlalchemy.exc.NoSuchColumnError(partition.field)
+                raise NoSuchColumnError(partition.field)
             text += '\nPARTITION BY %s' % partition
             opts.extend(partition)
+        
         if 'clustering_fields' in bq_opts and bq_opts['clustering_fields']:
             cluster = bq_opts['clustering_fields']
             for n in cluster:
                 if n not in table.c:
-                    raise sqlalchemy.exc.NoSuchColumnError(n)
+                    raise NoSuchColumnError(n)
             text += '\nCLUSTER BY ({})'.format(
                 ','.join([
                     self.preparer.format_column(
