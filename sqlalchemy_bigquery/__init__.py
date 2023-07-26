@@ -22,7 +22,7 @@ SQLAlchemy dialect for Google BigQuery
 
 from .version import __version__
 
-from .base import BigQueryDialect, dialect
+from .base import BigQueryDialect, dialect, TimePartitioning
 from ._types import (
     ARRAY,
     BIGNUMERIC,
