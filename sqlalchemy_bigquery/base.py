@@ -62,26 +62,34 @@ FIELD_ILLEGAL_CHARACTERS = re.compile(r"[^\w]+")
 
 TABLE_VALUED_ALIAS_ALIASES = "bigquery_table_valued_alias_aliases"
 
+
 class TimePartitioningType(object):
-    DAY = 'DAY'
-    HOUR = 'HOUR'
-    MONTH = 'MONTH'
-    YEAR = 'YEAR'
-        
+    DAY = "DAY"
+    HOUR = "HOUR"
+    MONTH = "MONTH"
+    YEAR = "YEAR"
+
+
 class TimePartitioning(sqlalchemy.sql.sqltypes.TypeEngine):
-    __visit_name__ = 'TimePartitioning'
-    
+    __visit_name__ = "TimePartitioning"
+
     TimePartitioningType = TimePartitioningType
-    
-    def __init__(self, type_: str, field: str, expiration_ms: int = 31536000000, require_partition_filter: bool = True):
+
+    def __init__(
+        self,
+        type_: str,
+        field: str,
+        expiration_ms: int = 31536000000,
+        require_partition_filter: bool = True,
+    ):
         self.type_ = type_
         self.field = field
         self.expiration_ms = expiration_ms
         self.require = require_partition_filter
-    
+
     def __bool__(self) -> bool:
         return self.field is not None
-    
+
     @classmethod
     def frombigquery_time_partitioning(cls, partition) -> typing.Self:
         if partition:
@@ -89,22 +97,25 @@ class TimePartitioning(sqlalchemy.sql.sqltypes.TypeEngine):
                 partition.type_,
                 partition.field,
                 partition.expiration_ms,
-                partition.require_partition_filter)
+                partition.require_partition_filter,
+            )
         return cls(TimePartitioningType.DAY, None)
-        
+
     def __str__(self):
-        return 'DATE_TRUNC(`%s`, %s)' % ( 
-            self.field, self.type_)
-    
+        return "DATE_TRUNC(`%s`, %s)" % (self.field, self.type_)
+
     def __iter__(self) -> typing.Iterable[str]:
-        yield 'partition_expiration_days = {}'.format(self.expiration_ms//(1000*60*60*24))
+        yield "partition_expiration_days = {}".format(
+            self.expiration_ms // (1000 * 60 * 60 * 24)
+        )
         if self.require:
-            yield 'require_partition_filter = true'
-    
+            yield "require_partition_filter = true"
+
     @property
     def oprtions(self) -> list[str]:
         return list(self)
-    
+
+
 def assert_(cond, message="Assertion failed"):  # pragma: NO COVER
     if not cond:
         raise AssertionError(message)
@@ -691,28 +702,31 @@ class BigQueryDDLCompiler(DDLCompiler):
     def post_create_table(self, table):
         bq_opts = table.dialect_options["bigquery"]
         opts = []
-        
+
         text = ""
-        if 'time_partitioning' in bq_opts and bq_opts['time_partitioning']:
-            partition = bq_opts['time_partitioning']
+        if "time_partitioning" in bq_opts and bq_opts["time_partitioning"]:
+            partition = bq_opts["time_partitioning"]
             if partition.field not in table.c:
                 raise NoSuchColumnError(partition.field)
-            text += '\nPARTITION BY %s' % partition
+            text += "\nPARTITION BY %s" % partition
             opts.extend(partition)
-        
-        if 'clustering_fields' in bq_opts and bq_opts['clustering_fields']:
-            cluster = bq_opts['clustering_fields']
+
+        if "clustering_fields" in bq_opts and bq_opts["clustering_fields"]:
+            cluster = bq_opts["clustering_fields"]
             for n in cluster:
                 if n not in table.c:
                     raise NoSuchColumnError(n)
-            text += '\nCLUSTER BY ({})'.format(
-                ','.join([
-                    self.preparer.format_column(
-                        table.c[n], 
-                        use_table=False,
-                        use_schema=False)
-                    for n in cluster]))
-        
+            text += "\nCLUSTER BY ({})".format(
+                ",".join(
+                    [
+                        self.preparer.format_column(
+                            table.c[n], use_table=False, use_schema=False
+                        )
+                        for n in cluster
+                    ]
+                )
+            )
+
         if ("description" in bq_opts) or table.comment:
             description = process_string_literal(
                 bq_opts.get("description", table.comment)
@@ -725,10 +739,10 @@ class BigQueryDDLCompiler(DDLCompiler):
                     process_string_literal(bq_opts["friendly_name"])
                 )
             )
-        
+
         if opts:
             return text + "\nOPTIONS({})".format(", ".join(opts))
-        
+
         return text
 
     def visit_set_table_comment(self, create):
