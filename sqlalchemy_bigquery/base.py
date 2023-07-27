@@ -56,7 +56,7 @@ import re
 from .parse_url import parse_url
 from . import _helpers, _struct, _types
 
-FIELD_ILLEGAL_CHARACTERS = re.compile(r"[^\w]+")
+FIELD_ILLEGAL_CHARACTERS = re.compile(r"[^\w]+", re.ASCII)
 
 TABLE_VALUED_ALIAS_ALIASES = "bigquery_table_valued_alias_aliases"
 
@@ -98,6 +98,12 @@ class BigQueryIdentifierPreparer(IdentifierPreparer):
         else:
             return ident
 
+    def backtick_quote(self, name):
+        """
+        Encapsulates statements with backticks.
+        """
+        return f"`{name}`"
+
     def format_label(self, label, name=None):
         name = name or label.name
 
@@ -106,8 +112,9 @@ class BigQueryIdentifierPreparer(IdentifierPreparer):
             name = "_" + name
 
         # Fields must contain only letters, numbers, and underscores
-        name = FIELD_ILLEGAL_CHARACTERS.sub("_", name)
+        # name = FIELD_ILLEGAL_CHARACTERS.sub("*", name)
 
+        # result = self.backtick_quote(self.quote(name))
         result = self.quote(name)
         return result
 
