@@ -56,7 +56,7 @@ import re
 from .parse_url import parse_url
 from . import _helpers, _struct, _types
 
-FIELD_ILLEGAL_CHARACTERS = re.compile(r"[^\w]+", re.ASCII)
+FIELD_ILLEGAL_CHARACTERS = re.compile(r"[^\w.]+", re.ASCII)
 
 TABLE_VALUED_ALIAS_ALIASES = "bigquery_table_valued_alias_aliases"
 
