@@ -72,48 +72,50 @@ class TimePartitioningType(object):
 
 class TimePartitioning(sqlalchemy.sql.sqltypes.TypeEngine):
     __visit_name__ = "TimePartitioning"
-
+    
     TimePartitioningType = TimePartitioningType
-
-    def __init__(
-        self,
-        type_: str,
-        field: str,
-        expiration_ms: int = 31536000000,
-        require_partition_filter: bool = True,
-    ):
+    
+    def __init__(self, type_: str, field: str, expiration_ms: int = 31536000000, require_partition_filter: bool = True):
         self.type_ = type_
         self.field = field
         self.expiration_ms = expiration_ms
-        self.require = require_partition_filter
-
+        self.require_partition_filter = require_partition_filter
+    
     def __bool__(self) -> bool:
         return self.field is not None
-
+    
+    def __str__(self) -> str:
+        return f"DATE_TRUNC(`{self.field}`, {self.type_})"
+    
+    def __iter__(self) -> typing.Iterable[str]:
+        yield "partition_expiration_days = {}".format(self.expiration)
+        if self.require:
+            yield "require_partition_filter = true"
+    
+    def __call__(self, preparer: IdentifierPreparer) -> str:
+        return f"DATE_TRUNC({preparer.quote(self.field)}, {self.type_})"
+    
+    @property
+    def expiration(self) -> int:
+        return self.expiration_ms//(1000*60*60*24)
+    
+    @property
+    def require(self) -> bool:
+        return self.require_partition_filter
+    
+    @property
+    def oprtions(self) -> list[str]:
+        return list(self)
+    
     @classmethod
-    def frombigquery_time_partitioning(cls, partition) -> typing.Self:
+    def frombigquery_time_partitioning(cls, partition) -> 'TimePartitioning':
         if partition:
             return cls(
                 partition.type_,
                 partition.field,
                 partition.expiration_ms,
-                partition.require_partition_filter,
-            )
+                partition.require_partition_filter)
         return cls(TimePartitioningType.DAY, None)
-
-    def __str__(self):
-        return "DATE_TRUNC(`%s`, %s)" % (self.field, self.type_)
-
-    def __iter__(self) -> typing.Iterable[str]:
-        yield "partition_expiration_days = {}".format(
-            self.expiration_ms // (1000 * 60 * 60 * 24)
-        )
-        if self.require:
-            yield "require_partition_filter = true"
-
-    @property
-    def oprtions(self) -> list[str]:
-        return list(self)
 
 
 def assert_(cond, message="Assertion failed"):  # pragma: NO COVER
@@ -708,7 +710,7 @@ class BigQueryDDLCompiler(DDLCompiler):
             partition = bq_opts["time_partitioning"]
             if partition.field not in table.c:
                 raise NoSuchColumnError(partition.field)
-            text += "\nPARTITION BY %s" % partition
+            text += "\nPARTITION BY {}".format(partition)
             opts.extend(partition)
 
         if "clustering_fields" in bq_opts and bq_opts["clustering_fields"]:
