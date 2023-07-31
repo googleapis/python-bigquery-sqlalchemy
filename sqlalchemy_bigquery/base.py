@@ -108,7 +108,6 @@ class BigQueryIdentifierPreparer(IdentifierPreparer):
         # Fields must contain only letters, numbers, and underscores
         name = FIELD_ILLEGAL_CHARACTERS.sub("_", name)
 
-        # result = self.backtick_quote(self.quote(name))
         result = self.quote(name)
         return result
 
