@@ -98,12 +98,6 @@ class BigQueryIdentifierPreparer(IdentifierPreparer):
         else:
             return ident
 
-    def backtick_quote(self, name):
-        """
-        Encapsulates statements with backticks.
-        """
-        return f"`{name}`"
-
     def format_label(self, label, name=None):
         name = name or label.name
 
