@@ -58,7 +58,7 @@ from . import _helpers, _struct, _types
 
 # Incorporates special characters used in flexible column names:
 # https://cloud.google.com/bigquery/docs/schemas#flexible-column-names
-FIELD_ILLEGAL_CHARACTERS = re.compile(r"[^\w&%=+:'<>#|]+", re.ASCII)
+FIELD_ILLEGAL_CHARACTERS = re.compile(r"[^\w&%=+:'<>#|\n]+", re.ASCII)
 
 TABLE_VALUED_ALIAS_ALIASES = "bigquery_table_valued_alias_aliases"
 
