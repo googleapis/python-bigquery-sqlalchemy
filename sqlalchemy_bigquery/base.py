@@ -56,7 +56,8 @@ import re
 from .parse_url import parse_url
 from . import _helpers, _struct, _types
 
-# Incorporates special characters used in flexible column names:
+# Illegal characters is intended to be all characters that are not explicitly
+# allowed as part of the flexible column names. 
 # https://cloud.google.com/bigquery/docs/schemas#flexible-column-names
 FIELD_ILLEGAL_CHARACTERS = re.compile(r"[^\w&%=+:'<>#|\n]+", re.ASCII)
 
