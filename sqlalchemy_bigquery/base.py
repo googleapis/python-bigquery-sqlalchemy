@@ -59,7 +59,7 @@ from . import _helpers, _struct, _types
 # Illegal characters is intended to be all characters that are not explicitly
 # allowed as part of the flexible column names.
 # https://cloud.google.com/bigquery/docs/schemas#flexible-column-names
-FIELD_ILLEGAL_CHARACTERS = re.compile(r"[!"$()*,./;?@[\\\]^{}~\n]+", re.ASCII)
+FIELD_ILLEGAL_CHARACTERS = re.compile(r'[!"$()*,./;?@[\\\]^{}~\n]+', re.ASCII)
 
 TABLE_VALUED_ALIAS_ALIASES = "bigquery_table_valued_alias_aliases"
 
