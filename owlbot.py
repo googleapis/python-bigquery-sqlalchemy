@@ -293,7 +293,7 @@ python_files=tests/*test_*.py
 # Samples templates
 # ----------------------------------------------------------------------------
 
-'''
+
 python.py_samples(skip_readmes=True)
 
 s.replace(
@@ -305,7 +305,7 @@ s.replace(
         # for tests that are not based on source
         session.install("sqlalchemy_bigquery")""",
 )
-'''
+
 
 # ----------------------------------------------------------------------------
 # Final cleanup
