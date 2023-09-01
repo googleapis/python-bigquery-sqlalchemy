@@ -53,11 +53,11 @@ dependencies.
 
 Supported Python Versions
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-Python >= 3.7
+Python >= 3.8
 
 Unsupported Python Versions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Python <= 3.6.
+Python <= 3.7.
 
 
 Mac/Linux
@@ -80,6 +80,20 @@ Windows
     virtualenv <your-env>
     <your-env>\Scripts\activate
     <your-env>\Scripts\pip.exe install sqlalchemy-bigquery
+
+
+Installations when processing large datasets
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When handling large datasets, you may see speed increases by also installing the
+`bqstorage` dependencies. See the instructions above about creating a virtual 
+environment and then install `sqlalchemy-bigquery` using the `bqstorage` extras:
+
+.. code-block:: console
+
+    source <your-env>/bin/activate
+    <your-env>/bin/pip install sqlalchemy-bigquery[bqstorage]
+
 
 Usage
 -----

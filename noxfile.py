@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Google LLC
+# Copyright 2023 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,13 +26,14 @@ import warnings
 
 import nox
 
+FLAKE8_VERSION = "flake8==6.1.0"
 BLACK_VERSION = "black==22.3.0"
 ISORT_VERSION = "isort==5.10.1"
 LINT_PATHS = ["docs", "sqlalchemy_bigquery", "tests", "noxfile.py", "setup.py"]
 
 DEFAULT_PYTHON_VERSION = "3.8"
 
-UNIT_TEST_PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10", "3.11"]
+UNIT_TEST_PYTHON_VERSIONS = ["3.8", "3.9", "3.10", "3.11"]
 UNIT_TEST_STANDARD_DEPENDENCIES = [
     "mock",
     "asyncmock",
@@ -50,10 +51,12 @@ UNIT_TEST_EXTRAS_BY_PYTHON = {
     "3.8": [
         "tests",
         "alembic",
+        "bqstorage",
     ],
     "3.11": [
         "tests",
         "geography",
+        "bqstorage",
     ],
 }
 
@@ -73,10 +76,12 @@ SYSTEM_TEST_EXTRAS_BY_PYTHON = {
     "3.8": [
         "tests",
         "alembic",
+        "bqstorage",
     ],
     "3.11": [
         "tests",
         "geography",
+        "bqstorage",
     ],
 }
 
@@ -105,7 +110,7 @@ def lint(session):
     Returns a failure if the linters find linting errors or sufficiently
     serious code quality issues.
     """
-    session.install("flake8", BLACK_VERSION)
+    session.install(FLAKE8_VERSION, BLACK_VERSION)
     session.run(
         "black",
         "--check",
@@ -179,13 +184,21 @@ def install_unittest_dependencies(session, *constraints):
         session.install("-e", ".", *constraints)
 
 
-def default(session):
+def default(session, install_extras=True):
     # Install all test dependencies, then install this package in-place.
 
     constraints_path = str(
         CURRENT_DIRECTORY / "testing" / f"constraints-{session.python}.txt"
     )
     install_unittest_dependencies(session, "-c", constraints_path)
+
+    if install_extras and session.python == "3.11":
+        install_target = ".[geography,alembic,tests,bqstorage]"
+    elif install_extras:
+        install_target = ".[all]"
+    else:
+        install_target = "."
+    session.install("-e", install_target, "-c", constraints_path)
 
     # Run py.test against the unit tests.
     session.run(
@@ -262,6 +275,51 @@ def system(session):
     if not system_test_exists and not system_test_folder_exists:
         session.skip("System tests were not found")
 
+    install_systemtest_dependencies(session, "-c", constraints_path)
+
+    # Run py.test against the system tests.
+    if system_test_exists:
+        session.run(
+            "py.test",
+            "--quiet",
+            f"--junitxml=system_{session.python}_sponge_log.xml",
+            system_test_path,
+            *session.posargs,
+        )
+    if system_test_folder_exists:
+        session.run(
+            "py.test",
+            "--quiet",
+            f"--junitxml=system_{session.python}_sponge_log.xml",
+            system_test_folder_path,
+            *session.posargs,
+        )
+
+
+@nox.session(python=SYSTEM_TEST_PYTHON_VERSIONS)
+def system_noextras(session):
+    """Run the system test suite."""
+    constraints_path = str(
+        CURRENT_DIRECTORY / "testing" / f"constraints-{session.python}.txt"
+    )
+    system_test_path = os.path.join("tests", "system.py")
+    system_test_folder_path = os.path.join("tests", "system")
+
+    # Check the value of `RUN_SYSTEM_TESTS` env var. It defaults to true.
+    if os.environ.get("RUN_SYSTEM_TESTS", "true") == "false":
+        session.skip("RUN_SYSTEM_TESTS is set to false, skipping")
+    # Install pyopenssl for mTLS testing.
+    if os.environ.get("GOOGLE_API_USE_CLIENT_CERTIFICATE", "false") == "true":
+        session.install("pyopenssl")
+
+    system_test_exists = os.path.exists(system_test_path)
+    system_test_folder_exists = os.path.exists(system_test_folder_path)
+    # Sanity check: only run tests if found.
+    if not system_test_exists and not system_test_folder_exists:
+        session.skip("System tests were not found")
+
+    global SYSTEM_TEST_EXTRAS_BY_PYTHON
+    SYSTEM_TEST_EXTRAS_BY_PYTHON = False
     install_systemtest_dependencies(session, "-c", constraints_path)
 
     # Run py.test against the system tests.
@@ -385,12 +443,11 @@ def docfx(session):
 
     session.install("-e", ".")
     session.install(
-        "sphinx==4.0.1",
+        "gcp-sphinx-docfx-yaml",
         "alabaster",
         "geoalchemy2",
         "shapely",
         "recommonmark",
-        "gcp-sphinx-docfx-yaml",
     )
 
     shutil.rmtree(os.path.join("docs", "_build"), ignore_errors=True)
@@ -463,6 +520,7 @@ def prerelease_deps(session):
         "grpcio!=1.52.0rc1",
         "grpcio-status",
         "google-api-core",
+        "google-auth",
         "proto-plus",
         "google-cloud-testutils",
         # dependencies of google-cloud-testutils"
@@ -475,7 +533,6 @@ def prerelease_deps(session):
     # Remaining dependencies
     other_deps = [
         "requests",
-        "google-auth",
     ]
     session.install(*other_deps)
 
@@ -484,6 +541,7 @@ def prerelease_deps(session):
         "python", "-c", "import google.protobuf; print(google.protobuf.__version__)"
     )
     session.run("python", "-c", "import grpc; print(grpc.__version__)")
+    session.run("python", "-c", "import google.auth; print(google.auth.__version__)")
 
     session.run("py.test", "tests/unit")
 

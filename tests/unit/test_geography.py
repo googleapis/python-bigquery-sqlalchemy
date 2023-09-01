@@ -104,7 +104,7 @@ def test_geoalchemy2_core(faux_conn, last_query):
 
     try:
         conn.execute(
-            select([lake_table.c.name, lake_table.c.geog.ST_AREA().label("area")])
+            select([lake_table.c.name, lake_table.c.geog.ST_Area().label("area")])
         )
     except Exception:
         pass  # sqlite had no special functions :)
@@ -160,16 +160,18 @@ def test_GEOGRAPHY_ElementType_bad_extended():
 def test_GEOGRAPHY_ElementType():
     from sqlalchemy_bigquery import GEOGRAPHY, WKB
 
-    data = GEOGRAPHY.ElementType("data")
+    # The data argument here should be composed of hex characters:
+    # 1-0 and a-f
+    data = GEOGRAPHY.ElementType("123def")
     assert isinstance(data, WKB)
-    assert (data.data, data.srid, data.extended) == ("data", 4326, True)
+    assert (data.data, data.srid, data.extended) == ("123def", 4326, True)
 
 
 def test_calling_st_functions_that_dont_take_geographies(faux_conn, last_query):
     from sqlalchemy import select, func
 
     try:
-        faux_conn.execute(select([func.ST_GEOGFROMTEXT("point(0 0)")]))
+        faux_conn.execute(select([func.ST_GeogFromText("point(0 0)")]))
     except Exception:
         pass  # sqlite had no special functions :)
 
