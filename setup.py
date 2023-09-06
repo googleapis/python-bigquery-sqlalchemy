@@ -48,7 +48,7 @@ def readme():
 extras = {
     "geography": ["GeoAlchemy2", "shapely"],
     "alembic": ["alembic"],
-    "tests": ["packaging", "pytz"],
+    "tests": ["packaging"],
     # Keep the no-op bqstorage extra for backward compatibility.
     # See: https://github.com/googleapis/python-bigquery/issues/757
     "bqstorage": [
@@ -104,7 +104,7 @@ setup(
     ],
     extras_require=extras,
     python_requires=">=3.8, <3.12",
-    tests_require=["packaging", "pytz"],
+    tests_require=["packaging"],
     entry_points={
         "sqlalchemy.dialects": ["bigquery = sqlalchemy_bigquery:BigQueryDialect"]
     },
