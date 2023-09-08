@@ -54,7 +54,9 @@ if packaging.version.parse(sqlalchemy.__version__) < packaging.version.parse("1.
 
     class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
 
-        data = datetime.datetime(2012, 10, 15, 12, 57, 18, 396, tzinfo=datetime.timezone.utc)
+        data = datetime.datetime(
+            2012, 10, 15, 12, 57, 18, 396, tzinfo=datetime.timezone.utc
+        )
 
         def test_literal(self):
             # The base tests doesn't set up the literal properly, because
@@ -122,7 +124,9 @@ else:
     del PostCompileParamsTest
 
     class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
-        data = datetime.datetime(2012, 10, 15, 12, 57, 18, 396, tzinfo=datetime.timezone.utc)
+        data = datetime.datetime(
+            2012, 10, 15, 12, 57, 18, 396, tzinfo=datetime.timezone.utc
+        )
 
         def test_literal(self, literal_round_trip):
             # The base tests doesn't set up the literal properly, because
