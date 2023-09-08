@@ -37,7 +37,7 @@ import sqlalchemy_bigquery
 
 ONE_ROW_CONTENTS_EXPANDED = [
     588,
-    datetime.datetime(2013, 10, 10, 11, 27, 16),
+    datetime.datetime(2013, 10, 10, 11, 27, 16, tzinfo=datetime.timezone.utc),
     "W 52 St & 11 Ave",
     40.76727216,
     decimal.Decimal("40.76727216"),
@@ -58,7 +58,7 @@ ONE_ROW_CONTENTS_EXPANDED = [
 
 ONE_ROW_CONTENTS = [
     588,
-    datetime.datetime(2013, 10, 10, 11, 27, 16),
+    datetime.datetime(2013, 10, 10, 11, 27, 16, tzinfo=datetime.timezone.utc),
     "W 52 St & 11 Ave",
     40.76727216,
     decimal.Decimal("40.76727216"),
@@ -74,7 +74,7 @@ ONE_ROW_CONTENTS = [
 
 ONE_ROW_CONTENTS_DML = [
     588,
-    datetime.datetime(2013, 10, 10, 11, 27, 16),
+    datetime.datetime(2013, 10, 10, 11, 27, 16, tzinfo=datetime.timezone.utc),
     "test",
     40.76727216,
     decimal.Decimal("40.76727216"),
