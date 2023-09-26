@@ -71,6 +71,7 @@ def parse_url(url):  # noqa: C901
     credentials_base64 = None
     list_tables_page_size = None
     user_supplied_client = False
+    with_subject = None
 
     # location
     if "location" in query:
@@ -106,6 +107,10 @@ def parse_url(url):  # noqa: C901
     if "user_supplied_client" in query:
         user_supplied_client = query.pop("user_supplied_client").lower() == "true"
 
+    # Impersonation support (delegation)
+    if "with_subject" in query:
+        with_subject = query.pop('with_subject')
+
     # if only these "non-config" values were present, the dict will now be empty
     if not query:
         # if a dataset_id exists, we need to return a job_config that isn't None
@@ -120,6 +125,7 @@ def parse_url(url):  # noqa: C901
                 credentials_base64,
                 QueryJobConfig(),
                 list_tables_page_size,
+                with_subject,
                 user_supplied_client,
             )
         else:
@@ -132,6 +138,7 @@ def parse_url(url):  # noqa: C901
                 credentials_base64,
                 None,
                 list_tables_page_size,
+                with_subject,
                 user_supplied_client,
             )
 
@@ -282,5 +289,6 @@ def parse_url(url):  # noqa: C901
         credentials_base64,
         job_config,
         list_tables_page_size,
+        with_subject,
         user_supplied_client,
     )

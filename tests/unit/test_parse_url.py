@@ -64,6 +64,7 @@ def url_with_everything():
         "&use_query_cache=true"
         "&write_disposition=WRITE_APPEND"
         "&user_supplied_client=true"
+        "&with_subject=user@foo.com"
     )
 
 
@@ -78,6 +79,7 @@ def test_basic(url_with_everything):
         job_config,
         list_tables_page_size,
         user_supplied_client,
+        with_subject,
     ) = parse_url(url_with_everything)
 
     assert project_id == "some-project"
@@ -89,6 +91,7 @@ def test_basic(url_with_everything):
     assert credentials_base64 == "eyJrZXkiOiJ2YWx1ZSJ9Cg=="
     assert isinstance(job_config, QueryJobConfig)
     assert user_supplied_client
+    assert with_subject
 
 
 @pytest.mark.parametrize(
@@ -191,6 +194,7 @@ def test_empty_with_non_config():
         job_config,
         list_tables_page_size,
         user_supplied_credentials,
+        with_subject,
     ) = url
 
     assert project_id is None
@@ -202,6 +206,7 @@ def test_empty_with_non_config():
     assert job_config is None
     assert list_tables_page_size is None
     assert not user_supplied_credentials
+    assert not with_subject
 
 
 def test_only_dataset():
@@ -215,6 +220,7 @@ def test_only_dataset():
         credentials_base64,
         job_config,
         list_tables_page_size,
+        with_subject,
         user_supplied_credentials,
     ) = url
 
@@ -226,6 +232,7 @@ def test_only_dataset():
     assert credentials_base64 is None
     assert list_tables_page_size is None
     assert isinstance(job_config, QueryJobConfig)
+    assert not user_supplied_credentials
     assert not user_supplied_credentials
     # we can't actually test that the dataset is on the job_config,
     # since we take care of that afterwards, when we have a client to fill in the project
