@@ -21,6 +21,7 @@
 
 import datetime
 import decimal
+import sys
 
 from sqlalchemy.engine import create_engine
 from sqlalchemy.schema import Table, MetaData, Column
@@ -248,6 +249,8 @@ def test_engine_with_dataset(engine_using_test_dataset, bigquery_dataset):
 def test_dataset_location(
     engine_with_location, bigquery_dataset, bigquery_regional_dataset
 ):
+    print()
+    print(sys.version)
     print()
     rows = engine_with_location.execute(
         f"SELECT * FROM {bigquery_regional_dataset}.sample_one_row"
