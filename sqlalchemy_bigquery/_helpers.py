@@ -58,7 +58,7 @@ def create_bigquery_client(
     else:
         credentials, default_project = google.auth.default(scopes=SCOPES)
 
-    if with_subject:
+    if with_subject and isinstance(credentials, (service_account.Credentials,)):
         credentials = credentials.with_subject(with_subject)
 
     if project_id is None:
