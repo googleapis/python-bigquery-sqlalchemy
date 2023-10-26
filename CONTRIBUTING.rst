@@ -80,6 +80,10 @@ We use `nox <https://nox.readthedocs.io/en/latest/>`__ to instrument our tests.
     The unit tests and system tests are described in the
     ``noxfile.py`` files in each directory.
 
+- System tests create a live BQ dataset and destroys it with tests::
+
+    $ nox -s system
+
 .. nox: https://pypi.org/project/nox/
 
 *****************************************

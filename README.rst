@@ -35,7 +35,8 @@ In order to use this library, you first need to go through the following steps:
 .. _Setup Authentication.: https://googleapis.dev/python/google-api-core/latest/auth.html
 
 .. note::
-   This library is only compatible with SQLAlchemy versions < 2.0.0
+   This library is only compatible with SQLAlchemy versions >= 2.0.0
+   For SQLAlchemy versions < 2.0.0, use `sqlalchemy-bigquery < 0.20.0`_.
 
 Installation
 ------------
@@ -104,11 +105,11 @@ SQLAlchemy
 .. code-block:: python
 
     from sqlalchemy import *
-    from sqlalchemy.engine import create_engine
-    from sqlalchemy.schema import *
     engine = create_engine('bigquery://project')
-    table = Table('dataset.table', MetaData(bind=engine), autoload=True)
-    print(select([func.count('*')], from_obj=table).scalar())
+    metadata_obj = MetaData()
+    table = Table('dataset.table', metadata_obj, autoload_with=engine)
+    with engine.connect() as conn:
+        print(conn.execute(select(func.count("*")).select_from(table)).scalar())
 
 Project
 ^^^^^^^
@@ -204,7 +205,8 @@ Note that specifying a default dataset doesn't restrict execution of queries to 
     engine = create_engine('bigquery://project/dataset_a')
 
     # This will still execute and return rows from dataset_b
-    engine.execute('SELECT * FROM dataset_b.table').fetchall()
+    with engine.connect() as conn:
+        conn.execute(sqlalchemy.text('SELECT * FROM dataset_b.table')).fetchall()
 
 
 Connection String Parameters
@@ -281,7 +283,7 @@ If you need additional control, you can supply a BigQuery client of your own:
 
     engine = create_engine(
         'bigquery://some-project/some-dataset?user_supplied_client=True',
-	connect_args={'client': custom_bq_client},
+	    connect_args={'client': custom_bq_client},
     )
 
 

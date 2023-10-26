@@ -214,7 +214,7 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
         # For example, given SQLAlchemy code:
         #
         #   print(
-        #      select([func.unnest(foo.c.objects).alias('foo_objects').column])
+        #      select(func.unnest(foo.c.objects).alias('foo_objects').column)
         #      .compile(engine))
         #
         # Left to it's own devices, SQLAlchemy would outout:
@@ -791,6 +791,14 @@ class BigQueryDialect(DefaultDialect):
 
     @classmethod
     def dbapi(cls):
+        """
+        Use `import_dbapi()` instead.
+        Maintained for backward compatibility.
+        """
+        return dbapi
+
+    @classmethod
+    def import_dbapi(cls):
         return dbapi
 
     @staticmethod
@@ -963,7 +971,10 @@ class BigQueryDialect(DefaultDialect):
             raise NoSuchTableError(table_name)
         return table
 
-    def has_table(self, connection, table_name, schema=None):
+    def has_table(self, connection, table_name, schema=None, **kw):
+        """
+        No kw are supported
+        """
         try:
             self._get_table(connection, table_name, schema)
             return True
@@ -1057,7 +1068,10 @@ class unnest(sqlalchemy.sql.functions.GenericFunction):
             raise TypeError("The unnest function requires a single argument.")
         arg = args[0]
         if isinstance(arg, sqlalchemy.sql.expression.ColumnElement):
-            if not isinstance(arg.type, sqlalchemy.sql.sqltypes.ARRAY):
+            if not (
+                isinstance(arg.type, sqlalchemy.sql.sqltypes.ARRAY)
+                or isinstance(arg.type.impl, sqlalchemy.sql.sqltypes.ARRAY)
+            ):
                 raise TypeError("The argument to unnest must have an ARRAY type.")
             self.type = arg.type.item_type
         super().__init__(*args, **kwargs)

@@ -100,7 +100,7 @@ setup(
         "google-auth>=1.25.0,<3.0.0dev",  # Work around pip wack.
         "google-cloud-bigquery>=2.25.2,<4.0.0dev",
         "packaging",
-        "sqlalchemy>=1.2.0,<2.0.0dev",
+        "sqlalchemy>=2.0,<2.1",
     ],
     extras_require=extras,
     python_requires=">=3.8, <3.12",

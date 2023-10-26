@@ -220,7 +220,7 @@ class ExistsTest(_ExistsTest):
         stuff = self.tables.stuff
         eq_(
             connection.execute(
-                select([stuff.c.id]).where(
+                select(stuff.c.id).where(
                     and_(
                         stuff.c.id == 1,
                         exists().where(stuff.c.data == "some data"),
@@ -234,7 +234,7 @@ class ExistsTest(_ExistsTest):
         stuff = self.tables.stuff
         eq_(
             connection.execute(
-                select([stuff.c.id]).where(exists().where(stuff.c.data == "no data"))
+                select(stuff.c.id).where(exists().where(stuff.c.data == "no data"))
             ).fetchall(),
             [],
         )

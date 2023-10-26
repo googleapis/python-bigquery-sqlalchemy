@@ -98,7 +98,7 @@ def test_get_table_names(
 ):
     mock_bigquery_client.list_datasets.return_value = datasets_list
     mock_bigquery_client.list_tables.side_effect = tables_lists
-    table_names = engine_under_test.table_names()
+    table_names = sqlalchemy.inspect(engine_under_test).get_table_names()
     mock_bigquery_client.list_datasets.assert_called_once()
     assert mock_bigquery_client.list_tables.call_count == len(datasets_list)
     assert list(sorted(table_names)) == list(sorted(expected))
@@ -231,7 +231,7 @@ def test_unnest_function(args, kw):
         "1.4"
     ):
         assert isinstance(
-            sqlalchemy.select([f]).subquery().c.unnest.type, sqlalchemy.String
+            sqlalchemy.select(f).subquery().c.unnest.type, sqlalchemy.String
         )
 
 
