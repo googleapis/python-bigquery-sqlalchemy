@@ -90,7 +90,7 @@ s.replace(
     '''"protobuf",
         # dependency of grpc''',
     '''"protobuf",
-        "sqlalchemy<2.0.0",
+        "sqlalchemy",
         # dependency of grpc''',
 )
 
@@ -162,7 +162,7 @@ def compliance(session):
         session.skip("Compliance tests were not found")
 
     session.install("--pre", "grpcio")
-    session.install("--pre", "--no-deps", "--upgrade", "sqlalchemy<2.0.0") 
+    session.install("--pre", "--no-deps", "--upgrade", "sqlalchemy") 
     session.install(
         "mock",
         "pytest",
