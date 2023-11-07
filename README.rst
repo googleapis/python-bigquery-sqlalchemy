@@ -36,7 +36,7 @@ In order to use this library, you first need to go through the following steps:
 
 .. note::
    This library is only compatible with SQLAlchemy versions >= 2.0.0
-   For SQLAlchemy versions < 2.0.0, use `sqlalchemy-bigquery < 0.20.0`_.
+   For SQLAlchemy versions < 2.0.0, use `sqlalchemy-bigquery<=1.8.0`.
 
 Installation
 ------------
