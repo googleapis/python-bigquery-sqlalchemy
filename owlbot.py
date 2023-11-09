@@ -90,7 +90,7 @@ s.replace(
     '''"protobuf",
         # dependency of grpc''',
     '''"protobuf",
-        "sqlalchemy",
+        "sqlalchemy>=2.0.0,<2.1",
         # dependency of grpc''',
 )
 
@@ -115,7 +115,7 @@ place_before(
     "noxfile.py",
     "SYSTEM_TEST_PYTHON_VERSIONS=",
     "",
-    "# We're using two Python versions to test with sqlalchemy 1.3 and 1.4.",
+    "# We're using two Python versions to test with sqlalchemy>=2.0.0",
 )
 
 place_before(
@@ -162,7 +162,7 @@ def compliance(session):
         session.skip("Compliance tests were not found")
 
     session.install("--pre", "grpcio")
-    session.install("--pre", "--no-deps", "--upgrade", "sqlalchemy") 
+    session.install("--pre", "--no-deps", "--upgrade", "sqlalchemy>=2.0.0,<2.1") 
     session.install(
         "mock",
         "pytest",
