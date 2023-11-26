@@ -114,3 +114,87 @@ def test_no_alias_for_known_tables_cte(faux_conn, metadata):
     )
     found_cte_sql = q.compile(faux_conn).string
     assert found_cte_sql == expected_cte_sql
+
+
+@sqlalchemy_1_4_or_higher
+def test_no_implicit_join_for_inner_unnest(faux_conn, metadata):
+    # See: https://github.com/googleapis/python-bigquery-sqlalchemy/issues/368
+    table1 = setup_table(
+        faux_conn, "table1", metadata, sqlalchemy.Column("foo", sqlalchemy.Integer)
+    )
+    table2 = setup_table(
+        faux_conn,
+        "table2",
+        metadata,
+        sqlalchemy.Column("foos", sqlalchemy.ARRAY(sqlalchemy.Integer)),
+        sqlalchemy.Column("bar", sqlalchemy.Integer),
+    )
+    F = sqlalchemy.func
+
+    unnested_col_name = "unnested_foos"
+    unnested_foos = F.unnest(table2.c.foos).alias(unnested_col_name)
+    unnested_foo_col = sqlalchemy.Column(unnested_col_name)
+
+    # Set up initial query
+    q = sqlalchemy.select(table1.c.foo, table2.c.bar).select_from(
+        unnested_foos.join(table1, table1.c.foo == unnested_foo_col)
+    )
+
+    expected_initial_sql = (
+        "SELECT `table1`.`foo`, `table2`.`bar` \n"
+        "FROM `table2`, unnest(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`"
+    )
+    found_initial_sql = q.compile(faux_conn).string
+    assert found_initial_sql == expected_initial_sql
+
+    q = sqlalchemy.select("*").select_from(q.subquery())
+
+    expected_outer_sql = (
+        "SELECT * \n"
+        "FROM (SELECT `table1`.`foo` AS `foo`, `table2`.`bar` AS `bar` \n"
+        "FROM `table2`, unnest(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`) AS `anon_1`"
+    )
+    found_outer_sql = q.compile(faux_conn).string
+    assert found_outer_sql == expected_outer_sql
+
+
+@sqlalchemy_1_4_or_higher
+def test_no_implicit_join_for_inner_unnest_2(faux_conn, metadata):
+    # See: https://github.com/googleapis/python-bigquery-sqlalchemy/issues/368
+    table1 = setup_table(
+        faux_conn, "table1", metadata, sqlalchemy.Column("foo", sqlalchemy.Integer)
+    )
+    table2 = setup_table(
+        faux_conn,
+        "table2",
+        metadata,
+        sqlalchemy.Column("foos", sqlalchemy.ARRAY(sqlalchemy.Integer)),
+        sqlalchemy.Column("bar", sqlalchemy.Integer),
+    )
+    F = sqlalchemy.func
+
+    unnested_col_name = "unnested_foos"
+    unnested_foos = F.unnest(table2.c.foos).alias(unnested_col_name)
+    unnested_foo_col = sqlalchemy.Column(unnested_col_name)
+
+    # Set up initial query
+    q = sqlalchemy.select(table1.c.foo).select_from(
+        unnested_foos.join(table1, table1.c.foo == unnested_foo_col)
+    )
+
+    expected_initial_sql = (
+        "SELECT `table1`.`foo` \n"
+        "FROM `table2` `table2_1`, unnest(`table2_1`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`"
+    )
+    found_initial_sql = q.compile(faux_conn).string
+    assert found_initial_sql == expected_initial_sql
+
+    q = sqlalchemy.select("*").select_from(q.subquery())
+
+    expected_outer_sql = (
+        "SELECT * \n"
+        "FROM (SELECT `table1`.`foo` AS `foo` \n"
+        "FROM `table2` `table2_1`, unnest(`table2_1`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`) AS `anon_1`"
+    )
+    found_outer_sql = q.compile(faux_conn).string
+    assert found_outer_sql == expected_outer_sql
