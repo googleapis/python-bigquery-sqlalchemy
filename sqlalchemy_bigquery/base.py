@@ -273,9 +273,10 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
         # as this will add the table twice and cause an implicit JOIN for that
         # table on itself
         if self.stack:
-            for from_ in self.stack[-1]["asfrom_froms"]:
-                if isinstance(from_, Table):
-                    known_tables.add(from_.name)
+            if (asfrom_froms := self.stack[-1].get("asfrom_froms")) is not None:
+                for from_ in asfrom_froms:
+                    if isinstance(from_, Table):
+                        known_tables.add(from_.name)
 
         return known_tables
 
