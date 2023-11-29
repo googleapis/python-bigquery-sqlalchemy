@@ -136,11 +136,11 @@ class Requirements(sqlalchemy.testing.requirements.SuiteRequirements):
         named 'test_schema'."""
 
         return unsupported()
-    
+
     @property
     def array_type(self):
         return only_on([lambda config: against(config, "postgresql")])
-    
+
     @property
     def uuid_data_type(self):
         """Return databases that support the UUID datatype."""
