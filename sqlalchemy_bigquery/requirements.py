@@ -24,6 +24,7 @@ based on database capabilities.
 
 import sqlalchemy.testing.requirements
 import sqlalchemy.testing.exclusions
+from sqlalchemy.testing.exclusions import against, only_on
 
 supported = sqlalchemy.testing.exclusions.open
 unsupported = sqlalchemy.testing.exclusions.closed
@@ -135,6 +136,15 @@ class Requirements(sqlalchemy.testing.requirements.SuiteRequirements):
         named 'test_schema'."""
 
         return unsupported()
+    
+    @property
+    def array_type(self):
+        return only_on([lambda config: against(config, "postgresql")])
+    
+    @property
+    def uuid_data_type(self):
+        """Return databases that support the UUID datatype."""
+        return only_on(("postgresql >= 8.3", "mariadb >= 10.7.0"))
 
     @property
     def implicit_default_schema(self):
