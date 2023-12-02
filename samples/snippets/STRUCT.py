@@ -25,7 +25,7 @@ def example(engine):
     from sqlalchemy import Column, String, Integer, Float
     from sqlalchemy_bigquery import STRUCT
 
-    Base = declarative_base()
+    Base = sqlalchemy.orm.declarative_base()
 
     class Car(Base):
         __tablename__ = "Cars"
