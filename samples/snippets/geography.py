@@ -24,7 +24,7 @@ def example(engine):
     from sqlalchemy import Column, String
     from sqlalchemy_bigquery import GEOGRAPHY
 
-    Base = sqlalchemy.orm.declarative_base()
+    Base = declarative_base()
 
     class Lake(Base):
         __tablename__ = "lakes"
