@@ -647,25 +647,49 @@ class BigQueryDDLCompiler(DDLCompiler):
 
     def post_create_table(self, table):
         bq_opts = table.dialect_options["bigquery"]
-        opts = []
+
+        partition_by_or_cluster_by_or_options = []
+
+        options = {}
 
         if ("description" in bq_opts) or table.comment:
-            description = process_string_literal(
-                bq_opts.get("description", table.comment)
-            )
-            opts.append(f"description={description}")
+            description = bq_opts.get("description", table.comment)
+            options["description"] = description
 
-        if "friendly_name" in bq_opts:
-            opts.append(
-                "friendly_name={}".format(
-                    process_string_literal(bq_opts["friendly_name"])
-                )
-            )
+        table_option_list = {
+            "friendly_name": str,
+        }
 
-        if opts:
-            return "\nOPTIONS({})".format(", ".join(opts))
+        for table_option in table_option_list:
+            if table_option in bq_opts:
+                options[table_option] = bq_opts.get(table_option)
 
-        return ""
+        if options:
+
+            def process_option_value(option, value):
+                if option in table_option_list:
+                    assert isinstance(
+                        value, table_option_list[option]
+                    ), f"bigquery_{option} dialect option accepts only {table_option_list[option]}, provided {repr(value)}"
+                else:
+                    return process_string_literal(value)
+
+                if table_option_list[option] == str:
+                    return process_string_literal(value)
+                if table_option_list[option] == int:
+                    return int(value)
+                if table_option_list[option] == bool:
+                    return "true" if value else "false"
+                if table_option_list[option] == datetime.datetime:
+                    return BQTimestamp.process_timestamp_literal(value)
+
+            options_list = [
+                f"{k}={process_option_value(k,v)}" for (k, v) in options.items()
+            ]
+            options_str = f"OPTIONS({', '.join(options_list)})"
+            partition_by_or_cluster_by_or_options.append(options_str)
+
+        return " " + "\n".join(partition_by_or_cluster_by_or_options)
 
     def visit_set_table_comment(self, create):
         table_name = self.preparer.format_table(create.element)
