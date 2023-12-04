@@ -19,6 +19,7 @@
 
 """Integration between SQLAlchemy and BigQuery."""
 
+import datetime
 from decimal import Decimal
 import random
 import operator
@@ -35,7 +36,7 @@ import sqlalchemy.sql.expression
 import sqlalchemy.sql.functions
 import sqlalchemy.sql.sqltypes
 import sqlalchemy.sql.type_api
-from sqlalchemy.exc import NoSuchTableError
+from sqlalchemy.exc import NoSuchTableError, NoSuchColumnError
 from sqlalchemy import util
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.compiler import (
@@ -650,6 +651,32 @@ class BigQueryDDLCompiler(DDLCompiler):
 
         partition_by_or_cluster_by_or_options = []
 
+        if "partitioning" in bq_opts:
+            partition_expr = bq_opts.get("partitioning")
+
+            assert isinstance(
+                partition_expr, str
+            ), f"bigquery_partitioning dialect option accepts only {str}, provided {repr(partition_expr)}"
+
+            partition_by_or_cluster_by_or_options.append(
+                f"PARTITION BY {partition_expr}"
+            )
+
+        if "clustering_fields" in bq_opts:
+            clustering_fields = bq_opts.get("clustering_fields")
+
+            assert isinstance(
+                clustering_fields, list
+            ), f"bigquery_clustering_fields dialect option accepts only {list}, provided {repr(clustering_fields)}"
+
+            for field in clustering_fields:
+                if field not in table.c:
+                    raise NoSuchColumnError(field)
+
+            partition_by_or_cluster_by_or_options.append(
+                f"CLUSTER BY {', '.join(clustering_fields)}"
+            )
+
         options = {}
 
         if ("description" in bq_opts) or table.comment:
@@ -658,6 +685,10 @@ class BigQueryDDLCompiler(DDLCompiler):
 
         table_option_list = {
             "friendly_name": str,
+            "expiration_timestamp": datetime.datetime,
+            "partition_expiration_days": int,
+            "require_partition_filter": bool,
+            "default_rounding_mode": str,
         }
 
         for table_option in table_option_list:
