@@ -48,13 +48,15 @@ from sqlalchemy.testing.suite import (
 
 if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2.0"):
     from sqlalchemy.sql import type_coerce
-    
+
     class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
         data = datetime.datetime(2012, 10, 15, 12, 57, 18, 396, tzinfo=pytz.UTC)
-        #TimestampMicrosecondsTest literal() no literal_execute parameter? Go back and add to literal()"
+
+        # TimestampMicrosecondsTest literal() no literal_execute parameter? Go back and add to literal()"
         @pytest.mark.skip("")
         def test_literal(self, literal_round_trip):
             pass
+
         def test_select_direct(self, connection):
             # This func added because this test was failing when passed the
             # UTC timezone.
@@ -93,13 +95,13 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
     class TrueDivTest(_TrueDivTest):
         @pytest.mark.skip("SQLAlchemy 2.0 rounds based on datatype")
         def test_floordiv_integer(self):
-            #TODO: possibly compare rounded result instead?
+            # TODO: possibly compare rounded result instead?
             pass
 
         @pytest.mark.skip("SQLAlchemy 2.0 rounds based on datatype")
         def test_floordiv_integer_bound(self):
             pass
-    
+
     class SimpleUpdateDeleteTest(_SimpleUpdateDeleteTest):
         """The base tests fail if operations return rows for some reason."""
 
@@ -126,7 +128,7 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
                 connection.execute(t.select().order_by(t.c.id)).fetchall(),
                 [(1, "d1"), (3, "d3")],
             )
-    
+
     class InsertBehaviorTest(_InsertBehaviorTest):
         @pytest.mark.skip(
             "BQ has no autoinc and client-side defaults can't work for select."
@@ -134,14 +136,13 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
         def test_insert_from_select_autoinc(cls):
             pass
 
-        # Another autoinc error?
+        # TODO: Find cause of error
         @pytest.mark.skip("")
         def test_no_results_for_non_returning_insert(cls):
             pass
 
     # BQ has no autoinc and client-side defaults can't work for select
     del _IntegerTest.test_huge_int_auto_accommodation
-
 
     class NumericTest(_NumericTest):
         @testing.fixture
@@ -225,14 +226,14 @@ elif packaging.version.parse(sqlalchemy.__version__) < packaging.version.parse("
 
             with mock.patch("sqlalchemy.testing.suite.test_types.literal", literal):
                 super(TimestampMicrosecondsTest, self).test_select_direct(connection)
-    
+
     class InsertBehaviorTest(_InsertBehaviorTest):
         @pytest.mark.skip(
             "BQ has no autoinc and client-side defaults can't work for select."
         )
         def test_insert_from_select_autoinc(cls):
             pass
-    
+
     class SimpleUpdateDeleteTest(_SimpleUpdateDeleteTest):
         """The base tests fail if operations return rows for some reason."""
 
@@ -256,7 +257,6 @@ elif packaging.version.parse(sqlalchemy.__version__) < packaging.version.parse("
                 config.db.execute(t.select().order_by(t.c.id)).fetchall(),
                 [(1, "d1"), (3, "d3")],
             )
-
 
 else:
     from sqlalchemy.testing.suite import (
@@ -396,24 +396,16 @@ else:
             )
 
 
+# Quotes aren't allowed in BigQuery table names.
+del QuotedNameArgumentTest
+
+
 # class InsertBehaviorTest(_InsertBehaviorTest):
 #     @pytest.mark.skip(
 #         "BQ has no autoinc and client-side defaults can't work for select."
 #     )
 #     def test_insert_from_select_autoinc(cls):
 #         pass
-
-
-# Quotes aren't allowed in BigQuery table names.
-del QuotedNameArgumentTest
-
-
-class InsertBehaviorTest(_InsertBehaviorTest):
-    @pytest.mark.skip(
-        "BQ has no autoinc and client-side defaults can't work for select."
-    )
-    def test_insert_from_select_autoinc(cls):
-        pass
 
 
 class ExistsTest(_ExistsTest):
