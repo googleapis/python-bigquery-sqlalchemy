@@ -292,13 +292,34 @@ To add metadata to a table:
 
 .. code-block:: python
 
-    table = Table('mytable', ..., bigquery_description='my table description', bigquery_friendly_name='my table friendly name')
+    table = Table('mytable', ...,
+        bigquery_description='my table description',
+        bigquery_friendly_name='my table friendly name',
+        bigquery_default_rounding_mode="ROUND_HALF_EVEN",
+        bigquery_expiration_timestamp=datetime.datetime.fromisoformat("2038-01-01T00:00:00+00:00"),
+    )
 
 To add metadata to a column:
 
 .. code-block:: python
 
     Column('mycolumn', doc='my column description')
+
+To create a clustered table:
+
+.. code-block:: python
+
+    table = Table('mytable', ..., bigquery_clustering_fields=["a", "b", "c"])
+
+To create a partitioned table:
+
+.. code-block:: python
+
+    table = Table('mytable', ...,
+        bigquery_partitioning="DATE(mytimestamp)",
+        bigquery_partition_expiration_days=90,
+        bigquery_require_partition_filter=True,
+    )
 
 
 Threading and Multiprocessing
