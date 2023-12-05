@@ -18,6 +18,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import datetime
+import decimal
 import mock
 import packaging.version
 import pytest
@@ -41,10 +42,12 @@ from sqlalchemy.testing.suite import (
     SimpleUpdateDeleteTest as _SimpleUpdateDeleteTest,
     TimestampMicrosecondsTest as _TimestampMicrosecondsTest,
     TrueDivTest as _TrueDivTest,
-    NumericTest as _NumericTest
+    IntegerTest as _IntegerTest,
+    NumericTest as _NumericTest,
 )
 
 if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2.0"):
+    from sqlalchemy.sql import type_coerce
     
     class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
         data = datetime.datetime(2012, 10, 15, 12, 57, 18, 396, tzinfo=pytz.UTC)
@@ -132,18 +135,57 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
             pass
 
         # Another autoinc error?
-        @pytest.mark.skip("BQ has no autoinc, unless specified")
+        @pytest.mark.skip("")
         def test_no_results_for_non_returning_insert(cls):
             pass
 
-    # BQ only supports a precision up to 38, have to delete tests with precision exceeding that
-    del _NumericTest.test_enotation_decimal
-    del _NumericTest.test_enotation_decimal_large
-    
-    # BQ cannot preserve the order when inserting multiple rows without a primary key. Filtering will lead to test failure, must modify the test.
-    # TODO: Modify test for non-determinsitic row ordering
-    del _NumericTest.test_float_as_decimal
-    del _NumericTest.test_float_as_float
+    # BQ has no autoinc and client-side defaults can't work for select
+    del _IntegerTest.test_huge_int_auto_accommodation
+
+
+    class NumericTest(_NumericTest):
+        @testing.fixture
+        def do_numeric_test(self, metadata, connection):
+            def run(type_, input_, output, filter_=None, check_scale=False):
+                t = Table("t", metadata, Column("x", type_))
+                t.create(connection)
+                connection.execute(t.insert(), [{"x": x} for x in input_])
+
+                result = {row[0] for row in connection.execute(t.select())}
+                output = set(output)
+                if filter_:
+                    result = {filter_(x) for x in result}
+                    output = {filter_(x) for x in output}
+                eq_(result, output)
+                if check_scale:
+                    eq_([str(x) for x in result], [str(x) for x in output])
+
+                where_expr = True
+
+                # Adding where clause
+                connection.execute(t.delete().where(where_expr))
+
+                # test that this is actually a number!
+                # note we have tiny scale here as we have tests with very
+                # small scale Numeric types.  PostgreSQL will raise an error
+                # if you use values outside the available scale.
+                if type_.asdecimal:
+                    test_value = decimal.Decimal("2.9")
+                    add_value = decimal.Decimal("37.12")
+                else:
+                    test_value = 2.9
+                    add_value = 37.12
+
+                connection.execute(t.insert(), {"x": test_value})
+                assert_we_are_a_number = connection.scalar(
+                    select(type_coerce(t.c.x + add_value, type_))
+                )
+                eq_(
+                    round(assert_we_are_a_number, 3),
+                    round(test_value + add_value, 3),
+                )
+
+            return run
 
 elif packaging.version.parse(sqlalchemy.__version__) < packaging.version.parse("1.4"):
     from sqlalchemy.testing.suite import LimitOffsetTest as _LimitOffsetTest
@@ -183,6 +225,38 @@ elif packaging.version.parse(sqlalchemy.__version__) < packaging.version.parse("
 
             with mock.patch("sqlalchemy.testing.suite.test_types.literal", literal):
                 super(TimestampMicrosecondsTest, self).test_select_direct(connection)
+    
+    class InsertBehaviorTest(_InsertBehaviorTest):
+        @pytest.mark.skip(
+            "BQ has no autoinc and client-side defaults can't work for select."
+        )
+        def test_insert_from_select_autoinc(cls):
+            pass
+    
+    class SimpleUpdateDeleteTest(_SimpleUpdateDeleteTest):
+        """The base tests fail if operations return rows for some reason."""
+
+        def test_update(self):
+            t = self.tables.plain_pk
+            r = config.db.execute(t.update().where(t.c.id == 2), data="d2_new")
+            assert not r.is_insert
+            # assert not r.returns_rows
+
+            eq_(
+                config.db.execute(t.select().order_by(t.c.id)).fetchall(),
+                [(1, "d1"), (2, "d2_new"), (3, "d3")],
+            )
+
+        def test_delete(self):
+            t = self.tables.plain_pk
+            r = config.db.execute(t.delete().where(t.c.id == 2))
+            assert not r.is_insert
+            # assert not r.returns_rows
+            eq_(
+                config.db.execute(t.select().order_by(t.c.id)).fetchall(),
+                [(1, "d1"), (3, "d3")],
+            )
+
 
 else:
     from sqlalchemy.testing.suite import (
@@ -297,9 +371,29 @@ else:
                 ],
             )
 
+    class SimpleUpdateDeleteTest(_SimpleUpdateDeleteTest):
+        """The base tests fail if operations return rows for some reason."""
 
-# Quotes aren't allowed in BigQuery table names.
-del QuotedNameArgumentTest
+        def test_update(self):
+            t = self.tables.plain_pk
+            r = config.db.execute(t.update().where(t.c.id == 2), data="d2_new")
+            assert not r.is_insert
+            # assert not r.returns_rows
+
+            eq_(
+                config.db.execute(t.select().order_by(t.c.id)).fetchall(),
+                [(1, "d1"), (2, "d2_new"), (3, "d3")],
+            )
+
+        def test_delete(self):
+            t = self.tables.plain_pk
+            r = config.db.execute(t.delete().where(t.c.id == 2))
+            assert not r.is_insert
+            # assert not r.returns_rows
+            eq_(
+                config.db.execute(t.select().order_by(t.c.id)).fetchall(),
+                [(1, "d1"), (3, "d3")],
+            )
 
 
 # class InsertBehaviorTest(_InsertBehaviorTest):
@@ -308,6 +402,18 @@ del QuotedNameArgumentTest
 #     )
 #     def test_insert_from_select_autoinc(cls):
 #         pass
+
+
+# Quotes aren't allowed in BigQuery table names.
+del QuotedNameArgumentTest
+
+
+class InsertBehaviorTest(_InsertBehaviorTest):
+    @pytest.mark.skip(
+        "BQ has no autoinc and client-side defaults can't work for select."
+    )
+    def test_insert_from_select_autoinc(cls):
+        pass
 
 
 class ExistsTest(_ExistsTest):

@@ -380,9 +380,7 @@ def compliance(session):
 
     session.run(
         "py.test",
-        "-s", #temporary for testing
         "-vv",
-        "-x", #temporary for testing
         f"--junitxml=compliance_{session.python}_sponge_log.xml",
         "--reruns=3",
         "--reruns-delay=60",
@@ -390,7 +388,7 @@ def compliance(session):
         "--only-rerun=409 Already Exists",
         "--only-rerun=404 Not found",
         "--only-rerun=400 Cannot execute DML over a non-existent table",
-        #system_test_folder_path, - temporary comment for testing
+        system_test_folder_path,
         *session.posargs,
         # To suppress the "Deprecated API features detected!" warning when
         # features not compatible with 2.0 are detected, use a value of "1"
