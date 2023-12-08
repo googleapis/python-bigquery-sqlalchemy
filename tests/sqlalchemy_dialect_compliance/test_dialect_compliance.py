@@ -139,7 +139,9 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
             pass
 
         # TODO: Find cause of error
-        @pytest.mark.skip("BQ has no autoinc and client-side defaults can't work for select.")
+        @pytest.mark.skip(
+            "BQ has no autoinc and client-side defaults can't work for select."
+        )
         def test_no_results_for_non_returning_insert(cls):
             pass
 
@@ -189,8 +191,9 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
                 )
 
             return run
+
     class DifficultParametersTest(_DifficultParametersTest):
-        #removed parameters that dont work with bigquery
+        # removed parameters that dont work with bigquery
         tough_parameters = testing.combinations(
             ("boring",),
             ("per cent",),
@@ -211,9 +214,7 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
 
         @tough_parameters
         @config.requirements.unusual_column_name_characters
-        def test_round_trip_same_named_column(
-            self, paramname, connection, metadata
-        ):
+        def test_round_trip_same_named_column(self, paramname, connection, metadata):
             name = paramname
 
             t = Table(
@@ -297,7 +298,6 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
             res = connection.scalars(stmt, {paramname: ["d", "a"]}).all()
             eq_(res, [1, 4])
 
-
     class FetchLimitOffsetTest(_FetchLimitOffsetTest):
         @pytest.mark.skip("BigQuery doesn't allow an offset without a limit.")
         def test_simple_offset(self):
@@ -321,7 +321,7 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
                 u,
                 [(1,)],
             )
-    
+
     # from else statement ....
     del DistinctOnTest  # expects unquoted table names.
     del HasIndexTest  # BQ doesn't do the indexes that SQLA is loooking for.

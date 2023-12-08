@@ -1070,7 +1070,10 @@ class unnest(sqlalchemy.sql.functions.GenericFunction):
         if isinstance(arg, sqlalchemy.sql.expression.ColumnElement):
             if not (
                 isinstance(arg.type, sqlalchemy.sql.sqltypes.ARRAY)
-                or (hasattr(arg.type, "impl") and isinstance(arg.type.impl, sqlalchemy.sql.sqltypes.ARRAY))
+                or (
+                    hasattr(arg.type, "impl")
+                    and isinstance(arg.type.impl, sqlalchemy.sql.sqltypes.ARRAY)
+                )
             ):
                 raise TypeError("The argument to unnest must have an ARRAY type.")
             self.type = arg.type.item_type
