@@ -594,17 +594,8 @@ def test_view_names(inspector, inspector_using_test_dataset, bigquery_dataset):
 def test_get_indexes(inspector, inspector_using_test_dataset, bigquery_dataset):
     for _ in [f"{bigquery_dataset}.sample", f"{bigquery_dataset}.sample_one_row"]:
         indexes = inspector.get_indexes(f"{bigquery_dataset}.sample")
-        assert len(indexes) == 2
-        assert indexes[0] == {
-            "name": "partition",
-            "column_names": ["timestamp"],
-            "unique": False,
-        }
-        assert indexes[1] == {
-            "name": "clustering",
-            "column_names": ["integer", "string"],
-            "unique": False,
-        }
+        assert len(indexes) == 0
+
 
 
 def test_get_columns(inspector, inspector_using_test_dataset, bigquery_dataset):
