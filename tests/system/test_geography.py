@@ -128,7 +128,9 @@ def test_geoalchemy2_core(bigquery_dataset):
         int(
             list(
                 conn.execute(
-                    select(lake_table.c.geog.st_area(), lake_table.c.name == "test2")
+                    select(lake_table.c.geog.st_area()).where(
+                        lake_table.c.name == "test2"
+                    )
                 )
             )[0][0]
         )

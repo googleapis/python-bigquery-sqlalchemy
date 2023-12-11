@@ -41,23 +41,20 @@ from sqlalchemy.testing.suite import (
     QuotedNameArgumentTest,
     SimpleUpdateDeleteTest as _SimpleUpdateDeleteTest,
     TimestampMicrosecondsTest as _TimestampMicrosecondsTest,
-    TrueDivTest as _TrueDivTest,
-    IntegerTest as _IntegerTest,
-    NumericTest as _NumericTest,
-    DifficultParametersTest as _DifficultParametersTest,
-    FetchLimitOffsetTest as _FetchLimitOffsetTest,
 )
 
 if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2.0"):
     from sqlalchemy.sql import type_coerce
+    from sqlalchemy.testing.suite import (
+        TrueDivTest as _TrueDivTest,
+        IntegerTest as _IntegerTest,
+        NumericTest as _NumericTest,
+        DifficultParametersTest as _DifficultParametersTest,
+        FetchLimitOffsetTest as _FetchLimitOffsetTest,
+    )
 
     class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
         data = datetime.datetime(2012, 10, 15, 12, 57, 18, 396, tzinfo=pytz.UTC)
-
-        # TimestampMicrosecondsTest literal() no literal_execute parameter? Go back and add to literal()"
-        @pytest.mark.skip("")
-        def test_literal(self, literal_round_trip):
-            pass
 
         def test_select_direct(self, connection):
             # This func added because this test was failing when passed the
@@ -93,14 +90,12 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
         test_round_trip_executemany
     )
 
-    # TrueDivTest issue because SQLAlchemy always rounded down. The assertion cannot reconcile 1.5==1 thusly
     class TrueDivTest(_TrueDivTest):
-        @pytest.mark.skip("Bigquery rounds based on datatype")
+        @pytest.mark.skip("BQ rounds based on datatype")
         def test_floordiv_integer(self):
-            # TODO: possibly compare rounded result instead?
             pass
 
-        @pytest.mark.skip("Bigquery rounds based on datatype")
+        @pytest.mark.skip("BQ rounds based on datatype")
         def test_floordiv_integer_bound(self):
             pass
 
@@ -138,7 +133,6 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
         def test_insert_from_select_autoinc(cls):
             pass
 
-        # TODO: Find cause of error
         @pytest.mark.skip(
             "BQ has no autoinc and client-side defaults can't work for select."
         )
@@ -167,7 +161,7 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
 
                 where_expr = True
 
-                # Adding where clause
+                # Adding where clause for 2.0 compatibility
                 connection.execute(t.delete().where(where_expr))
 
                 # test that this is actually a number!
