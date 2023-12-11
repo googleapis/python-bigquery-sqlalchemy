@@ -48,14 +48,13 @@ from sqlalchemy.testing.suite import (
 
 from sqlalchemy.testing.suite.test_types import (
     ArrayTest,
-    NumericTest,
 )
 
 from sqlalchemy.testing.suite.test_reflection import (
     BizarroCharacterFKResolutionTest,
     ComponentReflectionTest,
     OneConnectionTablesTest,
-    HasTableTest as _HasTableTest,
+    HasTableTest,
 )
 
 if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2.0"):
@@ -643,6 +642,4 @@ del ComponentReflectionTest    # Multiple tests re: CHECK CONSTRAINTS, etc which
 
 del ArrayTest      # only appears to apply to postgresql
 del BizarroCharacterFKResolutionTest  
-del NumericTest.test_float_as_float
-del NumericTest.test_float_as_decimal
 del HasTableTest.test_has_table_cache # TODO confirm whether BQ has table caching
