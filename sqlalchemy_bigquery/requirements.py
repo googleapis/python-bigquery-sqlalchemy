@@ -135,12 +135,11 @@ class Requirements(sqlalchemy.testing.requirements.SuiteRequirements):
         named 'test_schema'."""
 
         return unsupported()
-    
+
     @property
     def array_type(self):
         """Target database must support array_type"""
         return supported()
-
 
     @property
     def implicit_default_schema(self):

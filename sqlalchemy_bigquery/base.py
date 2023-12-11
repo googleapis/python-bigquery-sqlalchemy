@@ -972,8 +972,19 @@ class BigQueryDialect(DefaultDialect):
         return table
 
     def has_table(self, connection, table_name, schema=None, **kw):
-        """
-        No kw are supported
+        """Checks whether a table exists in BigQuery.
+
+        Args:
+            connection (google.cloud.bigquery.client.Client): The client
+                object used to interact with BigQuery.
+            table_name (str): The name of the table to check for.
+            schema (str, optional): The name of the schema to which the table
+                belongs. Defaults to the default schema.
+            **kw (dict): Any extra keyword arguments will be ignored.
+
+        Returns:
+            bool: True if the table exists, False otherwise.
+
         """
         try:
             self._get_table(connection, table_name, schema)
@@ -1070,8 +1081,10 @@ class unnest(sqlalchemy.sql.functions.GenericFunction):
         if isinstance(arg, sqlalchemy.sql.expression.ColumnElement):
             if not (
                 isinstance(arg.type, sqlalchemy.sql.sqltypes.ARRAY)
-                or (hasattr(arg.type, "impl")
-                    and isinstance(arg.type.impl, sqlalchemy.sql.sqltypes.ARRAY))
+                or (
+                    hasattr(arg.type, "impl")
+                    and isinstance(arg.type.impl, sqlalchemy.sql.sqltypes.ARRAY)
+                )
             ):
                 raise TypeError("The argument to unnest must have an ARRAY type.")
             self.type = arg.type.item_type
