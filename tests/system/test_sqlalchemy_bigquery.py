@@ -539,6 +539,12 @@ def test_create_table(engine, bigquery_dataset):
         Column("binary_c", sqlalchemy.BINARY),
         bigquery_description="test table description",
         bigquery_friendly_name="test table name",
+        bigquery_expiration_timestamp=datetime.datetime(2183, 3, 26, 8, 30, 0),
+        bigquery_partitioning="DATE(timestamp_c)",
+        bigquery_partition_expiration_days=30,
+        bigquery_require_partition_filter=True,
+        bigquery_default_rounding_mode="ROUND_HALF_EVEN",
+        bigquery_clustering_fields=["integer_c", "decimal_c"],
     )
     meta.create_all(engine)
     meta.drop_all(engine)
