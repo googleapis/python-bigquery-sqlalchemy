@@ -420,8 +420,8 @@ else:
 
         test_bound_offset = test_simple_offset
         test_expr_offset = test_simple_offset_zero = test_simple_offset
-        test_limit_offset_nobinds = test_simple_offset   # TODO figure out 
-                                             # how to prevent this from failing
+        test_limit_offset_nobinds = test_simple_offset  # TODO figure out
+        # how to prevent this from failing
         # The original test is missing an order by.
 
         # Also, note that sqlalchemy union is a union distinct, not a
@@ -628,8 +628,9 @@ class CTETest(_CTETest):
     def test_select_recursive_round_trip(self):
         pass
 
-del ComponentReflectionTest    # Multiple tests re: CHECK CONSTRAINTS, etc which
-                               # BQ does not support
+
+del ComponentReflectionTest  # Multiple tests re: CHECK CONSTRAINTS, etc which
+# BQ does not support
 # class ComponentReflectionTest(_ComponentReflectionTest):
 #     @pytest.mark.skip("Big query types don't track precision, length, etc.")
 #     def course_grained_types():
@@ -641,8 +642,8 @@ del ComponentReflectionTest    # Multiple tests re: CHECK CONSTRAINTS, etc which
 #     def test_get_indexes(self):
 #         pass
 
-del ArrayTest      # only appears to apply to postgresql
-del BizarroCharacterFKResolutionTest  
+del ArrayTest  # only appears to apply to postgresql
+del BizarroCharacterFKResolutionTest
 del NumericTest.test_float_as_float
 del NumericTest.test_float_as_decimal
-del HasTableTest.test_has_table_cache # TODO confirm whether BQ has table caching
+del HasTableTest.test_has_table_cache  # TODO confirm whether BQ has table caching

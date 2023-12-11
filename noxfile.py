@@ -212,7 +212,7 @@ def default(session, install_extras=True):
     else:
         install_target = "."
     session.install("-e", install_target, "-c", constraints_path)
-    session.run("python", "-m", "pip", "freeze")
+
     # Run py.test against the unit tests.
     session.run(
         "py.test",
