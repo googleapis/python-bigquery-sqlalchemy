@@ -35,8 +35,8 @@ In order to use this library, you first need to go through the following steps:
 .. _Setup Authentication.: https://googleapis.dev/python/google-api-core/latest/auth.html
 
 .. note::
-   This library is only compatible with SQLAlchemy versions >= 2.0.0
-   For SQLAlchemy versions < 2.0.0, use ``sqlalchemy-bigquery<=1.8.0``.
+   This library is a prerelease to gauge compatiblity with SQLAlchemy
+   versions >= 2.0.0
 
 Installation
 ------------
@@ -105,11 +105,12 @@ SQLAlchemy
 .. code-block:: python
 
     from sqlalchemy import *
+    from sqlalchemy.engine import create_engine
+    from sqlalchemy.schema import *
     engine = create_engine('bigquery://project')
-    metadata_obj = MetaData()
-    table = Table('dataset.table', metadata_obj, autoload_with=engine)
-    with engine.connect() as conn:
-        print(conn.execute(select(func.count("*")).select_from(table)).scalar())
+    table = Table('dataset.table', MetaData(bind=engine), autoload=True)
+    print(select([func.count('*')], from_obj=table().scalar())
+
 
 Project
 ^^^^^^^
@@ -205,8 +206,7 @@ Note that specifying a default dataset doesn't restrict execution of queries to 
     engine = create_engine('bigquery://project/dataset_a')
 
     # This will still execute and return rows from dataset_b
-    with engine.connect() as conn:
-        conn.execute(sqlalchemy.text('SELECT * FROM dataset_b.table')).fetchall()
+    engine.execute('SELECT * FROM dataset_b.table').fetchall()
 
 
 Connection String Parameters

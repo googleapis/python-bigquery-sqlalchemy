@@ -375,7 +375,7 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
             self._generate_generic_binary(binary, " IN ", **kw)
         )
 
-    def visit_empty_set_expr(self, element_types):
+    def visit_empty_set_expr(self, element_types, **kw):
         return ""
 
     def visit_not_in_op_binary(self, binary, operator, **kw):
@@ -624,15 +624,15 @@ class BigQueryTypeCompiler(GenericTypeCompiler):
 
 class BigQueryDDLCompiler(DDLCompiler):
     # BigQuery has no support for foreign keys.
-    def visit_foreign_key_constraint(self, constraint):
+    def visit_foreign_key_constraint(self, constraint, **kw):
         return None
 
     # BigQuery has no support for primary keys.
-    def visit_primary_key_constraint(self, constraint):
+    def visit_primary_key_constraint(self, constraint, **kw):
         return None
 
     # BigQuery has no support for unique constraints.
-    def visit_unique_constraint(self, constraint):
+    def visit_unique_constraint(self, constraint, **kw):
         return None
 
     def get_column_specification(self, column, **kwargs):
@@ -667,14 +667,14 @@ class BigQueryDDLCompiler(DDLCompiler):
 
         return ""
 
-    def visit_set_table_comment(self, create):
+    def visit_set_table_comment(self, create, **kw):
         table_name = self.preparer.format_table(create.element)
         description = self.sql_compiler.render_literal_value(
             create.element.comment, sqlalchemy.sql.sqltypes.String()
         )
         return f"ALTER TABLE {table_name} SET OPTIONS(description={description})"
 
-    def visit_drop_table_comment(self, drop):
+    def visit_drop_table_comment(self, drop, **kw):
         table_name = self.preparer.format_table(drop.element)
         return f"ALTER TABLE {table_name} SET OPTIONS(description=null)"
 
@@ -1070,7 +1070,8 @@ class unnest(sqlalchemy.sql.functions.GenericFunction):
         if isinstance(arg, sqlalchemy.sql.expression.ColumnElement):
             if not (
                 isinstance(arg.type, sqlalchemy.sql.sqltypes.ARRAY)
-                or (hasattr(arg.type, "impl") and isinstance(arg.type.impl, sqlalchemy.sql.sqltypes.ARRAY))
+                or (hasattr(arg.type, "impl")
+                    and isinstance(arg.type.impl, sqlalchemy.sql.sqltypes.ARRAY))
             ):
                 raise TypeError("The argument to unnest must have an ARRAY type.")
             self.type = arg.type.item_type
