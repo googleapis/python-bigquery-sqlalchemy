@@ -272,11 +272,10 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
         # If we have the table in the `from` of our parent, do not add the alias
         # as this will add the table twice and cause an implicit JOIN for that
         # table on itself
-        if self.stack:
-            if (asfrom_froms := self.stack[-1].get("asfrom_froms")) is not None:
-                for from_ in asfrom_froms:
-                    if isinstance(from_, Table):
-                        known_tables.add(from_.name)
+        asfrom_froms = self.stack[-1].get("asfrom_froms", [])
+        for from_ in asfrom_froms:
+            if isinstance(from_, Table):
+                known_tables.add(from_.name)
 
         return known_tables
 
