@@ -58,15 +58,17 @@ from sqlalchemy.testing.suite.test_reflection import (
 )
 
 if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2.0"):
+    import uuid
     from sqlalchemy.sql import type_coerce
-    from sqlalchemy import create_engine
+    from sqlalchemy import Uuid
     from sqlalchemy.testing.suite import (
         TrueDivTest as _TrueDivTest,
         IntegerTest as _IntegerTest,
         NumericTest as _NumericTest,
         DifficultParametersTest as _DifficultParametersTest,
         FetchLimitOffsetTest as _FetchLimitOffsetTest,
-        PostCompileParamsTest as _PostCompileParamsTest,
+        PostCompileParamsTest,
+        UuidTest as _UuidTest,
     )
 
     class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
@@ -335,6 +337,111 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
                 [(1,)],
             )
 
+    class UuidTest(_UuidTest):
+        @classmethod
+        def define_tables(cls, metadata):
+            Table(
+                "uuid_table",
+                metadata,
+                Column("id", Integer, primary_key=True, test_needs_autoincrement=True),
+                Column("uuid_data", String),  # Use native UUID for primary data
+                Column(
+                    "uuid_text_data", String, nullable=True
+                ),  # Optional text representation
+                Column("uuid_data_nonnative", String),
+                Column("uuid_text_data_nonnative", String),
+            )
+
+        def test_uuid_round_trip(self, connection):
+            data = str(uuid.uuid4())
+            uuid_table = self.tables.uuid_table
+
+            connection.execute(
+                uuid_table.insert(),
+                {"id": 1, "uuid_data": data, "uuid_data_nonnative": data},
+            )
+            row = connection.execute(
+                select(uuid_table.c.uuid_data, uuid_table.c.uuid_data_nonnative).where(
+                    uuid_table.c.uuid_data == data,
+                    uuid_table.c.uuid_data_nonnative == data,
+                )
+            ).first()
+            eq_(row, (data, data))
+
+        def test_uuid_text_round_trip(self, connection):
+            data = str(uuid.uuid4())
+            uuid_table = self.tables.uuid_table
+
+            connection.execute(
+                uuid_table.insert(),
+                {
+                    "id": 1,
+                    "uuid_text_data": data,
+                    "uuid_text_data_nonnative": data,
+                },
+            )
+            row = connection.execute(
+                select(
+                    uuid_table.c.uuid_text_data,
+                    uuid_table.c.uuid_text_data_nonnative,
+                ).where(
+                    uuid_table.c.uuid_text_data == data,
+                    uuid_table.c.uuid_text_data_nonnative == data,
+                )
+            ).first()
+            eq_((row[0].lower(), row[1].lower()), (data, data))
+
+        def test_literal_uuid(self, literal_round_trip):
+            data = str(uuid.uuid4())
+            literal_round_trip(String(), [data], [data])
+
+        def test_literal_text(self, literal_round_trip):
+            data = str(uuid.uuid4())
+            literal_round_trip(
+                String(),
+                [data],
+                [data],
+                filter_=lambda x: x.lower(),
+            )
+
+        def test_literal_nonnative_uuid(self, literal_round_trip):
+            data = str(uuid.uuid4())
+            literal_round_trip(String(), [data], [data])
+
+        def test_literal_nonnative_text(self, literal_round_trip):
+            data = str(uuid.uuid4())
+            literal_round_trip(
+                String(),
+                [data],
+                [data],
+                filter_=lambda x: x.lower(),
+            )
+
+        @testing.requires.insert_returning
+        def test_uuid_returning(self, connection):
+            data = str(uuid.uuid4())
+            str_data = str(data)
+            uuid_table = self.tables.uuid_table
+
+            result = connection.execute(
+                uuid_table.insert().returning(
+                    uuid_table.c.uuid_data,
+                    uuid_table.c.uuid_text_data,
+                    uuid_table.c.uuid_data_nonnative,
+                    uuid_table.c.uuid_text_data_nonnative,
+                ),
+                {
+                    "id": 1,
+                    "uuid_data": data,
+                    "uuid_text_data": str_data,
+                    "uuid_data_nonnative": data,
+                    "uuid_text_data_nonnative": str_data,
+                },
+            )
+            row = result.first()
+
+            eq_(row, (data, str_data, data, str_data))
+
     # from else statement ....
     del DistinctOnTest  # expects unquoted table names.
     del HasIndexTest  # BQ doesn't do the indexes that SQLA is loooking for.
@@ -524,6 +631,13 @@ else:
                     for i, (n, d) in enumerate(data)
                 ],
             )
+
+    class InsertBehaviorTest(_InsertBehaviorTest):
+        @pytest.mark.skip(
+            "BQ has no autoinc and client-side defaults can't work for select."
+        )
+        def test_insert_from_select_autoinc(cls):
+            pass
 
     class SimpleUpdateDeleteTest(_SimpleUpdateDeleteTest):
         """The base tests fail if operations return rows for some reason."""
