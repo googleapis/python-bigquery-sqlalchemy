@@ -369,7 +369,7 @@ def compliance(session):
         session.skip("Compliance tests were not found")
 
     session.install("--pre", "grpcio")
-    session.install("--pre", "--no-deps", "--upgrade", "sqlalchemy>=1.4,<2.1")
+    session.install("--pre", "--no-deps", "--upgrade", "sqlalchemy>=1.4.15,<2.1")
     session.install(
         "mock",
         "pytest",
@@ -527,7 +527,7 @@ def prerelease_deps(session):
 
     prerel_deps = [
         "protobuf",
-        "sqlalchemy>=1.4,<2.1",
+        "sqlalchemy>=1.4.15,<2.1",
         # dependency of grpc
         "six",
         "googleapis-common-protos",
