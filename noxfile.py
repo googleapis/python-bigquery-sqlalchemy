@@ -369,7 +369,7 @@ def compliance(session):
         session.skip("Compliance tests were not found")
 
     session.install("--pre", "grpcio")
-    session.install("--pre", "--no-deps", "--upgrade", "sqlalchemy>=1.4.15,<2.1")
+    session.install("--pre", "--no-deps", "--upgrade", "sqlalchemy>=1.4.16,<2.1")
     session.install(
         "mock",
         "pytest",
