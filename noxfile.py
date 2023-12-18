@@ -527,7 +527,7 @@ def prerelease_deps(session):
 
     prerel_deps = [
         "protobuf",
-        "sqlalchemy>=1.4.15,<2.1",
+        "sqlalchemy>=1.4.16,<2.1",
         # dependency of grpc
         "six",
         "googleapis-common-protos",
