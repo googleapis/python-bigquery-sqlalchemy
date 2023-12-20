@@ -275,8 +275,7 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
         asfrom_froms = self.stack[-1].get("asfrom_froms", [])
         for from_ in asfrom_froms:
             if isinstance(from_, Table):
-                if from_.name not in known_tables:
-                    known_tables.add(from_.name)
+                known_tables.add(from_.name)
 
         return known_tables
 

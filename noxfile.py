@@ -213,6 +213,8 @@ def default(session, install_extras=True):
         install_target = "."
     session.install("-e", install_target, "-c", constraints_path)
 
+    session.run("python", "-m", "pip", "freeze")
+
     # Run py.test against the unit tests.
     session.run(
         "py.test",
@@ -550,6 +552,7 @@ def prerelease_deps(session):
         "requests",
     ]
     session.install(*other_deps)
+    session.run("python", "-m", "pip", "freeze")
 
     # Print out prerelease package versions
     session.run(
