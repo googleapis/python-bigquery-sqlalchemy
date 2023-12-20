@@ -68,6 +68,7 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
         DifficultParametersTest as _DifficultParametersTest,
         FetchLimitOffsetTest as _FetchLimitOffsetTest,
         PostCompileParamsTest,
+        StringTest as _StringTest,
         UuidTest as _UuidTest,
     )
 
@@ -441,6 +442,30 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
             row = result.first()
 
             eq_(row, (data, str_data, data, str_data))
+
+    class StringTest(_StringTest):
+        def test_dont_truncate_rightside(
+            self, metadata, connection, expr=None, expected=None
+        ):
+            t = Table(
+                "t",
+                metadata,
+                Column("x", String(2)),
+                Column("id", Integer, primary_key=True),
+            )
+            t.create(connection)
+            connection.connection.commit()
+            connection.execute(
+                t.insert(),
+                [{"x": "AB", "id": 1}, {"x": "BC", "id": 2}, {"x": "AC", "id": 3}],
+            )
+            combinations = [("%B%", ["AB", "BC"]), ("A%C", ["AC"]), ("A%C%Z", [])]
+
+            for args in combinations:
+                eq_(
+                    connection.scalars(select(t.c.x).where(t.c.x.like(args[0]))).all(),
+                    args[1],
+                )
 
     # from else statement ....
     del DistinctOnTest  # expects unquoted table names.
