@@ -632,6 +632,14 @@ class BigQueryTypeCompiler(GenericTypeCompiler):
 
 
 class BigQueryDDLCompiler(DDLCompiler):
+    option_datatype_mapping = {
+        "friendly_name": str,
+        "expiration_timestamp": datetime.datetime,
+        "partition_expiration_days": int,
+        "require_partition_filter": bool,
+        "default_rounding_mode": str,
+    }
+
     # BigQuery has no support for foreign keys.
     def visit_foreign_key_constraint(self, constraint):
         return None
@@ -691,41 +699,14 @@ class BigQueryDDLCompiler(DDLCompiler):
             description = bq_opts.get("description", table.comment)
             options["description"] = description
 
-        option_datatype_mapping = {
-            "friendly_name": str,
-            "expiration_timestamp": datetime.datetime,
-            "partition_expiration_days": int,
-            "require_partition_filter": bool,
-            "default_rounding_mode": str,
-        }
-
-        for option in option_datatype_mapping:
+        for option in self.option_datatype_mapping:
             if option in bq_opts:
                 options[option] = bq_opts.get(option)
 
         if options:
-
-            def process_option_value(option, value):
-                if option in option_datatype_mapping:
-                    if not isinstance(value, option_datatype_mapping[option]):
-                        raise TypeError(
-                            f"bigquery_{option} dialect option accepts only {option_datatype_mapping[option]},"
-                            f"provided {repr(value)}"
-                        )
-                else:
-                    return process_string_literal(value)
-
-                if option_datatype_mapping[option] == str:
-                    return process_string_literal(value)
-                if option_datatype_mapping[option] == int:
-                    return int(value)
-                if option_datatype_mapping[option] == bool:
-                    return "true" if value else "false"
-                if option_datatype_mapping[option] == datetime.datetime:
-                    return BQTimestamp.process_timestamp_literal(value)
-
             individual_option_statements = [
-                f"{k}={process_option_value(k,v)}" for (k, v) in options.items()
+                "{}={}".format(k, self._process_option_value(k, v))
+                for (k, v) in options.items()
             ]
             clauses.append(f"OPTIONS({', '.join(individual_option_statements)})")
 
@@ -741,6 +722,25 @@ class BigQueryDDLCompiler(DDLCompiler):
     def visit_drop_table_comment(self, drop):
         table_name = self.preparer.format_table(drop.element)
         return f"ALTER TABLE {table_name} SET OPTIONS(description=null)"
+
+    def _process_option_value(self, option, value):
+        if option in self.option_datatype_mapping:
+            if not isinstance(value, self.option_datatype_mapping[option]):
+                raise TypeError(
+                    f"bigquery_{option} dialect option accepts only {self.option_datatype_mapping[option]},"
+                    f"provided {repr(value)}"
+                )
+        else:
+            return process_string_literal(value)
+
+        if self.option_datatype_mapping[option] == str:
+            return process_string_literal(value)
+        if self.option_datatype_mapping[option] == int:
+            return int(value)
+        if self.option_datatype_mapping[option] == bool:
+            return "true" if value else "false"
+        if self.option_datatype_mapping[option] == datetime.datetime:
+            return BQTimestamp.process_timestamp_literal(value)
 
 
 def process_string_literal(value):
