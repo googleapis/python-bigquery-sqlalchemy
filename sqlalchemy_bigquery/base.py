@@ -663,6 +663,24 @@ class BigQueryDDLCompiler(DDLCompiler):
         return colspec
 
     def post_create_table(self, table):
+        """
+        Constructs additional SQL clauses for table creation in BigQuery.
+
+        This function processes the BigQuery dialect-specific options and generates SQL clauses for partitioning,
+        clustering, and other table options.
+
+        Args:
+            table (Table): The SQLAlchemy Table object for which the SQL is being generated.
+
+        Returns:
+            str: A string composed of SQL clauses for partitioning, clustering, and other BigQuery specific
+                options, each separated by a newline. Returns an empty string if no such options are specified.
+
+        Raises:
+            TypeError: If the partitioning option is not a string or if the clustering_fields option is not a list.
+            NoSuchColumnError: If any field specified in clustering_fields does not exist in the table.
+        """
+
         bq_opts = table.dialect_options["bigquery"]
 
         clauses = []
@@ -723,7 +741,25 @@ class BigQueryDDLCompiler(DDLCompiler):
         table_name = self.preparer.format_table(drop.element)
         return f"ALTER TABLE {table_name} SET OPTIONS(description=null)"
 
-    def _process_option_value(self, option, value):
+    def _process_option_value(self, option: str, value):
+        """
+        Transforms the given option value into a literal representation suitable for SQL queries in BigQuery.
+
+        This transformation is guided by `self.option_datatype_mapping`, which maps
+        option to their expected data type.
+
+        Args:
+            option (str): The name of the dialect option.
+            value: The value to be transformed. The type of this parameter depends on
+                the specific option being processed.
+
+        Returns:
+            The processed value in a format suitable for inclusion in a SQL query.
+
+        Raises:
+            TypeError: If the type of the provided value does not match the expected type as defined in
+                    `self.option_datatype_mapping`.
+        """
         if option in self.option_datatype_mapping:
             if not isinstance(value, self.option_datatype_mapping[option]):
                 raise TypeError(
