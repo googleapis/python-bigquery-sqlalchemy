@@ -662,18 +662,22 @@ class BigQueryDDLCompiler(DDLCompiler):
         if "partitioning" in bq_opts:
             partition_expr = bq_opts.get("partitioning")
 
-            assert isinstance(
-                partition_expr, str
-            ), f"bigquery_partitioning dialect option accepts only {str}, provided {repr(partition_expr)}"
+            if not isinstance(partition_expr, str):
+                raise TypeError(
+                    f"bigquery_partitioning dialect option accepts only {str},"
+                    f"provided {repr(partition_expr)}"
+                )
 
             clauses.append(f"PARTITION BY {partition_expr}")
 
         if "clustering_fields" in bq_opts:
             clustering_fields = bq_opts.get("clustering_fields")
 
-            assert isinstance(
-                clustering_fields, list
-            ), f"bigquery_clustering_fields dialect option accepts only {list}, provided {repr(clustering_fields)}"
+            if not isinstance(clustering_fields, list):
+                raise TypeError(
+                    f"bigquery_clustering_fields dialect option accepts only {list},"
+                    f"provided {repr(clustering_fields)}"
+                )
 
             for field in clustering_fields:
                 if field not in table.c:
@@ -703,9 +707,11 @@ class BigQueryDDLCompiler(DDLCompiler):
 
             def process_option_value(option, value):
                 if option in option_datatype_mapping:
-                    assert isinstance(
-                        value, option_datatype_mapping[option]
-                    ), f"bigquery_{option} dialect option accepts only {option_datatype_mapping[option]}, provided {repr(value)}"
+                    if not isinstance(value, option_datatype_mapping[option]):
+                        raise TypeError(
+                            f"bigquery_{option} dialect option accepts only {option_datatype_mapping[option]},"
+                            f"provided {repr(value)}"
+                        )
                 else:
                     return process_string_literal(value)
 
