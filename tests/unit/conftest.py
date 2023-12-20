@@ -49,6 +49,7 @@ sqlalchemy_2_0_or_higher = pytest.mark.skipif(
     reason="requires sqlalchemy 1.4 or higher",
 )
 
+
 @pytest.fixture()
 def faux_conn():
     test_data = dict(execute=[])

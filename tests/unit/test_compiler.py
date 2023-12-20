@@ -194,7 +194,7 @@ def test_no_implicit_join_asterix_for_inner_unnest(faux_conn, metadata):
 
 
 @sqlalchemy_before_2_0
-def test_no_implicit_join_for_inner_unnest_before_1_4(faux_conn, metadata):
+def test_no_implicit_join_for_inner_unnest_before_2_0(faux_conn, metadata):
     # See: https://github.com/googleapis/python-bigquery-sqlalchemy/issues/368
     q = prepare_implicit_join_base_query(faux_conn, metadata, True, False)
     expected_initial_sql = (
