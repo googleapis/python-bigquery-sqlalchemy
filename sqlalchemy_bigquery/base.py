@@ -657,7 +657,7 @@ class BigQueryDDLCompiler(DDLCompiler):
     def post_create_table(self, table):
         bq_opts = table.dialect_options["bigquery"]
 
-        partition_by_or_cluster_by_or_options = []
+        clauses = []
 
         if "partitioning" in bq_opts:
             partition_expr = bq_opts.get("partitioning")
@@ -666,9 +666,7 @@ class BigQueryDDLCompiler(DDLCompiler):
                 partition_expr, str
             ), f"bigquery_partitioning dialect option accepts only {str}, provided {repr(partition_expr)}"
 
-            partition_by_or_cluster_by_or_options.append(
-                f"PARTITION BY {partition_expr}"
-            )
+            clauses.append(f"PARTITION BY {partition_expr}")
 
         if "clustering_fields" in bq_opts:
             clustering_fields = bq_opts.get("clustering_fields")
@@ -681,9 +679,7 @@ class BigQueryDDLCompiler(DDLCompiler):
                 if field not in table.c:
                     raise NoSuchColumnError(field)
 
-            partition_by_or_cluster_by_or_options.append(
-                f"CLUSTER BY {', '.join(clustering_fields)}"
-            )
+            clauses.append(f"CLUSTER BY {', '.join(clustering_fields)}")
 
         options = {}
 
@@ -691,7 +687,7 @@ class BigQueryDDLCompiler(DDLCompiler):
             description = bq_opts.get("description", table.comment)
             options["description"] = description
 
-        table_option_list = {
+        option_datatype_mapping = {
             "friendly_name": str,
             "expiration_timestamp": datetime.datetime,
             "partition_expiration_days": int,
@@ -699,36 +695,35 @@ class BigQueryDDLCompiler(DDLCompiler):
             "default_rounding_mode": str,
         }
 
-        for table_option in table_option_list:
-            if table_option in bq_opts:
-                options[table_option] = bq_opts.get(table_option)
+        for option in option_datatype_mapping:
+            if option in bq_opts:
+                options[option] = bq_opts.get(option)
 
         if options:
 
             def process_option_value(option, value):
-                if option in table_option_list:
+                if option in option_datatype_mapping:
                     assert isinstance(
-                        value, table_option_list[option]
-                    ), f"bigquery_{option} dialect option accepts only {table_option_list[option]}, provided {repr(value)}"
+                        value, option_datatype_mapping[option]
+                    ), f"bigquery_{option} dialect option accepts only {option_datatype_mapping[option]}, provided {repr(value)}"
                 else:
                     return process_string_literal(value)
 
-                if table_option_list[option] == str:
+                if option_datatype_mapping[option] == str:
                     return process_string_literal(value)
-                if table_option_list[option] == int:
+                if option_datatype_mapping[option] == int:
                     return int(value)
-                if table_option_list[option] == bool:
+                if option_datatype_mapping[option] == bool:
                     return "true" if value else "false"
-                if table_option_list[option] == datetime.datetime:
+                if option_datatype_mapping[option] == datetime.datetime:
                     return BQTimestamp.process_timestamp_literal(value)
 
-            options_list = [
+            individual_option_statements = [
                 f"{k}={process_option_value(k,v)}" for (k, v) in options.items()
             ]
-            options_str = f"OPTIONS({', '.join(options_list)})"
-            partition_by_or_cluster_by_or_options.append(options_str)
+            clauses.append(f"OPTIONS({', '.join(individual_option_statements)})")
 
-        return " " + "\n".join(partition_by_or_cluster_by_or_options)
+        return " " + "\n".join(clauses)
 
     def visit_set_table_comment(self, create):
         table_name = self.preparer.format_table(create.element)
