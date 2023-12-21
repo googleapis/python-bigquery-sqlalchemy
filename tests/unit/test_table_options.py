@@ -112,6 +112,19 @@ def test_table_clustering_fields_dialect_option(faux_conn):
     )
 
 
+def test_table_clustering_fields_dialect_option_type_error(faux_conn):
+    # expect TypeError when bigquery_clustering_fields is not a list
+    with pytest.raises(TypeError):
+        setup_table(
+            faux_conn,
+            "some_table",
+            sqlalchemy.Column("id", sqlalchemy.Integer),
+            sqlalchemy.Column("country", sqlalchemy.Text),
+            sqlalchemy.Column("town", sqlalchemy.Text),
+            bigquery_clustering_fields="country, town",
+        )
+
+
 def test_table_partitioning_dialect_option(faux_conn):
     # expect table creation to fail as SQLite does not support partitioned tables
     with pytest.raises(sqlite3.OperationalError):
@@ -127,6 +140,18 @@ def test_table_partitioning_dialect_option(faux_conn):
         "CREATE TABLE `some_table` ( `id` INT64, `createdAt` DATETIME )"
         " PARTITION BY DATE(createdAt)"
     )
+
+
+def test_table_partitioning_dialect_option_type_error(faux_conn):
+    # expect TypeError when bigquery_partitioning is not a string
+    with pytest.raises(TypeError):
+        setup_table(
+            faux_conn,
+            "some_table",
+            sqlalchemy.Column("id", sqlalchemy.Integer),
+            sqlalchemy.Column("createdAt", sqlalchemy.DateTime),
+            bigquery_partitioning=["DATE(createdAt)"],
+        )
 
 
 def test_table_all_dialect_option(faux_conn):
