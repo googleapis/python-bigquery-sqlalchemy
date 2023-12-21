@@ -180,3 +180,96 @@ def test_table_all_dialect_option(faux_conn):
         " CLUSTER BY country, town"
         " OPTIONS(expiration_timestamp=TIMESTAMP '2038-01-01 00:00:00+00:00', partition_expiration_days=30, require_partition_filter=true, default_rounding_mode='ROUND_HALF_EVEN')"
     )
+
+
+def test_validate_friendly_name_value_type(ddl_compiler):
+    # expect option value to be transformed as a string expression
+
+    assert ddl_compiler._validate_option_value_type("friendly_name", "Friendly name")
+
+    with pytest.raises(TypeError):
+        ddl_compiler._validate_option_value_type("friendly_name", 1983)
+
+
+def test_validate_expiration_timestamp_value_type(ddl_compiler):
+    # expect option value to be transformed as a timestamp expression
+
+    assert ddl_compiler._validate_option_value_type(
+        "expiration_timestamp",
+        datetime.datetime.fromisoformat("2038-01-01T00:00:00+00:00"),
+    )
+
+    with pytest.raises(TypeError):
+        ddl_compiler._validate_option_value_type("expiration_timestamp", "2038-01-01")
+
+
+def test_validate_partition_expiration_days_type(ddl_compiler):
+    # expect option value to be transformed as an integer
+
+    assert ddl_compiler._validate_option_value_type("partition_expiration_days", 90)
+
+    with pytest.raises(TypeError):
+        ddl_compiler._validate_option_value_type("partition_expiration_days", "90")
+
+
+def test_validate_require_partition_filter_type(ddl_compiler):
+    # expect option value to be transformed as a literal boolean
+
+    assert ddl_compiler._validate_option_value_type("require_partition_filter", True)
+    assert ddl_compiler._validate_option_value_type("require_partition_filter", False)
+
+    with pytest.raises(TypeError):
+        ddl_compiler._validate_option_value_type("partition_expiration_days", "true")
+
+    with pytest.raises(TypeError):
+        ddl_compiler._validate_option_value_type("partition_expiration_days", "false")
+
+
+def test_validate_default_rounding_mode_type(ddl_compiler):
+    # expect option value to be transformed as a string expression
+
+    assert ddl_compiler._validate_option_value_type(
+        "default_rounding_mode", "ROUND_HALF_EVEN"
+    )
+
+    with pytest.raises(TypeError):
+        ddl_compiler._validate_option_value_type("partition_expiration_days", True)
+
+
+def test_validate_unmapped_option_type(ddl_compiler):
+    # expect option value with no typed specified in mapping to be transformed as a string expression
+
+    assert ddl_compiler._validate_option_value_type("unknown", "DEFAULT_IS_STRING")
+
+
+def test_process_str_option_value(ddl_compiler):
+    # expect string to be transformed as a string expression
+    assert ddl_compiler._process_option_value("Some text") == "'Some text'"
+
+
+def test_process_datetime_value(ddl_compiler):
+    # expect datetime object to be transformed as a timestamp expression
+    assert (
+        ddl_compiler._process_option_value(
+            datetime.datetime.fromisoformat("2038-01-01T00:00:00+00:00")
+        )
+        == "TIMESTAMP '2038-01-01 00:00:00+00:00'"
+    )
+
+
+def test_process_int_option_value(ddl_compiler):
+    # expect int to be unchanged
+    assert ddl_compiler._process_option_value(90) == 90
+
+
+def test_process_boolean_option_value(ddl_compiler):
+    # expect boolean to be transformed as a literal boolean expression
+
+    assert ddl_compiler._process_option_value(True) == "true"
+    assert ddl_compiler._process_option_value(False) == "false"
+
+
+def test_process_not_implementer_option_value(ddl_compiler):
+    # expect to raise
+    with pytest.raises(NotImplementedError):
+        ddl_compiler._process_option_value(float)
