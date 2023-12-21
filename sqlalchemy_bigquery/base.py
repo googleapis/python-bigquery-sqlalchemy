@@ -781,14 +781,16 @@ class BigQueryDDLCompiler(DDLCompiler):
         Raises:
             NotImplementedError: When there is no transformation registered for a data type.
         """
-        if isinstance(value, bool):
-            return "true" if value else "false"
-        elif isinstance(value, int):
-            return int(value)
-        elif isinstance(value, str):
-            return process_string_literal(value)
-        elif isinstance(value, datetime.datetime):
-            return BQTimestamp.process_timestamp_literal(value)
+        option_casting = {
+            # Mapping from option type to its casting method
+            str: lambda x: process_string_literal(x),
+            int: lambda x: x,
+            bool: lambda x: "true" if x else "false",
+            datetime.datetime: lambda x: BQTimestamp.process_timestamp_literal(x),
+        }
+
+        if (option_cast := option_casting.get(type(value))) is not None:
+            return option_cast(value)
 
         raise NotImplementedError(f"No transformation registered for {repr(value)}")
 
