@@ -28,7 +28,10 @@ import uuid
 from google import auth
 import google.api_core.exceptions
 from google.cloud.bigquery import dbapi
-from google.cloud.bigquery.table import TableReference
+from google.cloud.bigquery.table import (
+    TableReference,
+    TimePartitioning,
+)
 from google.api_core.exceptions import NotFound
 import packaging.version
 import sqlalchemy
@@ -635,7 +638,6 @@ class BigQueryDDLCompiler(DDLCompiler):
     option_datatype_mapping = {
         "friendly_name": str,
         "expiration_timestamp": datetime.datetime,
-        "partition_expiration_days": int,
         "require_partition_filter": bool,
         "default_rounding_mode": str,
     }
@@ -673,37 +675,44 @@ class BigQueryDDLCompiler(DDLCompiler):
             table (Table): The SQLAlchemy Table object for which the SQL is being generated.
 
         Returns:
-            str: A string composed of SQL clauses for partitioning, clustering, and other BigQuery specific
+            str: A string composed of SQL clauses for time partitioning, clustering, and other BigQuery specific
                 options, each separated by a newline. Returns an empty string if no such options are specified.
 
         Raises:
-            TypeError: If the partitioning option is not a string or if the clustering_fields option is not a list.
+            TypeError: If the time_partitioning option is not a `TimePartitioning` object or if the clustering_fields option is not a list.
             NoSuchColumnError: If any field specified in clustering_fields does not exist in the table.
         """
 
         bq_opts = table.dialect_options["bigquery"]
 
+        options = {}
         clauses = []
 
-        if "partitioning" in bq_opts:
-            partition_expr = bq_opts.get("partitioning")
+        if "time_partitioning" in bq_opts:
+            time_partitioning: TimePartitioning = bq_opts.get("time_partitioning")
 
-            if not isinstance(partition_expr, str):
-                raise TypeError(
-                    f"bigquery_partitioning dialect option accepts only {str},"
-                    f"provided {repr(partition_expr)}"
+            self._raise_for_type(
+                "time_partitioning",
+                time_partitioning,
+                TimePartitioning,
+            )
+
+            if time_partitioning.expiration_ms:
+                options["partition_expiration_days"] = (
+                    time_partitioning.expiration_ms / 86400000
                 )
 
-            clauses.append(f"PARTITION BY {partition_expr}")
+            partition_by_clause = self._process_time_partitioning(
+                table,
+                time_partitioning,
+            )
+
+            clauses.append(partition_by_clause)
 
         if "clustering_fields" in bq_opts:
             clustering_fields = bq_opts.get("clustering_fields")
 
-            if not isinstance(clustering_fields, list):
-                raise TypeError(
-                    f"bigquery_clustering_fields dialect option accepts only {list},"
-                    f"provided {repr(clustering_fields)}"
-                )
+            self._raise_for_type("clustering_fields", clustering_fields, list)
 
             for field in clustering_fields:
                 if field not in table.c:
@@ -711,10 +720,9 @@ class BigQueryDDLCompiler(DDLCompiler):
 
             clauses.append(f"CLUSTER BY {', '.join(clustering_fields)}")
 
-        options = {}
-
         if ("description" in bq_opts) or table.comment:
             description = bq_opts.get("description", table.comment)
+            self._validate_option_value_type("description", description)
             options["description"] = description
 
         for option in self.option_datatype_mapping:
@@ -760,13 +768,50 @@ class BigQueryDDLCompiler(DDLCompiler):
                 `self.option_datatype_mapping`.
         """
         if option in self.option_datatype_mapping:
-            if type(value) is not self.option_datatype_mapping[option]:
-                raise TypeError(
-                    f"bigquery_{option} dialect option accepts only {self.option_datatype_mapping[option]},"
-                    f"provided {repr(value)}"
-                )
+            self._raise_for_type(
+                option,
+                value,
+                self.option_datatype_mapping[option],
+            )
 
         return True
+
+    def _raise_for_type(self, option, value, expected_type):
+        if type(value) is not expected_type:
+            raise TypeError(
+                f"bigquery_{option} dialect option accepts only {expected_type},"
+                f"provided {repr(value)}"
+            )
+
+    def _process_time_partitioning(
+        self, table: Table, time_partitioning: TimePartitioning
+    ):
+        """
+        Generates a SQL 'PARTITION BY' clause for partitioning a table by a date or timestamp.
+
+        Parameters:
+        - table (Table): The SQLAlchemy table to be partitioned.
+        - time_partitioning (TimePartitioning): The time partitioning details,
+            including the field to be used for partitioning.
+
+        Returns:
+        - str: A SQL 'PARTITION BY' clause that uses either TIMESTAMP_TRUNC or DATE_TRUNC to
+        partition data on the specified field.
+
+        Example:
+        - Given a table with a TIMESTAMP type column 'event_timestamp' and setting
+        'time_partitioning.field' to 'event_timestamp', the function returns
+        "PARTITION BY TIMESTAMP_TRUNC(event_timestamp, DAY)".
+        """
+        if isinstance(
+            table.columns[time_partitioning.field].type,
+            sqlalchemy.sql.sqltypes.TIMESTAMP,
+        ):
+            trunc_fn = "TIMESTAMP_TRUNC"
+        else:
+            trunc_fn = "DATE_TRUNC"
+
+        return f"PARTITION BY {trunc_fn}({time_partitioning.field}, {time_partitioning.type_})"
 
     def _process_option_value(self, value):
         """
@@ -785,6 +830,7 @@ class BigQueryDDLCompiler(DDLCompiler):
             # Mapping from option type to its casting method
             str: lambda x: process_string_literal(x),
             int: lambda x: x,
+            float: lambda x: x,
             bool: lambda x: "true" if x else "false",
             datetime.datetime: lambda x: BQTimestamp.process_timestamp_literal(x),
         }

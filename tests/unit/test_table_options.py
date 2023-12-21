@@ -22,6 +22,8 @@ import sqlite3
 import pytest
 import sqlalchemy
 
+from google.cloud.bigquery import TimePartitioning, TimePartitioningType
+
 from .conftest import setup_table
 
 
@@ -38,20 +40,6 @@ def test_table_expiration_timestamp_dialect_option(faux_conn):
     assert " ".join(faux_conn.test_data["execute"][-1][0].strip().split()) == (
         "CREATE TABLE `some_table` ( `createdAt` DATETIME )"
         " OPTIONS(expiration_timestamp=TIMESTAMP '2038-01-01 00:00:00+00:00')"
-    )
-
-
-def test_table_partition_expiration_days_dialect_option(faux_conn):
-    setup_table(
-        faux_conn,
-        "some_table",
-        sqlalchemy.Column("createdAt", sqlalchemy.DateTime),
-        bigquery_partition_expiration_days=30,
-    )
-
-    assert " ".join(faux_conn.test_data["execute"][-1][0].strip().split()) == (
-        "CREATE TABLE `some_table` ( `createdAt` DATETIME )"
-        " OPTIONS(partition_expiration_days=30)"
     )
 
 
@@ -125,7 +113,7 @@ def test_table_clustering_fields_dialect_option_type_error(faux_conn):
         )
 
 
-def test_table_partitioning_dialect_option(faux_conn):
+def test_table_time_partitioning_dialect_option(faux_conn):
     # expect table creation to fail as SQLite does not support partitioned tables
     with pytest.raises(sqlite3.OperationalError):
         setup_table(
@@ -133,24 +121,82 @@ def test_table_partitioning_dialect_option(faux_conn):
             "some_table",
             sqlalchemy.Column("id", sqlalchemy.Integer),
             sqlalchemy.Column("createdAt", sqlalchemy.DateTime),
-            bigquery_partitioning="DATE(createdAt)",
+            bigquery_time_partitioning=TimePartitioning(field="createdAt", type_="DAY"),
         )
 
     assert " ".join(faux_conn.test_data["execute"][-1][0].strip().split()) == (
         "CREATE TABLE `some_table` ( `id` INT64, `createdAt` DATETIME )"
-        " PARTITION BY DATE(createdAt)"
+        " PARTITION BY DATE_TRUNC(createdAt, DAY)"
+    )
+
+
+def test_table_time_partitioning_by_month_dialect_option(faux_conn):
+    # expect table creation to fail as SQLite does not support partitioned tables
+    with pytest.raises(sqlite3.OperationalError):
+        setup_table(
+            faux_conn,
+            "some_table",
+            sqlalchemy.Column("id", sqlalchemy.Integer),
+            sqlalchemy.Column("createdAt", sqlalchemy.DateTime),
+            bigquery_time_partitioning=TimePartitioning(
+                field="createdAt",
+                type_=TimePartitioningType.MONTH,
+            ),
+        )
+
+    assert " ".join(faux_conn.test_data["execute"][-1][0].strip().split()) == (
+        "CREATE TABLE `some_table` ( `id` INT64, `createdAt` DATETIME )"
+        " PARTITION BY DATE_TRUNC(createdAt, MONTH)"
+    )
+
+
+def test_table_time_partitioning_with_timestamp_dialect_option(faux_conn):
+    # expect table creation to fail as SQLite does not support partitioned tables
+    with pytest.raises(sqlite3.OperationalError):
+        setup_table(
+            faux_conn,
+            "some_table",
+            sqlalchemy.Column("id", sqlalchemy.Integer),
+            sqlalchemy.Column("createdAt", sqlalchemy.TIMESTAMP),
+            bigquery_time_partitioning=TimePartitioning(field="createdAt", type_="DAY"),
+        )
+
+    assert " ".join(faux_conn.test_data["execute"][-1][0].strip().split()) == (
+        "CREATE TABLE `some_table` ( `id` INT64, `createdAt` TIMESTAMP )"
+        " PARTITION BY TIMESTAMP_TRUNC(createdAt, DAY)"
+    )
+
+
+def test_table_time_partitioning_dialect_option_partition_expiration_days(faux_conn):
+    # expect table creation to fail as SQLite does not support partitioned tables
+    with pytest.raises(sqlite3.OperationalError):
+        setup_table(
+            faux_conn,
+            "some_table",
+            sqlalchemy.Column("createdAt", sqlalchemy.DateTime),
+            bigquery_time_partitioning=TimePartitioning(
+                field="createdAt",
+                type_="DAY",
+                expiration_ms=21600000,
+            ),
+        )
+
+    assert " ".join(faux_conn.test_data["execute"][-1][0].strip().split()) == (
+        "CREATE TABLE `some_table` ( `createdAt` DATETIME )"
+        " PARTITION BY DATE_TRUNC(createdAt, DAY)"
+        " OPTIONS(partition_expiration_days=0.25)"
     )
 
 
 def test_table_partitioning_dialect_option_type_error(faux_conn):
-    # expect TypeError when bigquery_partitioning is not a string
+    # expect TypeError when bigquery_time_partitioning is not a TimePartitioning object
     with pytest.raises(TypeError):
         setup_table(
             faux_conn,
             "some_table",
             sqlalchemy.Column("id", sqlalchemy.Integer),
             sqlalchemy.Column("createdAt", sqlalchemy.DateTime),
-            bigquery_partitioning=["DATE(createdAt)"],
+            bigquery_time_partitioning="DATE(createdAt)",
         )
 
 
@@ -167,18 +213,21 @@ def test_table_all_dialect_option(faux_conn):
             bigquery_expiration_timestamp=datetime.datetime.fromisoformat(
                 "2038-01-01T00:00:00+00:00"
             ),
-            bigquery_partition_expiration_days=30,
             bigquery_require_partition_filter=True,
             bigquery_default_rounding_mode="ROUND_HALF_EVEN",
             bigquery_clustering_fields=["country", "town"],
-            bigquery_partitioning="DATE(createdAt)",
+            bigquery_time_partitioning=TimePartitioning(
+                field="createdAt",
+                type_="DAY",
+                expiration_ms=2592000000,
+            ),
         )
 
     assert " ".join(faux_conn.test_data["execute"][-1][0].strip().split()) == (
         "CREATE TABLE `some_table` ( `id` INT64, `country` STRING, `town` STRING, `createdAt` DATETIME )"
-        " PARTITION BY DATE(createdAt)"
+        " PARTITION BY DATE_TRUNC(createdAt, DAY)"
         " CLUSTER BY country, town"
-        " OPTIONS(expiration_timestamp=TIMESTAMP '2038-01-01 00:00:00+00:00', partition_expiration_days=30, require_partition_filter=true, default_rounding_mode='ROUND_HALF_EVEN')"
+        " OPTIONS(partition_expiration_days=30.0, expiration_timestamp=TIMESTAMP '2038-01-01 00:00:00+00:00', require_partition_filter=true, default_rounding_mode='ROUND_HALF_EVEN')"
     )
 
 
@@ -201,15 +250,6 @@ def test_validate_expiration_timestamp_value_type(ddl_compiler):
 
     with pytest.raises(TypeError):
         ddl_compiler._validate_option_value_type("expiration_timestamp", "2038-01-01")
-
-
-def test_validate_partition_expiration_days_type(ddl_compiler):
-    # expect option value to be transformed as an integer
-
-    assert ddl_compiler._validate_option_value_type("partition_expiration_days", 90)
-
-    with pytest.raises(TypeError):
-        ddl_compiler._validate_option_value_type("partition_expiration_days", "90")
 
 
 def test_validate_require_partition_filter_type(ddl_compiler):
