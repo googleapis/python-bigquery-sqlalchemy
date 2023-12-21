@@ -723,8 +723,9 @@ class BigQueryDDLCompiler(DDLCompiler):
 
         if options:
             individual_option_statements = [
-                "{}={}".format(k, self._process_option_value(k, v))
+                "{}={}".format(k, self._process_option_value(v))
                 for (k, v) in options.items()
+                if self._validate_option_value_type(k, v)
             ]
             clauses.append(f"OPTIONS({', '.join(individual_option_statements)})")
 
@@ -741,42 +742,55 @@ class BigQueryDDLCompiler(DDLCompiler):
         table_name = self.preparer.format_table(drop.element)
         return f"ALTER TABLE {table_name} SET OPTIONS(description=null)"
 
-    def _process_option_value(self, option: str, value):
+    def _validate_option_value_type(self, option: str, value):
+        """
+        Validates the type of the given option value against the expected data type.
+
+        Args:
+            option (str): The name of the option to be validated.
+            value: The value of the dialect option whose type is to be checked. The type of this parameter
+                is dynamic and is verified against the expected type in `self.option_datatype_mapping`.
+
+        Returns:
+            bool: True if the type of the value matches the expected type, or if the option is not found in
+                `self.option_datatype_mapping`.
+
+        Raises:
+            TypeError: If the type of the provided value does not match the expected type as defined in
+                `self.option_datatype_mapping`.
+        """
+        if option in self.option_datatype_mapping:
+            if type(value) is not self.option_datatype_mapping[option]:
+                raise TypeError(
+                    f"bigquery_{option} dialect option accepts only {self.option_datatype_mapping[option]},"
+                    f"provided {repr(value)}"
+                )
+
+        return True
+
+    def _process_option_value(self, value):
         """
         Transforms the given option value into a literal representation suitable for SQL queries in BigQuery.
 
-        This transformation is guided by `self.option_datatype_mapping`, which maps
-        option to their expected data type.
-
         Args:
-            option (str): The name of the dialect option.
-            value: The value to be transformed. The type of this parameter depends on
-                the specific option being processed.
+            value: The value to be transformed.
 
         Returns:
             The processed value in a format suitable for inclusion in a SQL query.
 
         Raises:
-            TypeError: If the type of the provided value does not match the expected type as defined in
-                    `self.option_datatype_mapping`.
+            NotImplementedError: When there is no transformation registered for a data type.
         """
-        if option in self.option_datatype_mapping:
-            if not isinstance(value, self.option_datatype_mapping[option]):
-                raise TypeError(
-                    f"bigquery_{option} dialect option accepts only {self.option_datatype_mapping[option]},"
-                    f"provided {repr(value)}"
-                )
-        else:
-            return process_string_literal(value)
-
-        if self.option_datatype_mapping[option] == str:
-            return process_string_literal(value)
-        if self.option_datatype_mapping[option] == int:
-            return int(value)
-        if self.option_datatype_mapping[option] == bool:
+        if isinstance(value, bool):
             return "true" if value else "false"
-        if self.option_datatype_mapping[option] == datetime.datetime:
+        elif isinstance(value, int):
+            return int(value)
+        elif isinstance(value, str):
+            return process_string_literal(value)
+        elif isinstance(value, datetime.datetime):
             return BQTimestamp.process_timestamp_literal(value)
+
+        raise NotImplementedError(f"No transformation registered for {repr(value)}")
 
 
 def process_string_literal(value):
