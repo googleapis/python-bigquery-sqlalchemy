@@ -219,10 +219,10 @@ def test_validate_require_partition_filter_type(ddl_compiler):
     assert ddl_compiler._validate_option_value_type("require_partition_filter", False)
 
     with pytest.raises(TypeError):
-        ddl_compiler._validate_option_value_type("partition_expiration_days", "true")
+        ddl_compiler._validate_option_value_type("require_partition_filter", "true")
 
     with pytest.raises(TypeError):
-        ddl_compiler._validate_option_value_type("partition_expiration_days", "false")
+        ddl_compiler._validate_option_value_type("require_partition_filter", "false")
 
 
 def test_validate_default_rounding_mode_type(ddl_compiler):
@@ -233,7 +233,7 @@ def test_validate_default_rounding_mode_type(ddl_compiler):
     )
 
     with pytest.raises(TypeError):
-        ddl_compiler._validate_option_value_type("partition_expiration_days", True)
+        ddl_compiler._validate_option_value_type("default_rounding_mode", True)
 
 
 def test_validate_unmapped_option_type(ddl_compiler):
