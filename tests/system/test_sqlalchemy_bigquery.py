@@ -603,7 +603,6 @@ def test_get_indexes(inspector, inspector_using_test_dataset, bigquery_dataset):
         assert len(indexes) == 0
 
 
-
 def test_get_columns(inspector, inspector_using_test_dataset, bigquery_dataset):
     columns_without_schema = inspector.get_columns(f"{bigquery_dataset}.sample")
     columns_schema = inspector.get_columns("sample", bigquery_dataset)
