@@ -803,15 +803,18 @@ class BigQueryDDLCompiler(DDLCompiler):
         'time_partitioning.field' to 'event_timestamp', the function returns
         "PARTITION BY TIMESTAMP_TRUNC(event_timestamp, DAY)".
         """
-        if isinstance(
-            table.columns[time_partitioning.field].type,
-            sqlalchemy.sql.sqltypes.TIMESTAMP,
-        ):
-            trunc_fn = "TIMESTAMP_TRUNC"
-        else:
-            trunc_fn = "DATE_TRUNC"
+        field = "_PARTITIONDATE"
+        trunc_fn = "DATE_TRUNC"
 
-        return f"PARTITION BY {trunc_fn}({time_partitioning.field}, {time_partitioning.type_})"
+        if time_partitioning.field is not None:
+            field = time_partitioning.field
+            if isinstance(
+                table.columns[time_partitioning.field].type,
+                sqlalchemy.sql.sqltypes.TIMESTAMP,
+            ):
+                trunc_fn = "TIMESTAMP_TRUNC"
+
+        return f"PARTITION BY {trunc_fn}({field}, {time_partitioning.type_})"
 
     def _process_option_value(self, value):
         """
