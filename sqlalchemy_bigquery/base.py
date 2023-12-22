@@ -688,9 +688,7 @@ class BigQueryDDLCompiler(DDLCompiler):
         options = {}
         clauses = []
 
-        if "time_partitioning" in bq_opts:
-            time_partitioning: TimePartitioning = bq_opts.get("time_partitioning")
-
+        if (time_partitioning := bq_opts.get("time_partitioning")) is not None:
             self._raise_for_type(
                 "time_partitioning",
                 time_partitioning,
@@ -709,9 +707,7 @@ class BigQueryDDLCompiler(DDLCompiler):
 
             clauses.append(partition_by_clause)
 
-        if "clustering_fields" in bq_opts:
-            clustering_fields = bq_opts.get("clustering_fields")
-
+        if (clustering_fields := bq_opts.get("clustering_fields")) is not None:
             self._raise_for_type("clustering_fields", clustering_fields, list)
 
             for field in clustering_fields:
