@@ -311,13 +311,43 @@ To create a clustered table:
 
     table = Table('mytable', ..., bigquery_clustering_fields=["a", "b", "c"])
 
-To create a partitioned table:
+To create a time-unit column-partitioned table:
 
 .. code-block:: python
 
+    from google.cloud import bigquery
+
     table = Table('mytable', ...,
-        bigquery_partitioning="DATE(mytimestamp)",
-        bigquery_partition_expiration_days=90,
+        bigquery_time_partitioning=bigquery.TimePartitioning(
+            field="mytimestamp",
+            type_="MONTH",
+            expiration_ms=1000 * 60 * 60 * 24 * 30 * 6, # 6 months
+        ),
+        bigquery_require_partition_filter=True,
+    )
+
+To create an ingestion-time partitioned table:
+
+.. code-block:: python
+
+    from google.cloud import bigquery
+
+    table = Table('mytable', ...,
+        bigquery_time_partitioning=bigquery.TimePartitioning(),
+        bigquery_require_partition_filter=True,
+    )
+
+To create an integer-range partitioned table
+
+.. code-block:: python
+
+    from google.cloud import bigquery
+
+    table = Table('mytable', ...,
+        bigquery_range_partitioning=bigquery.RangePartitioning(
+            field="zipcode",
+            range_=bigquery.PartitionRange(start=0, end=100000, interval=10),
+        ),
         bigquery_require_partition_filter=True,
     )
 
