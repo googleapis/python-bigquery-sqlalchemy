@@ -43,20 +43,6 @@ def test_table_expiration_timestamp_dialect_option(faux_conn):
     )
 
 
-def test_table_require_partition_filter_dialect_option(faux_conn):
-    setup_table(
-        faux_conn,
-        "some_table",
-        sqlalchemy.Column("createdAt", sqlalchemy.DateTime),
-        bigquery_require_partition_filter=True,
-    )
-
-    assert " ".join(faux_conn.test_data["execute"][-1][0].strip().split()) == (
-        "CREATE TABLE `some_table` ( `createdAt` DATETIME )"
-        " OPTIONS(require_partition_filter=true)"
-    )
-
-
 def test_table_default_rounding_mode_dialect_option(faux_conn):
     setup_table(
         faux_conn,
@@ -130,6 +116,24 @@ def test_table_time_partitioning_dialect_option(faux_conn):
     )
 
 
+def test_table_require_partition_filter_dialect_option(faux_conn):
+    # expect table creation to fail as SQLite does not support partitioned tables
+    with pytest.raises(sqlite3.OperationalError):
+        setup_table(
+            faux_conn,
+            "some_table",
+            sqlalchemy.Column("createdAt", sqlalchemy.DateTime),
+            bigquery_time_partitioning=TimePartitioning(field="createdAt"),
+            bigquery_require_partition_filter=True,
+        )
+
+    assert " ".join(faux_conn.test_data["execute"][-1][0].strip().split()) == (
+        "CREATE TABLE `some_table` ( `createdAt` DATETIME )"
+        " PARTITION BY DATE_TRUNC(createdAt, DAY)"
+        " OPTIONS(require_partition_filter=true)"
+    )
+
+
 def test_table_time_partitioning_with_field_dialect_option(faux_conn):
     # expect table creation to fail as SQLite does not support partitioned tables
     with pytest.raises(sqlite3.OperationalError):
@@ -138,7 +142,7 @@ def test_table_time_partitioning_with_field_dialect_option(faux_conn):
             "some_table",
             sqlalchemy.Column("id", sqlalchemy.Integer),
             sqlalchemy.Column("createdAt", sqlalchemy.DateTime),
-            bigquery_time_partitioning=TimePartitioning(field="createdAt", type_="DAY"),
+            bigquery_time_partitioning=TimePartitioning(field="createdAt"),
         )
 
     assert " ".join(faux_conn.test_data["execute"][-1][0].strip().split()) == (
@@ -175,7 +179,7 @@ def test_table_time_partitioning_with_timestamp_dialect_option(faux_conn):
             "some_table",
             sqlalchemy.Column("id", sqlalchemy.Integer),
             sqlalchemy.Column("createdAt", sqlalchemy.TIMESTAMP),
-            bigquery_time_partitioning=TimePartitioning(field="createdAt", type_="DAY"),
+            bigquery_time_partitioning=TimePartitioning(field="createdAt"),
         )
 
     assert " ".join(faux_conn.test_data["execute"][-1][0].strip().split()) == (
