@@ -23,7 +23,7 @@ import pytest
 from sqlalchemy import Column, DateTime, Integer, String, Numeric
 
 import google.api_core.exceptions
-from google.cloud.bigquery import SchemaField
+from google.cloud.bigquery import SchemaField, TimePartitioning
 
 alembic = pytest.importorskip("alembic")
 
@@ -143,7 +143,7 @@ def test_alembic_scenario(alembic_table):
         Column("account", Integer, nullable=False),
         Column("transaction_time", DateTime(), nullable=False),
         Column("amount", Numeric(11, 2), nullable=False),
-        bigquery_partitioning="DATE(transaction_time)",
+        bigquery_time_partitioning=TimePartitioning(field="transaction_time"),
     )
 
     op.alter_column("transactions", "amount", nullable=True)

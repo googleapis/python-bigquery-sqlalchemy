@@ -22,6 +22,8 @@
 import datetime
 import decimal
 
+from google.cloud.bigquery import TimePartitioning
+
 from sqlalchemy.engine import create_engine
 from sqlalchemy.schema import Table, MetaData, Column
 from sqlalchemy.ext.declarative import declarative_base
@@ -540,8 +542,10 @@ def test_create_table(engine, bigquery_dataset):
         bigquery_description="test table description",
         bigquery_friendly_name="test table name",
         bigquery_expiration_timestamp=datetime.datetime(2183, 3, 26, 8, 30, 0),
-        bigquery_partitioning="DATE(timestamp_c)",
-        bigquery_partition_expiration_days=30,
+        bigquery_time_partitioning=TimePartitioning(
+            field="timestamp_c",
+            expiration_ms=1000 * 60 * 60 * 24 * 30,
+        ),
         bigquery_require_partition_filter=True,
         bigquery_default_rounding_mode="ROUND_HALF_EVEN",
         bigquery_clustering_fields=["integer_c", "decimal_c"],
