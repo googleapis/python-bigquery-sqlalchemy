@@ -22,7 +22,12 @@ import sqlite3
 import pytest
 import sqlalchemy
 
-from google.cloud.bigquery import TimePartitioning, TimePartitioningType
+from google.cloud.bigquery import (
+    PartitionRange,
+    RangePartitioning,
+    TimePartitioning,
+    TimePartitioningType,
+)
 
 from .conftest import setup_table
 
@@ -219,6 +224,111 @@ def test_table_partitioning_dialect_option_type_error(faux_conn):
             sqlalchemy.Column("createdAt", sqlalchemy.DateTime),
             bigquery_time_partitioning="DATE(createdAt)",
         )
+
+
+def test_table_range_partitioning_dialect_option(faux_conn):
+    # expect table creation to fail as SQLite does not support partitioned tables
+    with pytest.raises(sqlite3.OperationalError):
+        setup_table(
+            faux_conn,
+            "some_table",
+            sqlalchemy.Column("id", sqlalchemy.Integer),
+            sqlalchemy.Column("zipcode", sqlalchemy.INT),
+            bigquery_range_partitioning=RangePartitioning(
+                field="zipcode",
+                range_=PartitionRange(
+                    start=0,
+                    end=100000,
+                    interval=2,
+                ),
+            ),
+        )
+
+    assert " ".join(faux_conn.test_data["execute"][-1][0].strip().split()) == (
+        "CREATE TABLE `some_table` ( `id` INT64, `zipcode` INT64 )"
+        " PARTITION BY RANGE_BUCKET(zipcode, GENERATE_ARRAY(0, 100000, 2))"
+    )
+
+
+def test_table_range_partitioning_dialect_option_no_field(faux_conn):
+    # expect table creation to fail as SQLite does not support partitioned tables
+    with pytest.raises(
+        ValueError,
+        match="bigquery_range_partitioning expects field to be defined",
+    ):
+        setup_table(
+            faux_conn,
+            "some_table",
+            sqlalchemy.Column("id", sqlalchemy.Integer),
+            sqlalchemy.Column("zipcode", sqlalchemy.FLOAT),
+            bigquery_range_partitioning=RangePartitioning(
+                range_=PartitionRange(
+                    start=0,
+                    end=100000,
+                    interval=10,
+                ),
+            ),
+        )
+
+
+def test_table_range_partitioning_dialect_option_bad_column_type(faux_conn):
+    # expect table creation to fail as SQLite does not support partitioned tables
+    with pytest.raises(
+        ValueError,
+        match="bigquery_range_partitioning expects field data type to be INTEGER",
+    ):
+        setup_table(
+            faux_conn,
+            "some_table",
+            sqlalchemy.Column("id", sqlalchemy.Integer),
+            sqlalchemy.Column("zipcode", sqlalchemy.FLOAT),
+            bigquery_range_partitioning=RangePartitioning(
+                field="zipcode",
+                range_=PartitionRange(
+                    start=0,
+                    end=100000,
+                    interval=10,
+                ),
+            ),
+        )
+
+
+def test_table_range_partitioning_dialect_option_range_missing(faux_conn):
+    # expect table creation to fail as SQLite does not support partitioned tables
+    with pytest.raises(
+        ValueError,
+        match="bigquery_range_partitioning expects range_.start to be an int, provided None",
+    ):
+        setup_table(
+            faux_conn,
+            "some_table",
+            sqlalchemy.Column("id", sqlalchemy.Integer),
+            sqlalchemy.Column("zipcode", sqlalchemy.INT),
+            bigquery_range_partitioning=RangePartitioning(field="zipcode"),
+        )
+
+
+def test_table_range_partitioning_dialect_option_default_interval(faux_conn):
+    # expect table creation to fail as SQLite does not support partitioned tables
+    with pytest.raises(sqlite3.OperationalError):
+        setup_table(
+            faux_conn,
+            "some_table",
+            sqlalchemy.Column("id", sqlalchemy.Integer),
+            sqlalchemy.Column("zipcode", sqlalchemy.INT),
+            bigquery_range_partitioning=RangePartitioning(
+                field="zipcode",
+                range_=PartitionRange(
+                    start=0,
+                    end=100000,
+                ),
+            ),
+        )
+
+    assert " ".join(faux_conn.test_data["execute"][-1][0].strip().split()) == (
+        "CREATE TABLE `some_table` ( `id` INT64, `zipcode` INT64 )"
+        " PARTITION BY RANGE_BUCKET(zipcode, GENERATE_ARRAY(0, 100000, 1))"
+    )
 
 
 def test_table_all_dialect_option(faux_conn):
