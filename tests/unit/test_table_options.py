@@ -307,6 +307,21 @@ def test_table_range_partitioning_dialect_option_range_missing(faux_conn):
             bigquery_range_partitioning=RangePartitioning(field="zipcode"),
         )
 
+    with pytest.raises(
+        ValueError,
+        match="bigquery_range_partitioning expects range_.end to be an int, provided None",
+    ):
+        setup_table(
+            faux_conn,
+            "some_table",
+            sqlalchemy.Column("id", sqlalchemy.Integer),
+            sqlalchemy.Column("zipcode", sqlalchemy.INT),
+            bigquery_range_partitioning=RangePartitioning(
+                field="zipcode",
+                range_=PartitionRange(start=1),
+            ),
+        )
+
 
 def test_table_range_partitioning_dialect_option_default_interval(faux_conn):
     # expect table creation to fail as SQLite does not support partitioned tables
@@ -329,6 +344,19 @@ def test_table_range_partitioning_dialect_option_default_interval(faux_conn):
         "CREATE TABLE `some_table` ( `id` INT64, `zipcode` INT64 )"
         " PARTITION BY RANGE_BUCKET(zipcode, GENERATE_ARRAY(0, 100000, 1))"
     )
+
+
+def test_time_and_range_partitioning_mutually_exclusive(faux_conn):
+    # expect ValueError when both bigquery_time_partitioning and bigquery_range_partitioning are provided
+    with pytest.raises(ValueError):
+        setup_table(
+            faux_conn,
+            "some_table",
+            sqlalchemy.Column("id", sqlalchemy.Integer),
+            sqlalchemy.Column("createdAt", sqlalchemy.DateTime),
+            bigquery_range_partitioning=RangePartitioning(),
+            bigquery_time_partitioning=TimePartitioning(),
+        )
 
 
 def test_table_all_dialect_option(faux_conn):
