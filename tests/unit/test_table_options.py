@@ -253,7 +253,7 @@ def test_table_range_partitioning_dialect_option(faux_conn):
 def test_table_range_partitioning_dialect_option_no_field(faux_conn):
     # expect TypeError when bigquery_range_partitioning field is not defined
     with pytest.raises(
-        ValueError,
+        AttributeError,
         match="bigquery_range_partitioning expects field to be defined",
     ):
         setup_table(
@@ -275,7 +275,7 @@ def test_table_range_partitioning_dialect_option_bad_column_type(faux_conn):
     # expect ValueError when bigquery_range_partitioning field is not an INTEGER
     with pytest.raises(
         ValueError,
-        match="bigquery_range_partitioning expects field data type to be INTEGER",
+        match="bigquery_range_partitioning expects field \(i\.e\. column\) data type to be INTEGER",
     ):
         setup_table(
             faux_conn,
@@ -294,9 +294,9 @@ def test_table_range_partitioning_dialect_option_bad_column_type(faux_conn):
 
 
 def test_table_range_partitioning_dialect_option_range_missing(faux_conn):
-    # expect ValueError when bigquery_range_partitioning range start or end is missing
+    # expect TypeError when bigquery_range_partitioning range start or end is missing
     with pytest.raises(
-        ValueError,
+        TypeError,
         match="bigquery_range_partitioning expects range_.start to be an int, provided None",
     ):
         setup_table(
@@ -308,7 +308,7 @@ def test_table_range_partitioning_dialect_option_range_missing(faux_conn):
         )
 
     with pytest.raises(
-        ValueError,
+        TypeError,
         match="bigquery_range_partitioning expects range_.end to be an int, provided None",
     ):
         setup_table(

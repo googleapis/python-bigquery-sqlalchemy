@@ -852,33 +852,36 @@ class BigQueryDDLCompiler(DDLCompiler):
         - str: A SQL string for range partitioning using RANGE_BUCKET and GENERATE_ARRAY functions.
 
         Raises:
-        - ValueError: If the partitioning field is not defined, not an integer type, or if the range
-        start/end values are not integers.
+        - AttributeError: If the partitioning field is not defined.
+        - ValueError: If the partitioning field (i.e. column) data type is not an integer.
+        - TypeError: If the partitioning range start/end values are not integers.
 
         Example:
             "PARTITION BY RANGE_BUCKET(zipcode, GENERATE_ARRAY(0, 100000, 10))"
         """
         if range_partitioning.field is None:
-            raise ValueError("bigquery_range_partitioning expects field to be defined")
+            raise AttributeError(
+                "bigquery_range_partitioning expects field to be defined"
+            )
 
         if not isinstance(
             table.columns[range_partitioning.field].type,
             sqlalchemy.sql.sqltypes.INT,
         ):
             raise ValueError(
-                "bigquery_range_partitioning expects field data type to be INTEGER"
+                "bigquery_range_partitioning expects field (i.e. column) data type to be INTEGER"
             )
 
         range_ = range_partitioning.range_
 
         if not isinstance(range_.start, int):
-            raise ValueError(
+            raise TypeError(
                 "bigquery_range_partitioning expects range_.start to be an int,"
                 f" provided {repr(range_.start)}"
             )
 
         if not isinstance(range_.end, int):
-            raise ValueError(
+            raise TypeError(
                 "bigquery_range_partitioning expects range_.end to be an int,"
                 f" provided {repr(range_.end)}"
             )
