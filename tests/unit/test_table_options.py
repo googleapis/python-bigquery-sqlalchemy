@@ -275,7 +275,7 @@ def test_table_range_partitioning_dialect_option_bad_column_type(faux_conn):
     # expect ValueError when bigquery_range_partitioning field is not an INTEGER
     with pytest.raises(
         ValueError,
-        match="bigquery_range_partitioning expects field \(i\.e\. column\) data type to be INTEGER",
+        match=r"bigquery_range_partitioning expects field \(i\.e\. column\) data type to be INTEGER",
     ):
         setup_table(
             faux_conn,
