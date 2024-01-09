@@ -883,7 +883,9 @@ class BigQueryDDLCompiler(DDLCompiler):
                 f" provided {repr(range_.end)}"
             )
 
-        return f"PARTITION BY RANGE_BUCKET({range_partitioning.field}, GENERATE_ARRAY({range_.start}, {range_.end}, {range_.interval or 1}))"
+        default_interval = 1
+
+        return f"PARTITION BY RANGE_BUCKET({range_partitioning.field}, GENERATE_ARRAY({range_.start}, {range_.end}, {range_.interval or default_interval}))"
 
     def _process_option_value(self, value):
         """
