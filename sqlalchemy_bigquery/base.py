@@ -706,8 +706,9 @@ class BigQueryDDLCompiler(DDLCompiler):
             )
 
             if time_partitioning.expiration_ms:
+                _24hours = 1000 * 60 * 60 * 24
                 options["partition_expiration_days"] = (
-                    time_partitioning.expiration_ms / 86400000
+                    time_partitioning.expiration_ms / _24hours
                 )
 
             partition_by_clause = self._process_time_partitioning(

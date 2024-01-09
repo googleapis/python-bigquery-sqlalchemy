@@ -544,7 +544,7 @@ def test_create_table(engine, bigquery_dataset):
         bigquery_expiration_timestamp=datetime.datetime(2183, 3, 26, 8, 30, 0),
         bigquery_time_partitioning=TimePartitioning(
             field="timestamp_c",
-            expiration_ms=1000 * 60 * 60 * 24 * 30,
+            expiration_ms=1000 * 60 * 60 * 24 * 30,  # 30 days
         ),
         bigquery_require_partition_filter=True,
         bigquery_default_rounding_mode="ROUND_HALF_EVEN",
