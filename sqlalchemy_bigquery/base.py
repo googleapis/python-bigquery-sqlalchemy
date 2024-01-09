@@ -810,7 +810,7 @@ class BigQueryDDLCompiler(DDLCompiler):
         """
         Generates a SQL 'PARTITION BY' clause for partitioning a table by a date or timestamp.
 
-        Parameters:
+        Args:
         - table (Table): The SQLAlchemy table object representing the BigQuery table to be partitioned.
         - time_partitioning (TimePartitioning): The time partitioning details,
             including the field to be used for partitioning.
@@ -843,7 +843,7 @@ class BigQueryDDLCompiler(DDLCompiler):
         """
         Generates a SQL 'PARTITION BY' clause for partitioning a table by a range of integers.
 
-        Parameters:
+        Args:
         - table (Table): The SQLAlchemy table object representing the BigQuery table to be partitioned.
         - range_partitioning (RangePartitioning): The RangePartitioning object containing the
         partitioning field, range start, range end, and interval.
