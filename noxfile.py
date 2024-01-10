@@ -213,6 +213,8 @@ def default(session, install_extras=True):
         install_target = "."
     session.install("-e", install_target, "-c", constraints_path)
 
+    session.run("python", "-m", "pip", "freeze")
+
     # Run py.test against the unit tests.
     session.run(
         "py.test",
@@ -369,7 +371,7 @@ def compliance(session):
         session.skip("Compliance tests were not found")
 
     session.install("--pre", "grpcio")
-    session.install("--pre", "--no-deps", "--upgrade", "sqlalchemy<2.0.0")
+    session.install("--pre", "--no-deps", "--upgrade", "sqlalchemy>=1.4.16,<2.1")
     session.install(
         "mock",
         "pytest",
@@ -416,6 +418,9 @@ def cover(session):
     test runs (not system test runs), and then erases coverage data.
     """
     session.install("coverage", "pytest-cov")
+
+    session.run("python", "-m", "pip", "freeze")
+
     session.run("coverage", "report", "--show-missing", "--fail-under=100")
 
     session.run("coverage", "erase")
@@ -524,7 +529,7 @@ def prerelease_deps(session):
 
     prerel_deps = [
         "protobuf",
-        "sqlalchemy<2.0.0",
+        "sqlalchemy>=1.4.16,<2.1",
         # dependency of grpc
         "six",
         "googleapis-common-protos",
@@ -547,6 +552,7 @@ def prerelease_deps(session):
         "requests",
     ]
     session.install(*other_deps)
+    session.run("python", "-m", "pip", "freeze")
 
     # Print out prerelease package versions
     session.run(

@@ -219,7 +219,7 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
         # For example, given SQLAlchemy code:
         #
         #   print(
-        #      select([func.unnest(foo.c.objects).alias('foo_objects').column])
+        #      select(func.unnest(foo.c.objects).alias('foo_objects').column)
         #      .compile(engine))
         #
         # Left to it's own devices, SQLAlchemy would outout:
@@ -388,7 +388,7 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
             self._generate_generic_binary(binary, " IN ", **kw)
         )
 
-    def visit_empty_set_expr(self, element_types):
+    def visit_empty_set_expr(self, element_types, **kw):
         return ""
 
     def visit_not_in_op_binary(self, binary, operator, **kw):
@@ -644,15 +644,15 @@ class BigQueryDDLCompiler(DDLCompiler):
     }
 
     # BigQuery has no support for foreign keys.
-    def visit_foreign_key_constraint(self, constraint):
+    def visit_foreign_key_constraint(self, constraint, **kw):
         return None
 
     # BigQuery has no support for primary keys.
-    def visit_primary_key_constraint(self, constraint):
+    def visit_primary_key_constraint(self, constraint, **kw):
         return None
 
     # BigQuery has no support for unique constraints.
-    def visit_unique_constraint(self, constraint):
+    def visit_unique_constraint(self, constraint, **kw):
         return None
 
     def get_column_specification(self, column, **kwargs):
@@ -760,14 +760,14 @@ class BigQueryDDLCompiler(DDLCompiler):
 
         return " " + "\n".join(clauses)
 
-    def visit_set_table_comment(self, create):
+    def visit_set_table_comment(self, create, **kw):
         table_name = self.preparer.format_table(create.element)
         description = self.sql_compiler.render_literal_value(
             create.element.comment, sqlalchemy.sql.sqltypes.String()
         )
         return f"ALTER TABLE {table_name} SET OPTIONS(description={description})"
 
-    def visit_drop_table_comment(self, drop):
+    def visit_drop_table_comment(self, drop, **kw):
         table_name = self.preparer.format_table(drop.element)
         return f"ALTER TABLE {table_name} SET OPTIONS(description=null)"
 
@@ -1030,6 +1030,14 @@ class BigQueryDialect(DefaultDialect):
 
     @classmethod
     def dbapi(cls):
+        """
+        Use `import_dbapi()` instead.
+        Maintained for backward compatibility.
+        """
+        return dbapi
+
+    @classmethod
+    def import_dbapi(cls):
         return dbapi
 
     @staticmethod
@@ -1202,7 +1210,21 @@ class BigQueryDialect(DefaultDialect):
             raise NoSuchTableError(table_name)
         return table
 
-    def has_table(self, connection, table_name, schema=None):
+    def has_table(self, connection, table_name, schema=None, **kw):
+        """Checks whether a table exists in BigQuery.
+
+        Args:
+            connection (google.cloud.bigquery.client.Client): The client
+                object used to interact with BigQuery.
+            table_name (str): The name of the table to check for.
+            schema (str, optional): The name of the schema to which the table
+                belongs. Defaults to the default schema.
+            **kw (dict): Any extra keyword arguments will be ignored.
+
+        Returns:
+            bool: True if the table exists, False otherwise.
+
+        """
         try:
             self._get_table(connection, table_name, schema)
             return True
@@ -1279,7 +1301,13 @@ class unnest(sqlalchemy.sql.functions.GenericFunction):
             raise TypeError("The unnest function requires a single argument.")
         arg = args[0]
         if isinstance(arg, sqlalchemy.sql.expression.ColumnElement):
-            if not isinstance(arg.type, sqlalchemy.sql.sqltypes.ARRAY):
+            if not (
+                isinstance(arg.type, sqlalchemy.sql.sqltypes.ARRAY)
+                or (
+                    hasattr(arg.type, "impl")
+                    and isinstance(arg.type.impl, sqlalchemy.sql.sqltypes.ARRAY)
+                )
+            ):
                 raise TypeError("The argument to unnest must have an ARRAY type.")
             self.type = arg.type.item_type
         super().__init__(*args, **kwargs)

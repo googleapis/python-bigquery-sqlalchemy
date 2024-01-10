@@ -38,7 +38,7 @@ from .conftest import (
 
 def test_labels_not_forced(faux_conn):
     table = setup_table(faux_conn, "t", sqlalchemy.Column("id", sqlalchemy.Integer))
-    result = faux_conn.execute(sqlalchemy.select([table.c.id]))
+    result = faux_conn.execute(sqlalchemy.select(table.c.id))
     assert result.keys() == ["id"]  # Look! Just the column name!
 
 
@@ -154,14 +154,18 @@ def test_typed_parameters(faux_conn, type_, val, btype, vrep):
         {},
     )
 
-    assert list(map(list, faux_conn.execute(sqlalchemy.select([table])))) == [[val]] * 2
+    assert list(map(list, faux_conn.execute(sqlalchemy.select(table)))) == [[val]] * 2
     assert faux_conn.test_data["execute"][-1][0] == "SELECT `t`.`foo` \nFROM `t`"
 
     assert (
         list(
             map(
                 list,
-                faux_conn.execute(sqlalchemy.select([table.c.foo], use_labels=True)),
+                faux_conn.execute(
+                    sqlalchemy.select(table.c.foo).set_label_style(
+                        sqlalchemy.LABEL_STYLE_TABLENAME_PLUS_COL
+                    )
+                ),
             )
         )
         == [[val]] * 2
@@ -183,7 +187,7 @@ def test_select_struct(faux_conn, metadata):
     faux_conn.ex("create table t (x RECORD)")
     faux_conn.ex("""insert into t values ('{"y": 1}')""")
 
-    row = list(faux_conn.execute(sqlalchemy.select([table])))[0]
+    row = list(faux_conn.execute(sqlalchemy.select(table)))[0]
     # We expect the raw string, because sqlite3, unlike BigQuery
     # doesn't deserialize for us.
     assert row.x == '{"y": 1}'
@@ -191,7 +195,7 @@ def test_select_struct(faux_conn, metadata):
 
 def test_select_label_starts_w_digit(faux_conn):
     # Make sure label names are legal identifiers
-    faux_conn.execute(sqlalchemy.select([sqlalchemy.literal(1).label("2foo")]))
+    faux_conn.execute(sqlalchemy.select(sqlalchemy.literal(1).label("2foo")))
     assert (
         faux_conn.test_data["execute"][-1][0] == "SELECT %(param_1:INT64)s AS `_2foo`"
     )
@@ -205,7 +209,7 @@ def test_force_quote(faux_conn):
         "t",
         sqlalchemy.Column(quoted_name("foo", True), sqlalchemy.Integer),
     )
-    faux_conn.execute(sqlalchemy.select([table]))
+    faux_conn.execute(sqlalchemy.select(table))
     assert faux_conn.test_data["execute"][-1][0] == ("SELECT `t`.`foo` \nFROM `t`")
 
 
@@ -217,14 +221,14 @@ def test_disable_quote(faux_conn):
         "t",
         sqlalchemy.Column(quoted_name("foo", False), sqlalchemy.Integer),
     )
-    faux_conn.execute(sqlalchemy.select([table]))
+    faux_conn.execute(sqlalchemy.select(table))
     assert faux_conn.test_data["execute"][-1][0] == ("SELECT `t`.foo \nFROM `t`")
 
 
 @sqlalchemy_before_1_4
 def test_select_in_lit_13(faux_conn):
     [[isin]] = faux_conn.execute(
-        sqlalchemy.select([sqlalchemy.literal(1).in_([1, 2, 3])])
+        sqlalchemy.select(sqlalchemy.literal(1).in_([1, 2, 3]))
     )
     assert isin
     assert faux_conn.test_data["execute"][-1] == (
@@ -236,7 +240,7 @@ def test_select_in_lit_13(faux_conn):
 
 @sqlalchemy_1_4_or_higher
 def test_select_in_lit(faux_conn, last_query):
-    faux_conn.execute(sqlalchemy.select([sqlalchemy.literal(1).in_([1, 2, 3])]))
+    faux_conn.execute(sqlalchemy.select(sqlalchemy.literal(1).in_([1, 2, 3])))
     last_query(
         "SELECT %(param_1:INT64)s IN UNNEST(%(param_2:INT64)s) AS `anon_1`",
         {"param_1": 1, "param_2": [1, 2, 3]},
@@ -246,7 +250,7 @@ def test_select_in_lit(faux_conn, last_query):
 def test_select_in_param(faux_conn, last_query):
     [[isin]] = faux_conn.execute(
         sqlalchemy.select(
-            [sqlalchemy.literal(1).in_(sqlalchemy.bindparam("q", expanding=True))]
+            sqlalchemy.literal(1).in_(sqlalchemy.bindparam("q", expanding=True))
         ),
         dict(q=[1, 2, 3]),
     )
@@ -268,7 +272,7 @@ def test_select_in_param(faux_conn, last_query):
 def test_select_in_param1(faux_conn, last_query):
     [[isin]] = faux_conn.execute(
         sqlalchemy.select(
-            [sqlalchemy.literal(1).in_(sqlalchemy.bindparam("q", expanding=True))]
+            sqlalchemy.literal(1).in_(sqlalchemy.bindparam("q", expanding=True))
         ),
         dict(q=[1]),
     )
@@ -289,7 +293,7 @@ def test_select_in_param1(faux_conn, last_query):
 def test_select_in_param_empty(faux_conn, last_query):
     [[isin]] = faux_conn.execute(
         sqlalchemy.select(
-            [sqlalchemy.literal(1).in_(sqlalchemy.bindparam("q", expanding=True))]
+            sqlalchemy.literal(1).in_(sqlalchemy.bindparam("q", expanding=True))
         ),
         dict(q=[]),
     )
@@ -308,7 +312,7 @@ def test_select_in_param_empty(faux_conn, last_query):
 @sqlalchemy_before_1_4
 def test_select_notin_lit13(faux_conn):
     [[isnotin]] = faux_conn.execute(
-        sqlalchemy.select([sqlalchemy.literal(0).notin_([1, 2, 3])])
+        sqlalchemy.select(sqlalchemy.literal(0).notin_([1, 2, 3]))
     )
     assert isnotin
     assert faux_conn.test_data["execute"][-1] == (
@@ -320,7 +324,7 @@ def test_select_notin_lit13(faux_conn):
 
 @sqlalchemy_1_4_or_higher
 def test_select_notin_lit(faux_conn, last_query):
-    faux_conn.execute(sqlalchemy.select([sqlalchemy.literal(0).notin_([1, 2, 3])]))
+    faux_conn.execute(sqlalchemy.select(sqlalchemy.literal(0).notin_([1, 2, 3])))
     last_query(
         "SELECT (%(param_1:INT64)s NOT IN UNNEST(%(param_2:INT64)s)) AS `anon_1`",
         {"param_1": 0, "param_2": [1, 2, 3]},
@@ -330,7 +334,7 @@ def test_select_notin_lit(faux_conn, last_query):
 def test_select_notin_param(faux_conn, last_query):
     [[isnotin]] = faux_conn.execute(
         sqlalchemy.select(
-            [sqlalchemy.literal(1).notin_(sqlalchemy.bindparam("q", expanding=True))]
+            sqlalchemy.literal(1).notin_(sqlalchemy.bindparam("q", expanding=True))
         ),
         dict(q=[1, 2, 3]),
     )
@@ -353,7 +357,7 @@ def test_select_notin_param(faux_conn, last_query):
 def test_select_notin_param_empty(faux_conn, last_query):
     [[isnotin]] = faux_conn.execute(
         sqlalchemy.select(
-            [sqlalchemy.literal(1).notin_(sqlalchemy.bindparam("q", expanding=True))]
+            sqlalchemy.literal(1).notin_(sqlalchemy.bindparam("q", expanding=True))
         ),
         dict(q=[]),
     )
@@ -376,7 +380,7 @@ def test_literal_binds_kwarg_with_an_IN_operator_252(faux_conn):
         sqlalchemy.Column("val", sqlalchemy.Integer),
         initial_data=[dict(val=i) for i in range(3)],
     )
-    q = sqlalchemy.select([table.c.val]).where(table.c.val.in_([2]))
+    q = sqlalchemy.select(table.c.val).where(table.c.val.in_([2]))
 
     def nstr(q):
         return " ".join(str(q).strip().split())
@@ -444,7 +448,7 @@ def test_array_indexing(faux_conn, metadata):
         metadata,
         sqlalchemy.Column("a", sqlalchemy.ARRAY(sqlalchemy.String)),
     )
-    got = str(sqlalchemy.select([t.c.a[0]]).compile(faux_conn.engine))
+    got = str(sqlalchemy.select(t.c.a[0]).compile(faux_conn.engine))
     assert got == "SELECT `t`.`a`[OFFSET(%(a_1:INT64)s)] AS `anon_1` \nFROM `t`"
 
 
