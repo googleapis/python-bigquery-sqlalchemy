@@ -227,12 +227,9 @@ def test_unnest_function(args, kw):
 
     f = sqlalchemy.func.unnest(*args, **kw)
     assert isinstance(f.type, sqlalchemy.String)
-    if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse(
-        "1.4"
-    ):
-        assert isinstance(
-            sqlalchemy.select(f).subquery().c.unnest.type, sqlalchemy.String
-        )
+    assert isinstance(
+        sqlalchemy.select(f).subquery().c.unnest.type, sqlalchemy.String
+    )
 
 
 @mock.patch("sqlalchemy_bigquery._helpers.create_bigquery_client")
