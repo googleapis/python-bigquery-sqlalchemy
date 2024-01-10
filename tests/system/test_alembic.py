@@ -127,6 +127,8 @@ def test_alembic_scenario(alembic_table):
     op.drop_table("account_w_comment")
     assert alembic_table("account_w_comment") is None
 
+    #time.sleep(10)
+
     op.rename_table("account", "accounts")
     assert alembic_table("account") is None
     assert alembic_table("accounts", "schema") == [
