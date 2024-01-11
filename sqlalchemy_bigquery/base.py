@@ -357,9 +357,7 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
     __sqlalchemy_version_info = packaging.version.parse(sqlalchemy.__version__)
 
     __expanding_text = (
-        "EXPANDING"
-        if __sqlalchemy_version_info < packaging.version.parse("1.4")
-        else "POSTCOMPILE"
+        "POSTCOMPILE"
     )
 
     # https://github.com/sqlalchemy/sqlalchemy/commit/f79df12bd6d99b8f6f09d4bf07722638c4b4c159
