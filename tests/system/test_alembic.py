@@ -21,7 +21,6 @@ import contextlib
 
 import pytest
 from sqlalchemy import Column, DateTime, Integer, String, Numeric
-import time
 
 import google.api_core.exceptions
 from google.cloud.bigquery import SchemaField, TimePartitioning
@@ -127,8 +126,6 @@ def test_alembic_scenario(alembic_table):
 
     op.drop_table("account_w_comment")
     assert alembic_table("account_w_comment") is None
-
-    time.sleep(10)
 
     op.rename_table("account", "accounts")
     assert alembic_table("account") is None

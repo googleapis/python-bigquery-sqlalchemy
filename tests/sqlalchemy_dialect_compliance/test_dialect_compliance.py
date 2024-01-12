@@ -118,18 +118,6 @@ else:
     del HasIndexTest  # BQ doesn't do the indexes that SQLA is loooking for.
     del IdentityAutoincrementTest  # BQ doesn't do autoincrement
 
-    """
-    # detele to make test faster
-    del JSONTest
-    del LikeFunctionsTest
-    del FutureTableDDLTest
-    del NumericTest
-    del StringTest
-    del TableDDLTest
-    del TextTest
-    del UnicodeVarcharTest
-    """
-
     # This test makes makes assertions about generated sql and trips
     # over the backquotes that we add everywhere. XXX Why do we do that?
     del PostCompileParamsTest
@@ -167,7 +155,6 @@ else:
 
             with mock.patch("sqlalchemy.testing.suite.test_types.literal", literal):
                 super(TimestampMicrosecondsTest, self).test_select_direct(connection)
-
 
     def test_round_trip_executemany(self, connection):
         unicode_table = self.tables.unicode_table

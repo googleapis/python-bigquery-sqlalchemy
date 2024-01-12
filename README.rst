@@ -362,6 +362,3 @@ In multiprocessing scenarios, the best
 practice is to create client instances *after* the invocation of
 `os.fork` by `multiprocessing.pool.Pool` or
 `multiprocessing.Process`.
-
-
-this PR is created to investigate flaky bot failure.

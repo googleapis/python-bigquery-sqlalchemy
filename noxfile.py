@@ -390,7 +390,6 @@ def compliance(session):
 
     session.run(
         "py.test",
-        "-x",
         "-vv",
         f"--junitxml=compliance_{session.python}_sponge_log.xml",
         "--reruns=3",
