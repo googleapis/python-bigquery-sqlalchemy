@@ -13,6 +13,12 @@ Older versions of this project were distributed as [pybigquery][0].
 
 [2]: https://pypi.org/project/pybigquery/#history
 
+## [3.17.0rc1]()
+
+
+### Features
+
+* Drop support for SQLAlchemy versions 1.2 and 1.3, maintain support for 1.4 and add support for 2.0 ([#920](https://github.com/googleapis/python-bigquery-sqlalchemy/pull/920))
 
 ## [1.9.0](https://github.com/googleapis/python-bigquery-sqlalchemy/compare/v1.8.0...v1.9.0) (2023-12-10)
 
