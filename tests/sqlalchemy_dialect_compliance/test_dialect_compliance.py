@@ -122,7 +122,7 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
         def test_update(self):
             t = self.tables.plain_pk
             connection = config.db.connect()
-            # Had to pass in data as a dict object in 2.0
+            # In SQLAlchemy 2.0, the datatype changed to dict in the following function.
             r = connection.execute(t.update().where(t.c.id == 2), dict(data="d2_new"))
             assert not r.is_insert
 
