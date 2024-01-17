@@ -85,8 +85,6 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
                 if type_ is not None:
                     assert type_ is self.datatype
 
-                import sqlalchemy.sql.sqltypes
-
                 return sqlalchemy.sql.elements.literal(value, self.datatype)
 
             with mock.patch("sqlalchemy.testing.suite.test_types.literal", literal):
@@ -127,7 +125,6 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
             # Had to pass in data as a dict object in 2.0
             r = connection.execute(t.update().where(t.c.id == 2), dict(data="d2_new"))
             assert not r.is_insert
-            # assert not r.returns_rows
 
             eq_(
                 connection.execute(t.select().order_by(t.c.id)).fetchall(),
@@ -139,7 +136,6 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
             connection = config.db.connect()
             r = connection.execute(t.delete().where(t.c.id == 2))
             assert not r.is_insert
-            # assert not r.returns_rows
             eq_(
                 connection.execute(t.select().order_by(t.c.id)).fetchall(),
                 [(1, "d1"), (3, "d3")],
@@ -526,7 +522,6 @@ elif packaging.version.parse(sqlalchemy.__version__) < packaging.version.parse("
             t = self.tables.plain_pk
             r = config.db.execute(t.update().where(t.c.id == 2), data="d2_new")
             assert not r.is_insert
-            # assert not r.returns_rows
 
             eq_(
                 config.db.execute(t.select().order_by(t.c.id)).fetchall(),
@@ -537,7 +532,6 @@ elif packaging.version.parse(sqlalchemy.__version__) < packaging.version.parse("
             t = self.tables.plain_pk
             r = config.db.execute(t.delete().where(t.c.id == 2))
             assert not r.is_insert
-            # assert not r.returns_rows
             eq_(
                 config.db.execute(t.select().order_by(t.c.id)).fetchall(),
                 [(1, "d1"), (3, "d3")],
@@ -671,7 +665,6 @@ else:
             t = self.tables.plain_pk
             r = config.db.execute(t.update().where(t.c.id == 2), data="d2_new")
             assert not r.is_insert
-            # assert not r.returns_rows
 
             eq_(
                 config.db.execute(t.select().order_by(t.c.id)).fetchall(),
@@ -682,7 +675,6 @@ else:
             t = self.tables.plain_pk
             r = config.db.execute(t.delete().where(t.c.id == 2))
             assert not r.is_insert
-            # assert not r.returns_rows
             eq_(
                 config.db.execute(t.select().order_by(t.c.id)).fetchall(),
                 [(1, "d1"), (3, "d3")],
