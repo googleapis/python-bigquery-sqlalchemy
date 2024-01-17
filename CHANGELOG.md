@@ -13,7 +13,7 @@ Older versions of this project were distributed as [pybigquery][0].
 
 [2]: https://pypi.org/project/pybigquery/#history
 
-## [3.17.0rc1]()
+## [1.10.0rc1]()
 
 
 ### Features
