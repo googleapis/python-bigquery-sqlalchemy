@@ -18,6 +18,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import contextlib
+import time
 
 import pytest
 from sqlalchemy import Column, DateTime, Integer, String, Numeric
@@ -69,6 +70,7 @@ def test_alembic_scenario(alembic_table):
 
     assert alembic_table("account") is None
 
+    _prevent_rate_limiting()
     account = op.create_table(
         "account",
         Column("id", Integer, nullable=False),
@@ -96,6 +98,7 @@ def test_alembic_scenario(alembic_table):
         {"description": None, "id": 3, "name": "savings"},
     ]
 
+    _prevent_rate_limiting()
     op.add_column(
         "account", Column("last_transaction_date", DateTime, comment="when updated")
     )
@@ -107,6 +110,7 @@ def test_alembic_scenario(alembic_table):
         SchemaField("last_transaction_date", "DATETIME", description="when updated"),
     ]
 
+    _prevent_rate_limiting()
     op.rename_table("account", "accounts")
     assert alembic_table("account") is None
     assert alembic_table("accounts", "schema") == [
@@ -116,9 +120,11 @@ def test_alembic_scenario(alembic_table):
         SchemaField("last_transaction_date", "DATETIME", description="when updated"),
     ]
 
+    _prevent_rate_limiting()
     op.drop_table("accounts")
     assert alembic_table("accounts") is None
 
+    _prevent_rate_limiting()
     op.create_table(
         "account_w_comment",
         Column("id", Integer, nullable=False),
@@ -127,18 +133,23 @@ def test_alembic_scenario(alembic_table):
         comment="This table has comments",
     )
     assert alembic_table("account_w_comment").description == "This table has comments"
+
+    _prevent_rate_limiting()
     op.drop_table_comment("account_w_comment")
     assert alembic_table("account_w_comment").description is None
 
+    _prevent_rate_limiting()
     op.drop_column("account_w_comment", "description")
     assert alembic_table("account_w_comment", "schema") == [
         SchemaField("id", "INTEGER", "REQUIRED"),
         SchemaField("name", "STRING(50)", "REQUIRED", description="The name"),
     ]
 
+    _prevent_rate_limiting()
     op.drop_table("account_w_comment")
     assert alembic_table("account_w_comment") is None
 
+    _prevent_rate_limiting()
     op.create_table(
         "transactions",
         Column("account", Integer, nullable=False),
@@ -147,6 +158,7 @@ def test_alembic_scenario(alembic_table):
         bigquery_time_partitioning=TimePartitioning(field="transaction_time"),
     )
 
+    _prevent_rate_limiting()
     op.alter_column("transactions", "amount", nullable=True)
     assert alembic_table("transactions", "schema") == [
         SchemaField("account", "INTEGER", "REQUIRED"),
@@ -154,16 +166,31 @@ def test_alembic_scenario(alembic_table):
         SchemaField("amount", "NUMERIC(11, 2)"),
     ]
 
+    _prevent_rate_limiting()
     op.create_table_comment("transactions", "Transaction log")
     assert alembic_table("transactions").description == "Transaction log"
 
+    _prevent_rate_limiting()
     op.drop_table("transactions")
 
     # Another thing we can do is alter the datatype of a nullable column,
     # if allowed by BigQuery's type coercion rules
+    _prevent_rate_limiting()
     op.create_table("identifiers", Column("id", Integer))
 
+    _prevent_rate_limiting()
     op.alter_column("identifiers", "id", type_=Numeric)
     assert alembic_table("identifiers", "schema") == [SchemaField("id", "NUMERIC")]
 
+    _prevent_rate_limiting()
     op.drop_table("identifiers")
+
+
+def _prevent_rate_limiting():
+    """
+    Adds a delay between operations to prevent exceeding the "Maximum rate of table metadata update operations per table".
+
+    The rate limit is set to a maximum of 5 operations per 10 seconds. By introducing a sleep of 2 seconds
+    before each operation, this function helps to ensure that the rate limit is not exceeded.
+    """
+    time.sleep(2)
