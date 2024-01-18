@@ -107,6 +107,18 @@ def test_alembic_scenario(alembic_table):
         SchemaField("last_transaction_date", "DATETIME", description="when updated"),
     ]
 
+    op.rename_table("account", "accounts")
+    assert alembic_table("account") is None
+    assert alembic_table("accounts", "schema") == [
+        SchemaField("id", "INTEGER", "REQUIRED"),
+        SchemaField("name", "STRING(50)", "REQUIRED", description="The name"),
+        SchemaField("description", "STRING(200)"),
+        SchemaField("last_transaction_date", "DATETIME", description="when updated"),
+    ]
+
+    op.drop_table("accounts")
+    assert alembic_table("accounts") is None
+
     op.create_table(
         "account_w_comment",
         Column("id", Integer, nullable=False),
@@ -126,17 +138,6 @@ def test_alembic_scenario(alembic_table):
 
     op.drop_table("account_w_comment")
     assert alembic_table("account_w_comment") is None
-
-    op.rename_table("account", "accounts")
-    assert alembic_table("account") is None
-    assert alembic_table("accounts", "schema") == [
-        SchemaField("id", "INTEGER", "REQUIRED"),
-        SchemaField("name", "STRING(50)", "REQUIRED", description="The name"),
-        SchemaField("description", "STRING(200)"),
-        SchemaField("last_transaction_date", "DATETIME", description="when updated"),
-    ]
-    op.drop_table("accounts")
-    assert alembic_table("accounts") is None
 
     op.create_table(
         "transactions",
