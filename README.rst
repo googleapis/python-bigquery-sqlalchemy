@@ -36,7 +36,7 @@ In order to use this library, you first need to go through the following steps:
 
 .. note::
    This library is a prerelease to gauge compatiblity with SQLAlchemy
-   versions >= 2.0.0
+   versions >= 1.4.16 and < 2.1
 
 Installation
 ------------

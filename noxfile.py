@@ -213,8 +213,6 @@ def default(session, install_extras=True):
         install_target = "."
     session.install("-e", install_target, "-c", constraints_path)
 
-    session.run("python", "-m", "pip", "freeze")
-
     # Run py.test against the unit tests.
     session.run(
         "py.test",
@@ -396,10 +394,11 @@ def compliance(session):
         f"--junitxml=compliance_{session.python}_sponge_log.xml",
         "--reruns=3",
         "--reruns-delay=60",
-        "--only-rerun=403 Exceeded rate limits",
-        "--only-rerun=409 Already Exists",
-        "--only-rerun=404 Not found",
-        "--only-rerun=400 Cannot execute DML over a non-existent table",
+        "--only-rerun=Exceeded rate limits",
+        "--only-rerun=Already Exists",
+        "--only-rerun=Not found",
+        "--only-rerun=Cannot execute DML over a non-existent table",
+        "--only-rerun=Job exceeded rate limits",
         system_test_folder_path,
         *session.posargs,
         # To suppress the "Deprecated API features detected!" warning when
@@ -418,9 +417,6 @@ def cover(session):
     test runs (not system test runs), and then erases coverage data.
     """
     session.install("coverage", "pytest-cov")
-
-    session.run("python", "-m", "pip", "freeze")
-
     session.run("coverage", "report", "--show-missing", "--fail-under=100")
 
     session.run("coverage", "erase")
@@ -432,7 +428,16 @@ def docs(session):
 
     session.install("-e", ".")
     session.install(
-        "sphinx==4.0.1",
+        # We need to pin to specific versions of the `sphinxcontrib-*` packages
+        # which still support sphinx 4.x.
+        # See https://github.com/googleapis/sphinx-docfx-yaml/issues/344
+        # and https://github.com/googleapis/sphinx-docfx-yaml/issues/345.
+        "sphinxcontrib-applehelp==1.0.4",
+        "sphinxcontrib-devhelp==1.0.2",
+        "sphinxcontrib-htmlhelp==2.0.1",
+        "sphinxcontrib-qthelp==1.0.3",
+        "sphinxcontrib-serializinghtml==1.1.5",
+        "sphinx==4.5.0",
         "alabaster",
         "geoalchemy2",
         "shapely",
@@ -460,6 +465,15 @@ def docfx(session):
 
     session.install("-e", ".")
     session.install(
+        # We need to pin to specific versions of the `sphinxcontrib-*` packages
+        # which still support sphinx 4.x.
+        # See https://github.com/googleapis/sphinx-docfx-yaml/issues/344
+        # and https://github.com/googleapis/sphinx-docfx-yaml/issues/345.
+        "sphinxcontrib-applehelp==1.0.4",
+        "sphinxcontrib-devhelp==1.0.2",
+        "sphinxcontrib-htmlhelp==2.0.1",
+        "sphinxcontrib-qthelp==1.0.3",
+        "sphinxcontrib-serializinghtml==1.1.5",
         "gcp-sphinx-docfx-yaml",
         "alabaster",
         "geoalchemy2",
@@ -552,7 +566,6 @@ def prerelease_deps(session):
         "requests",
     ]
     session.install(*other_deps)
-    session.run("python", "-m", "pip", "freeze")
 
     # Print out prerelease package versions
     session.run(
