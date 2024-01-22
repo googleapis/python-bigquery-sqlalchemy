@@ -149,43 +149,6 @@ class BigQueryExecutionContext(DefaultExecutionContext):
         repl=r" IN(\1)",
     )
 
-    @_helpers.substitute_re_method(
-        r"""
-        \sIN\sUNNEST\(\[\s       # ' IN UNNEST([ '
-        (                        # Placeholders. See below.
-        %\([^)]+_\d+\)s          # Placeholder '%(foo_1)s'
-        (?:,\s                   # 0 or more placeholders
-        %\([^)]+_\d+\)s
-        )*
-        )?
-        :([A-Z0-9]+)             # Type ':TYPE' (e.g. ':INT64')
-        \s\]\)                   # Close: ' ])'
-        """,
-        flags=re.IGNORECASE | re.VERBOSE,
-    )
-    def __distribute_types_to_expanded_placeholders(self, m):
-        # If we have an in parameter, it sometimes gets expaned to 0 or more
-        # parameters and we need to move the type marker to each
-        # parameter.
-        # (The way SQLAlchemy handles this is a bit awkward for our
-        # purposes.)
-
-        # In the placeholder part of the regex above, the `_\d+
-        # suffixes refect that when an array parameter is expanded,
-        # numeric suffixes are added.  For example, a placeholder like
-        # `%(foo)s` gets expaneded to `%(foo_0)s, `%(foo_1)s, ...`.
-        placeholders, type_ = m.groups()
-        if placeholders:
-            placeholders = placeholders.replace(")", f":{type_})")
-        else:
-            placeholders = ""
-        return f" IN UNNEST([ {placeholders} ])"
-
-    def pre_exec(self):
-        self.statement = self.__distribute_types_to_expanded_placeholders(
-            self.__remove_type_from_empty_in(self.statement)
-        )
-
 
 class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
     compound_keywords = SQLCompiler.compound_keywords.copy()
@@ -356,9 +319,7 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
 
     __sqlalchemy_version_info = packaging.version.parse(sqlalchemy.__version__)
 
-    __expanding_text = (
-        "POSTCOMPILE"
-    )
+    __expanding_text = "POSTCOMPILE"
 
     # https://github.com/sqlalchemy/sqlalchemy/commit/f79df12bd6d99b8f6f09d4bf07722638c4b4c159
     __expanding_conflict = (
@@ -508,11 +469,10 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
             # here, because then we can't do a recompile later (e.g., first
             # print the statment, then execute it).  See issue #357.
             #
-            if getattr(bindparam, "expand_op", None) is not None:
-                assert bindparam.expand_op.__name__.endswith("in_op")  # in in
-                bindparam = bindparam._clone(maintain_key=True)
-                bindparam.expanding = False
-                unnest = True
+            assert bindparam.expand_op.__name__.endswith("in_op")  # in in
+            bindparam = bindparam._clone(maintain_key=True)
+            bindparam.expanding = False
+            unnest = True
 
         param = super(BigQueryCompiler, self).visit_bindparam(
             bindparam,
