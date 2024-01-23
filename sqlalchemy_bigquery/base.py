@@ -175,10 +175,10 @@ class BigQueryExecutionContext(DefaultExecutionContext):
         # numeric suffixes are added.  For example, a placeholder like
         # `%(foo)s` gets expaneded to `%(foo_0)s, `%(foo_1)s, ...`.
         placeholders, type_ = m.groups()
-        if placeholders:
-            placeholders = placeholders.replace(")", f":{type_})")
-        else:
-            placeholders = ""
+        # if placeholders:
+        #     placeholders = placeholders.replace(")", f":{type_})")
+        # else:
+        #     placeholders = ""
         return f" IN UNNEST([ {placeholders} ])"
 
     def pre_exec(self):
@@ -506,11 +506,11 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
             # here, because then we can't do a recompile later (e.g., first
             # print the statment, then execute it).  See issue #357.
             #
-            if getattr(bindparam, "expand_op", None) is not None:
-                assert bindparam.expand_op.__name__.endswith("in_op")  # in in
-                bindparam = bindparam._clone(maintain_key=True)
-                bindparam.expanding = False
-                unnest = True
+            # if getattr(bindparam, "expand_op", None) is not None:
+            #     assert bindparam.expand_op.__name__.endswith("in_op")  # in in
+            bindparam = bindparam._clone(maintain_key=True)
+            bindparam.expanding = False
+            unnest = True
 
         param = super(BigQueryCompiler, self).visit_bindparam(
             bindparam,
