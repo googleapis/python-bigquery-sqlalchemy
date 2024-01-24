@@ -399,6 +399,7 @@ def compliance(session):
         "--only-rerun=Not found",
         "--only-rerun=Cannot execute DML over a non-existent table",
         "--only-rerun=Job exceeded rate limits",
+        "----durations=0",
         system_test_folder_path,
         *session.posargs,
         # To suppress the "Deprecated API features detected!" warning when
