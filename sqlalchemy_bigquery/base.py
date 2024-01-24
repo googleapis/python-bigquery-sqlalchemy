@@ -491,7 +491,7 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
             # print the statment, then execute it).  See issue #357.
             #
             # Coverage: despite our best efforts, never recognized this segment of code as being tested.
-            if getattr(bindparam, "expand_op", None) is not None:  # pragma: NO COVER
+            if getattr(bindparam, "expand_op", None) is not None: # pragma: NO COVER
                 assert bindparam.expand_op.__name__.endswith("in_op")  # in in
                 bindparam = bindparam._clone(maintain_key=True)
                 bindparam.expanding = False

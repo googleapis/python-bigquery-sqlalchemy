@@ -24,7 +24,6 @@ based on database capabilities.
 
 import sqlalchemy.testing.requirements
 import sqlalchemy.testing.exclusions
-from sqlalchemy.testing.exclusions import against, only_on
 
 supported = sqlalchemy.testing.exclusions.open
 unsupported = sqlalchemy.testing.exclusions.closed

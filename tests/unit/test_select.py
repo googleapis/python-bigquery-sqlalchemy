@@ -20,7 +20,6 @@
 import datetime
 from decimal import Decimal
 
-import packaging.version
 import pytest
 import sqlalchemy
 from sqlalchemy import not_

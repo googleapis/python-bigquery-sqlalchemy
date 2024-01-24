@@ -29,14 +29,11 @@ from sqlalchemy import and_
 import sqlalchemy.testing.suite.test_types
 import sqlalchemy.sql.sqltypes
 from sqlalchemy.testing import util, config
-from sqlalchemy.testing import is_false
-from sqlalchemy.testing import is_true
-from sqlalchemy.testing import is_
 from sqlalchemy.testing.assertions import eq_
-from sqlalchemy.testing.suite import config, select, exists
+from sqlalchemy.testing.suite import select, exists
 from sqlalchemy.testing.suite import *  # noqa
+from sqlalchemy.testing.suite import Integer, Table, Column, String, bindparam, testing
 from sqlalchemy.testing.suite import (
-    ComponentReflectionTest as _ComponentReflectionTest,
     CTETest as _CTETest,
     ExistsTest as _ExistsTest,
     InsertBehaviorTest as _InsertBehaviorTest,
@@ -53,21 +50,18 @@ from sqlalchemy.testing.suite.test_types import (
 from sqlalchemy.testing.suite.test_reflection import (
     BizarroCharacterFKResolutionTest,
     ComponentReflectionTest,
-    OneConnectionTablesTest,
     HasTableTest,
 )
 
 if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2.0"):
     import uuid
     from sqlalchemy.sql import type_coerce
-    from sqlalchemy import Uuid
     from sqlalchemy.testing.suite import (
         TrueDivTest as _TrueDivTest,
         IntegerTest as _IntegerTest,
         NumericTest as _NumericTest,
         DifficultParametersTest as _DifficultParametersTest,
         FetchLimitOffsetTest as _FetchLimitOffsetTest,
-        PostCompileParamsTest,
         StringTest as _StringTest,
         UuidTest as _UuidTest,
     )
