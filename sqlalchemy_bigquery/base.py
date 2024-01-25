@@ -418,14 +418,29 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
         return super(BigQueryCompiler, self).visit_contains_op_binary(
             self._maybe_reescape(binary), operator, **kw
         )
+    
+    def visit_not_contains_op_binary(self, binary, operator, **kw):
+        return super(BigQueryCompiler, self).visit_not_contains_op_binary(
+            self._maybe_reescape(binary), operator, **kw
+        )
 
     def visit_startswith_op_binary(self, binary, operator, **kw):
         return super(BigQueryCompiler, self).visit_startswith_op_binary(
             self._maybe_reescape(binary), operator, **kw
         )
+    
+    def visit_not_startswith_op_binary(self, binary, operator, **kw):
+        return super(BigQueryCompiler, self).visit_not_startswith_op_binary(
+            self._maybe_reescape(binary), operator, **kw
+        )
 
     def visit_endswith_op_binary(self, binary, operator, **kw):
         return super(BigQueryCompiler, self).visit_endswith_op_binary(
+            self._maybe_reescape(binary), operator, **kw
+        )
+
+    def visit_not_endswith_op_binary(self, binary, operator, **kw):
+        return super(BigQueryCompiler, self).visit_not_endswith_op_binary(
             self._maybe_reescape(binary), operator, **kw
         )
 
