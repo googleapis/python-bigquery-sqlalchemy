@@ -36,6 +36,7 @@ from sqlalchemy.testing.suite import Integer, Table, Column, String, bindparam, 
 from sqlalchemy.testing.suite import (
     CTETest as _CTETest,
     ExistsTest as _ExistsTest,
+    FetchLimitOffsetTest as _FetchLimitOffsetTest,
     DifficultParametersTest as _DifficultParametersTest,
     DistinctOnTest,
     HasIndexTest,
@@ -425,7 +426,6 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
 
 else:
     from sqlalchemy.testing.suite import (
-        FetchLimitOffsetTest as _FetchLimitOffsetTest,
         RowCountTest as _RowCountTest,
     )
 
