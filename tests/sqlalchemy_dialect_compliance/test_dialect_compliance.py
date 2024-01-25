@@ -36,10 +36,13 @@ from sqlalchemy.testing.suite import Integer, Table, Column, String, bindparam, 
 from sqlalchemy.testing.suite import (
     CTETest as _CTETest,
     ExistsTest as _ExistsTest,
-    FetchLimitOffsetTest as _FetchLimitOffsetTest,
     DifficultParametersTest as _DifficultParametersTest,
+    DistinctOnTest,
+    HasIndexTest,
+    IdentityAutoincrementTest,
     InsertBehaviorTest as _InsertBehaviorTest,
     LongNameBlowoutTest,
+    PostCompileParamsTest,
     QuotedNameArgumentTest,
     SimpleUpdateDeleteTest as _SimpleUpdateDeleteTest,
     TimestampMicrosecondsTest as _TimestampMicrosecondsTest,
@@ -68,6 +71,7 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
 
     class DifficultParametersTest(_DifficultParametersTest):
         """There are some parameters that don't work with bigquery that were removed from this test"""
+
         tough_parameters = testing.combinations(
             ("boring",),
             ("per cent",),
@@ -177,6 +181,7 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
 
     class NumericTest(_NumericTest):
         """Added a where clause for BQ compatibility."""
+
         @testing.fixture
         def do_numeric_test(self, metadata, connection):
             def run(type_, input_, output, filter_=None, check_scale=False):
@@ -217,6 +222,7 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
 
     class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
         """BQ has no support for BQ util.text_type"""
+
         data = datetime.datetime(2012, 10, 15, 12, 57, 18, 396, tzinfo=pytz.UTC)
 
         def test_select_direct(self, connection):
@@ -286,6 +292,7 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
 
     class StringTest(_StringTest):
         """Added a where clause for BQ compatibility"""
+
         def test_dont_truncate_rightside(
             self, metadata, connection, expr=None, expected=None
         ):
@@ -311,6 +318,7 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
 
     class UuidTest(_UuidTest):
         """BQ needs to pass in UUID as a string"""
+
         @classmethod
         def define_tables(cls, metadata):
             Table(
@@ -425,6 +433,7 @@ else:
 
     class RowCountTest(_RowCountTest):
         """"""
+
         @classmethod
         def insert_data(cls, connection):
             cls.data = data = [
