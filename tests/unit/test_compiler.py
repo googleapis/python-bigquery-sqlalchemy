@@ -22,6 +22,8 @@ import sqlalchemy.exc
 
 from .conftest import setup_table
 from .conftest import (
+    sqlalchemy_1_4_or_higher,
+    sqlalchemy_before_1_4,
     sqlalchemy_2_0_or_higher,
     sqlalchemy_before_2_0,
 )
@@ -61,6 +63,7 @@ def test_cant_compile_unnamed_column(faux_conn, metadata):
         sqlalchemy.Column(sqlalchemy.Integer).compile(faux_conn)
 
 
+@sqlalchemy_1_4_or_higher
 def test_no_alias_for_known_tables(faux_conn, metadata):
     # See: https://github.com/googleapis/python-bigquery-sqlalchemy/issues/353
     table = setup_table(
@@ -82,6 +85,7 @@ def test_no_alias_for_known_tables(faux_conn, metadata):
     assert found_sql == expected_sql
 
 
+@sqlalchemy_1_4_or_higher
 def test_no_alias_for_known_tables_cte(faux_conn, metadata):
     # See: https://github.com/googleapis/python-bigquery-sqlalchemy/issues/368
     table = setup_table(
@@ -235,6 +239,7 @@ def test_no_implicit_join_for_inner_unnest(faux_conn, metadata):
     assert found_outer_sql == expected_outer_sql
 
 
+@sqlalchemy_1_4_or_higher
 def test_no_implicit_join_asterix_for_inner_unnest_no_table2_column(
     faux_conn, metadata
 ):
@@ -259,6 +264,7 @@ def test_no_implicit_join_asterix_for_inner_unnest_no_table2_column(
     assert found_outer_sql == expected_outer_sql
 
 
+@sqlalchemy_1_4_or_higher
 def test_no_implicit_join_for_inner_unnest_no_table2_column(faux_conn, metadata):
     # See: https://github.com/googleapis/python-bigquery-sqlalchemy/issues/368
     q = prepare_implicit_join_base_query(faux_conn, metadata, False, False)

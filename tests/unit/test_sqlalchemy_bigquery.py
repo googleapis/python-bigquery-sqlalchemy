@@ -10,6 +10,7 @@ import google.api_core.exceptions
 from google.cloud import bigquery
 from google.cloud.bigquery.dataset import DatasetListItem
 from google.cloud.bigquery.table import TableListItem
+import packaging.version
 import pytest
 import sqlalchemy
 
@@ -226,7 +227,12 @@ def test_unnest_function(args, kw):
 
     f = sqlalchemy.func.unnest(*args, **kw)
     assert isinstance(f.type, sqlalchemy.String)
-    assert isinstance(sqlalchemy.select(f).subquery().c.unnest.type, sqlalchemy.String)
+    if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse(
+        "1.4"
+    ):
+        assert isinstance(
+            sqlalchemy.select(f).subquery().c.unnest.type, sqlalchemy.String
+        )
 
 
 @mock.patch("sqlalchemy_bigquery._helpers.create_bigquery_client")

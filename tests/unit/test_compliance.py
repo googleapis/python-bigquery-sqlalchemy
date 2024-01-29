@@ -27,7 +27,7 @@ import sqlalchemy
 from sqlalchemy import Column, Integer, literal_column, select, String, Table, union
 from sqlalchemy.testing.assertions import eq_, in_
 
-from .conftest import setup_table
+from .conftest import setup_table, sqlalchemy_1_3_or_higher
 
 
 def assert_result(connection, sel, expected, params=()):
@@ -106,6 +106,7 @@ def test_percent_sign_round_trip(faux_conn, metadata):
     )
 
 
+@sqlalchemy_1_3_or_higher
 def test_empty_set_against_integer(faux_conn):
     table = some_table(faux_conn)
 
@@ -118,6 +119,7 @@ def test_empty_set_against_integer(faux_conn):
     assert_result(faux_conn, stmt, [], params={"q": []})
 
 
+@sqlalchemy_1_3_or_higher
 def test_null_in_empty_set_is_false(faux_conn):
     stmt = select(
         sqlalchemy.case(
