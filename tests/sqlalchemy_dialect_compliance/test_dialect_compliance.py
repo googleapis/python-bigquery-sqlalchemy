@@ -29,14 +29,11 @@ from sqlalchemy import and_
 import sqlalchemy.testing.suite.test_types
 import sqlalchemy.sql.sqltypes
 from sqlalchemy.testing import util, config
-from sqlalchemy.testing import is_false
-from sqlalchemy.testing import is_true
-from sqlalchemy.testing import is_
 from sqlalchemy.testing.assertions import eq_
-from sqlalchemy.testing.suite import config, select, exists
+from sqlalchemy.testing.suite import select, exists
 from sqlalchemy.testing.suite import *  # noqa
+from sqlalchemy.testing.suite import Integer, Table, Column, String, bindparam, testing
 from sqlalchemy.testing.suite import (
-    ComponentReflectionTest as _ComponentReflectionTest,
     CTETest as _CTETest,
     ExistsTest as _ExistsTest,
     InsertBehaviorTest as _InsertBehaviorTest,
@@ -53,21 +50,18 @@ from sqlalchemy.testing.suite.test_types import (
 from sqlalchemy.testing.suite.test_reflection import (
     BizarroCharacterFKResolutionTest,
     ComponentReflectionTest,
-    OneConnectionTablesTest,
     HasTableTest,
 )
 
 if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2.0"):
     import uuid
     from sqlalchemy.sql import type_coerce
-    from sqlalchemy import Uuid
     from sqlalchemy.testing.suite import (
         TrueDivTest as _TrueDivTest,
         IntegerTest as _IntegerTest,
         NumericTest as _NumericTest,
         DifficultParametersTest as _DifficultParametersTest,
         FetchLimitOffsetTest as _FetchLimitOffsetTest,
-        PostCompileParamsTest,
         StringTest as _StringTest,
         UuidTest as _UuidTest,
     )
@@ -468,74 +462,6 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
     del HasIndexTest  # BQ doesn't do the indexes that SQLA is loooking for.
     del IdentityAutoincrementTest  # BQ doesn't do autoincrement
     del PostCompileParamsTest  # BQ adds backticks to bind parameters, causing failure of tests TODO: fix this?
-
-elif packaging.version.parse(sqlalchemy.__version__) < packaging.version.parse("1.4"):
-    from sqlalchemy.testing.suite import LimitOffsetTest as _LimitOffsetTest
-
-    class LimitOffsetTest(_LimitOffsetTest):
-        @pytest.mark.skip("BigQuery doesn't allow an offset without a limit.")
-        def test_simple_offset(self):
-            pass
-
-        test_bound_offset = test_simple_offset
-
-    class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
-        data = datetime.datetime(2012, 10, 15, 12, 57, 18, 396, tzinfo=pytz.UTC)
-
-        def test_literal(self):
-            # The base tests doesn't set up the literal properly, because
-            # it doesn't pass its datatype to `literal`.
-
-            def literal(value):
-                assert value == self.data
-                return sqlalchemy.sql.elements.literal(value, self.datatype)
-
-            with mock.patch("sqlalchemy.testing.suite.test_types.literal", literal):
-                super(TimestampMicrosecondsTest, self).test_literal()
-
-        def test_select_direct(self, connection):
-            # This func added because this test was failing when passed the
-            # UTC timezone.
-
-            def literal(value, type_=None):
-                assert value == self.data
-
-                if type_ is not None:
-                    assert type_ is self.datatype
-
-                return sqlalchemy.sql.elements.literal(value, self.datatype)
-
-            with mock.patch("sqlalchemy.testing.suite.test_types.literal", literal):
-                super(TimestampMicrosecondsTest, self).test_select_direct(connection)
-
-    class InsertBehaviorTest(_InsertBehaviorTest):
-        @pytest.mark.skip(
-            "BQ has no autoinc and client-side defaults can't work for select."
-        )
-        def test_insert_from_select_autoinc(cls):
-            pass
-
-    class SimpleUpdateDeleteTest(_SimpleUpdateDeleteTest):
-        """The base tests fail if operations return rows for some reason."""
-
-        def test_update(self):
-            t = self.tables.plain_pk
-            r = config.db.execute(t.update().where(t.c.id == 2), data="d2_new")
-            assert not r.is_insert
-
-            eq_(
-                config.db.execute(t.select().order_by(t.c.id)).fetchall(),
-                [(1, "d1"), (2, "d2_new"), (3, "d3")],
-            )
-
-        def test_delete(self):
-            t = self.tables.plain_pk
-            r = config.db.execute(t.delete().where(t.c.id == 2))
-            assert not r.is_insert
-            eq_(
-                config.db.execute(t.select().order_by(t.c.id)).fetchall(),
-                [(1, "d1"), (3, "d3")],
-            )
 
 else:
     from sqlalchemy.testing.suite import (
