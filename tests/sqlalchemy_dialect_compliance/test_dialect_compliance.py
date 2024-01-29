@@ -29,21 +29,18 @@ from sqlalchemy import and_
 import sqlalchemy.testing.suite.test_types
 import sqlalchemy.sql.sqltypes
 from sqlalchemy.testing import util, config
+from sqlalchemy.testing import is_false
+from sqlalchemy.testing import is_true
+from sqlalchemy.testing import is_
 from sqlalchemy.testing.assertions import eq_
-from sqlalchemy.testing.suite import select, exists
+from sqlalchemy.testing.suite import config, select, exists
 from sqlalchemy.testing.suite import *  # noqa
-from sqlalchemy.testing.suite import Integer, Table, Column, String, bindparam, testing
 from sqlalchemy.testing.suite import (
+    ComponentReflectionTest as _ComponentReflectionTest,
     CTETest as _CTETest,
     ExistsTest as _ExistsTest,
-    FetchLimitOffsetTest as _FetchLimitOffsetTest,
-    DifficultParametersTest as _DifficultParametersTest,
-    DistinctOnTest,
-    HasIndexTest,
-    IdentityAutoincrementTest,
     InsertBehaviorTest as _InsertBehaviorTest,
     LongNameBlowoutTest,
-    PostCompileParamsTest,
     QuotedNameArgumentTest,
     SimpleUpdateDeleteTest as _SimpleUpdateDeleteTest,
     TimestampMicrosecondsTest as _TimestampMicrosecondsTest,
@@ -56,23 +53,156 @@ from sqlalchemy.testing.suite.test_types import (
 from sqlalchemy.testing.suite.test_reflection import (
     BizarroCharacterFKResolutionTest,
     ComponentReflectionTest,
+    OneConnectionTablesTest,
     HasTableTest,
 )
 
 if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2.0"):
     import uuid
     from sqlalchemy.sql import type_coerce
+    from sqlalchemy import Uuid
     from sqlalchemy.testing.suite import (
         TrueDivTest as _TrueDivTest,
         IntegerTest as _IntegerTest,
         NumericTest as _NumericTest,
+        DifficultParametersTest as _DifficultParametersTest,
+        FetchLimitOffsetTest as _FetchLimitOffsetTest,
+        PostCompileParamsTest,
         StringTest as _StringTest,
         UuidTest as _UuidTest,
     )
 
-    class DifficultParametersTest(_DifficultParametersTest):
-        """There are some parameters that don't work with bigquery that were removed from this test"""
+    class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
+        data = datetime.datetime(2012, 10, 15, 12, 57, 18, 396, tzinfo=pytz.UTC)
 
+        def test_select_direct(self, connection):
+            # This func added because this test was failing when passed the
+            # UTC timezone.
+
+            def literal(value, type_=None):
+                assert value == self.data
+
+                if type_ is not None:
+                    assert type_ is self.datatype
+
+                return sqlalchemy.sql.elements.literal(value, self.datatype)
+
+            with mock.patch("sqlalchemy.testing.suite.test_types.literal", literal):
+                super(TimestampMicrosecondsTest, self).test_select_direct(connection)
+
+    def test_round_trip_executemany(self, connection):
+        unicode_table = self.tables.unicode_table
+        connection.execute(
+            unicode_table.insert(),
+            [{"id": i, "unicode_data": self.data} for i in range(3)],
+        )
+
+        rows = connection.execute(select(unicode_table.c.unicode_data)).fetchall()
+        eq_(rows, [(self.data,) for i in range(3)])
+        for row in rows:
+            # 2.0 had no support for util.text_type
+            assert isinstance(row[0], str)
+
+    sqlalchemy.testing.suite.test_types._UnicodeFixture.test_round_trip_executemany = (
+        test_round_trip_executemany
+    )
+
+    class TrueDivTest(_TrueDivTest):
+        @pytest.mark.skip("BQ rounds based on datatype")
+        def test_floordiv_integer(self):
+            pass
+
+        @pytest.mark.skip("BQ rounds based on datatype")
+        def test_floordiv_integer_bound(self):
+            pass
+
+    class SimpleUpdateDeleteTest(_SimpleUpdateDeleteTest):
+        """The base tests fail if operations return rows for some reason."""
+
+        def test_update(self):
+            t = self.tables.plain_pk
+            connection = config.db.connect()
+            # In SQLAlchemy 2.0, the datatype changed to dict in the following function.
+            r = connection.execute(t.update().where(t.c.id == 2), dict(data="d2_new"))
+            assert not r.is_insert
+
+            eq_(
+                connection.execute(t.select().order_by(t.c.id)).fetchall(),
+                [(1, "d1"), (2, "d2_new"), (3, "d3")],
+            )
+
+        def test_delete(self):
+            t = self.tables.plain_pk
+            connection = config.db.connect()
+            r = connection.execute(t.delete().where(t.c.id == 2))
+            assert not r.is_insert
+            eq_(
+                connection.execute(t.select().order_by(t.c.id)).fetchall(),
+                [(1, "d1"), (3, "d3")],
+            )
+
+    class InsertBehaviorTest(_InsertBehaviorTest):
+        @pytest.mark.skip(
+            "BQ has no autoinc and client-side defaults can't work for select."
+        )
+        def test_insert_from_select_autoinc(cls):
+            pass
+
+        @pytest.mark.skip(
+            "BQ has no autoinc and client-side defaults can't work for select."
+        )
+        def test_no_results_for_non_returning_insert(cls):
+            pass
+
+    # BQ has no autoinc and client-side defaults can't work for select
+    del _IntegerTest.test_huge_int_auto_accommodation
+
+    class NumericTest(_NumericTest):
+        @testing.fixture
+        def do_numeric_test(self, metadata, connection):
+            def run(type_, input_, output, filter_=None, check_scale=False):
+                t = Table("t", metadata, Column("x", type_))
+                t.create(connection)
+                connection.execute(t.insert(), [{"x": x} for x in input_])
+
+                result = {row[0] for row in connection.execute(t.select())}
+                output = set(output)
+                if filter_:
+                    result = {filter_(x) for x in result}
+                    output = {filter_(x) for x in output}
+                eq_(result, output)
+                if check_scale:
+                    eq_([str(x) for x in result], [str(x) for x in output])
+
+                where_expr = True
+
+                # Adding where clause for 2.0 compatibility
+                connection.execute(t.delete().where(where_expr))
+
+                # test that this is actually a number!
+                # note we have tiny scale here as we have tests with very
+                # small scale Numeric types.  PostgreSQL will raise an error
+                # if you use values outside the available scale.
+                if type_.asdecimal:
+                    test_value = decimal.Decimal("2.9")
+                    add_value = decimal.Decimal("37.12")
+                else:
+                    test_value = 2.9
+                    add_value = 37.12
+
+                connection.execute(t.insert(), {"x": test_value})
+                assert_we_are_a_number = connection.scalar(
+                    select(type_coerce(t.c.x + add_value, type_))
+                )
+                eq_(
+                    round(assert_we_are_a_number, 3),
+                    round(test_value + add_value, 3),
+                )
+
+            return run
+
+    class DifficultParametersTest(_DifficultParametersTest):
+        # removed parameters that dont work with bigquery
         tough_parameters = testing.combinations(
             ("boring",),
             ("per cent",),
@@ -177,149 +307,34 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
             res = connection.scalars(stmt, {paramname: ["d", "a"]}).all()
             eq_(res, [1, 4])
 
-    # BQ has no autoinc and client-side defaults can't work for select
-    del _IntegerTest.test_huge_int_auto_accommodation
-
-    class NumericTest(_NumericTest):
-        """Added a where clause for BQ compatibility."""
-
-        @testing.fixture
-        def do_numeric_test(self, metadata, connection):
-            def run(type_, input_, output, filter_=None, check_scale=False):
-                t = Table("t", metadata, Column("x", type_))
-                t.create(connection)
-                connection.execute(t.insert(), [{"x": x} for x in input_])
-
-                result = {row[0] for row in connection.execute(t.select())}
-                output = set(output)
-                if filter_:
-                    result = {filter_(x) for x in result}
-                    output = {filter_(x) for x in output}
-                eq_(result, output)
-                if check_scale:
-                    eq_([str(x) for x in result], [str(x) for x in output])
-
-                where_expr = True
-
-                connection.execute(t.delete().where(where_expr))
-
-                if type_.asdecimal:
-                    test_value = decimal.Decimal("2.9")
-                    add_value = decimal.Decimal("37.12")
-                else:
-                    test_value = 2.9
-                    add_value = 37.12
-
-                connection.execute(t.insert(), {"x": test_value})
-                assert_we_are_a_number = connection.scalar(
-                    select(type_coerce(t.c.x + add_value, type_))
-                )
-                eq_(
-                    round(assert_we_are_a_number, 3),
-                    round(test_value + add_value, 3),
-                )
-
-            return run
-
-    class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
-        """BQ has no support for BQ util.text_type"""
-
-        data = datetime.datetime(2012, 10, 15, 12, 57, 18, 396, tzinfo=pytz.UTC)
-
-        def test_select_direct(self, connection):
-            # This func added because this test was failing when passed the
-            # UTC timezone.
-
-            def literal(value, type_=None):
-                assert value == self.data
-
-                if type_ is not None:
-                    assert type_ is self.datatype
-
-                return sqlalchemy.sql.elements.literal(value, self.datatype)
-
-            with mock.patch("sqlalchemy.testing.suite.test_types.literal", literal):
-                super(TimestampMicrosecondsTest, self).test_select_direct(connection)
-
-    def test_round_trip_executemany(self, connection):
-        unicode_table = self.tables.unicode_table
-        connection.execute(
-            unicode_table.insert(),
-            [{"id": i, "unicode_data": self.data} for i in range(3)],
-        )
-
-        rows = connection.execute(select(unicode_table.c.unicode_data)).fetchall()
-        eq_(rows, [(self.data,) for i in range(3)])
-        for row in rows:
-            assert isinstance(row[0], str)
-
-    sqlalchemy.testing.suite.test_types._UnicodeFixture.test_round_trip_executemany = (
-        test_round_trip_executemany
-    )
-
-    class TrueDivTest(_TrueDivTest):
-        @pytest.mark.skip("BQ rounds based on datatype")
-        def test_floordiv_integer(self):
+    class FetchLimitOffsetTest(_FetchLimitOffsetTest):
+        @pytest.mark.skip("BigQuery doesn't allow an offset without a limit.")
+        def test_simple_offset(self):
             pass
 
-        @pytest.mark.skip("BQ rounds based on datatype")
-        def test_floordiv_integer_bound(self):
-            pass
+        test_bound_offset = test_simple_offset
+        test_expr_offset = test_simple_offset_zero = test_simple_offset
+        test_limit_offset_nobinds = test_simple_offset  # TODO figure out
+        # how to prevent this from failing
+        # The original test is missing an order by.
 
-    class SimpleUpdateDeleteTest(_SimpleUpdateDeleteTest):
-        """The base tests fail if operations return rows for some reason."""
+        # The original test is missing an order by.
 
-        def test_update(self):
-            t = self.tables.plain_pk
-            connection = config.db.connect()
-            # In SQLAlchemy 2.0, the datatype changed to dict in the following function.
-            r = connection.execute(t.update().where(t.c.id == 2), dict(data="d2_new"))
-            assert not r.is_insert
+        # Also, note that sqlalchemy union is a union distinct, not a
+        # union all. This test caught that were were getting that wrong.
+        def test_limit_render_multiple_times(self, connection):
+            table = self.tables.some_table
+            stmt = select(table.c.id).order_by(table.c.id).limit(1).scalar_subquery()
 
-            eq_(
-                connection.execute(t.select().order_by(t.c.id)).fetchall(),
-                [(1, "d1"), (2, "d2_new"), (3, "d3")],
+            u = sqlalchemy.union(select(stmt), select(stmt)).subquery().select()
+
+            self._assert_result(
+                connection,
+                u,
+                [(1,)],
             )
-
-        def test_delete(self):
-            t = self.tables.plain_pk
-            connection = config.db.connect()
-            r = connection.execute(t.delete().where(t.c.id == 2))
-            assert not r.is_insert
-            eq_(
-                connection.execute(t.select().order_by(t.c.id)).fetchall(),
-                [(1, "d1"), (3, "d3")],
-            )
-
-    class StringTest(_StringTest):
-        """Added a where clause for BQ compatibility"""
-
-        def test_dont_truncate_rightside(
-            self, metadata, connection, expr=None, expected=None
-        ):
-            t = Table(
-                "t",
-                metadata,
-                Column("x", String(2)),
-                Column("id", Integer, primary_key=True),
-            )
-            t.create(connection)
-            connection.connection.commit()
-            connection.execute(
-                t.insert(),
-                [{"x": "AB", "id": 1}, {"x": "BC", "id": 2}, {"x": "AC", "id": 3}],
-            )
-            combinations = [("%B%", ["AB", "BC"]), ("A%C", ["AC"]), ("A%C%Z", [])]
-
-            for args in combinations:
-                eq_(
-                    connection.scalars(select(t.c.x).where(t.c.x.like(args[0]))).all(),
-                    args[1],
-                )
 
     class UuidTest(_UuidTest):
-        """BQ needs to pass in UUID as a string"""
-
         @classmethod
         def define_tables(cls, metadata):
             Table(
@@ -424,38 +439,81 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
 
             eq_(row, (data, str_data, data, str_data))
 
-else:
-    from sqlalchemy.testing.suite import (
-        RowCountTest as _RowCountTest,
-    )
-
-    del DifficultParametersTest  # exercises column names illegal in BQ
-
-    class RowCountTest(_RowCountTest):
-        """"""
-
-        @classmethod
-        def insert_data(cls, connection):
-            cls.data = data = [
-                ("Angela", "A"),
-                ("Andrew", "A"),
-                ("Anand", "A"),
-                ("Bob", "B"),
-                ("Bobette", "B"),
-                ("Buffy", "B"),
-                ("Charlie", "C"),
-                ("Cynthia", "C"),
-                ("Chris", "C"),
-            ]
-
-            employees_table = cls.tables.employees
-            connection.execute(
-                employees_table.insert(),
-                [
-                    {"employee_id": i, "name": n, "department": d}
-                    for i, (n, d) in enumerate(data)
-                ],
+    class StringTest(_StringTest):
+        def test_dont_truncate_rightside(
+            self, metadata, connection, expr=None, expected=None
+        ):
+            t = Table(
+                "t",
+                metadata,
+                Column("x", String(2)),
+                Column("id", Integer, primary_key=True),
             )
+            t.create(connection)
+            connection.connection.commit()
+            connection.execute(
+                t.insert(),
+                [{"x": "AB", "id": 1}, {"x": "BC", "id": 2}, {"x": "AC", "id": 3}],
+            )
+            combinations = [("%B%", ["AB", "BC"]), ("A%C", ["AC"]), ("A%C%Z", [])]
+
+            for args in combinations:
+                eq_(
+                    connection.scalars(select(t.c.x).where(t.c.x.like(args[0]))).all(),
+                    args[1],
+                )
+
+    # from else statement ....
+    del DistinctOnTest  # expects unquoted table names.
+    del HasIndexTest  # BQ doesn't do the indexes that SQLA is loooking for.
+    del IdentityAutoincrementTest  # BQ doesn't do autoincrement
+    del PostCompileParamsTest  # BQ adds backticks to bind parameters, causing failure of tests TODO: fix this?
+
+elif packaging.version.parse(sqlalchemy.__version__) < packaging.version.parse("1.4"):
+    from sqlalchemy.testing.suite import LimitOffsetTest as _LimitOffsetTest
+
+    class LimitOffsetTest(_LimitOffsetTest):
+        @pytest.mark.skip("BigQuery doesn't allow an offset without a limit.")
+        def test_simple_offset(self):
+            pass
+
+        test_bound_offset = test_simple_offset
+
+    class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
+        data = datetime.datetime(2012, 10, 15, 12, 57, 18, 396, tzinfo=pytz.UTC)
+
+        def test_literal(self):
+            # The base tests doesn't set up the literal properly, because
+            # it doesn't pass its datatype to `literal`.
+
+            def literal(value):
+                assert value == self.data
+                return sqlalchemy.sql.elements.literal(value, self.datatype)
+
+            with mock.patch("sqlalchemy.testing.suite.test_types.literal", literal):
+                super(TimestampMicrosecondsTest, self).test_literal()
+
+        def test_select_direct(self, connection):
+            # This func added because this test was failing when passed the
+            # UTC timezone.
+
+            def literal(value, type_=None):
+                assert value == self.data
+
+                if type_ is not None:
+                    assert type_ is self.datatype
+
+                return sqlalchemy.sql.elements.literal(value, self.datatype)
+
+            with mock.patch("sqlalchemy.testing.suite.test_types.literal", literal):
+                super(TimestampMicrosecondsTest, self).test_select_direct(connection)
+
+    class InsertBehaviorTest(_InsertBehaviorTest):
+        @pytest.mark.skip(
+            "BQ has no autoinc and client-side defaults can't work for select."
+        )
+        def test_insert_from_select_autoinc(cls):
+            pass
 
     class SimpleUpdateDeleteTest(_SimpleUpdateDeleteTest):
         """The base tests fail if operations return rows for some reason."""
@@ -478,6 +536,46 @@ else:
                 config.db.execute(t.select().order_by(t.c.id)).fetchall(),
                 [(1, "d1"), (3, "d3")],
             )
+
+else:
+    from sqlalchemy.testing.suite import (
+        FetchLimitOffsetTest as _FetchLimitOffsetTest,
+        RowCountTest as _RowCountTest,
+    )
+
+    class FetchLimitOffsetTest(_FetchLimitOffsetTest):
+        @pytest.mark.skip("BigQuery doesn't allow an offset without a limit.")
+        def test_simple_offset(self):
+            pass
+
+        test_bound_offset = test_simple_offset
+        test_expr_offset = test_simple_offset_zero = test_simple_offset
+        test_limit_offset_nobinds = test_simple_offset  # TODO figure out
+        # how to prevent this from failing
+        # The original test is missing an order by.
+
+        # Also, note that sqlalchemy union is a union distinct, not a
+        # union all. This test caught that were were getting that wrong.
+        def test_limit_render_multiple_times(self, connection):
+            table = self.tables.some_table
+            stmt = select(table.c.id).order_by(table.c.id).limit(1).scalar_subquery()
+
+            u = sqlalchemy.union(select(stmt), select(stmt)).subquery().select()
+
+            self._assert_result(
+                connection,
+                u,
+                [(1,)],
+            )
+
+    del DifficultParametersTest  # exercises column names illegal in BQ
+    del DistinctOnTest  # expects unquoted table names.
+    del HasIndexTest  # BQ doesn't do the indexes that SQLA is loooking for.
+    del IdentityAutoincrementTest  # BQ doesn't do autoincrement
+
+    # This test makes makes assertions about generated sql and trips
+    # over the backquotes that we add everywhere. XXX Why do we do that?
+    del PostCompileParamsTest
 
     class TimestampMicrosecondsTest(_TimestampMicrosecondsTest):
         data = datetime.datetime(2012, 10, 15, 12, 57, 18, 396, tzinfo=pytz.UTC)
@@ -529,15 +627,70 @@ else:
         test_round_trip_executemany
     )
 
+    class RowCountTest(_RowCountTest):
+        @classmethod
+        def insert_data(cls, connection):
+            cls.data = data = [
+                ("Angela", "A"),
+                ("Andrew", "A"),
+                ("Anand", "A"),
+                ("Bob", "B"),
+                ("Bobette", "B"),
+                ("Buffy", "B"),
+                ("Charlie", "C"),
+                ("Cynthia", "C"),
+                ("Chris", "C"),
+            ]
 
-class CTETest(_CTETest):
-    @pytest.mark.skip("Can't use CTEs with insert")
-    def test_insert_from_select_round_trip(self):
-        pass
+            employees_table = cls.tables.employees
+            connection.execute(
+                employees_table.insert(),
+                [
+                    {"employee_id": i, "name": n, "department": d}
+                    for i, (n, d) in enumerate(data)
+                ],
+            )
 
-    @pytest.mark.skip("Recusive CTEs aren't supported.")
-    def test_select_recursive_round_trip(self):
-        pass
+    class InsertBehaviorTest(_InsertBehaviorTest):
+        @pytest.mark.skip(
+            "BQ has no autoinc and client-side defaults can't work for select."
+        )
+        def test_insert_from_select_autoinc(cls):
+            pass
+
+    class SimpleUpdateDeleteTest(_SimpleUpdateDeleteTest):
+        """The base tests fail if operations return rows for some reason."""
+
+        def test_update(self):
+            t = self.tables.plain_pk
+            r = config.db.execute(t.update().where(t.c.id == 2), data="d2_new")
+            assert not r.is_insert
+
+            eq_(
+                config.db.execute(t.select().order_by(t.c.id)).fetchall(),
+                [(1, "d1"), (2, "d2_new"), (3, "d3")],
+            )
+
+        def test_delete(self):
+            t = self.tables.plain_pk
+            r = config.db.execute(t.delete().where(t.c.id == 2))
+            assert not r.is_insert
+            eq_(
+                config.db.execute(t.select().order_by(t.c.id)).fetchall(),
+                [(1, "d1"), (3, "d3")],
+            )
+
+
+# Quotes aren't allowed in BigQuery table names.
+del QuotedNameArgumentTest
+
+
+# class InsertBehaviorTest(_InsertBehaviorTest):
+#     @pytest.mark.skip(
+#         "BQ has no autoinc and client-side defaults can't work for select."
+#     )
+#     def test_insert_from_select_autoinc(cls):
+#         pass
 
 
 class ExistsTest(_ExistsTest):
@@ -572,43 +725,42 @@ class ExistsTest(_ExistsTest):
         )
 
 
-class FetchLimitOffsetTest(_FetchLimitOffsetTest):
-    @pytest.mark.skip("BigQuery doesn't allow an offset without a limit.")
-    def test_simple_offset(self):
+# This test requires features (indexes, primary keys, etc., that BigQuery doesn't have.
+del LongNameBlowoutTest
+
+
+# class SimpleUpdateDeleteTest(_SimpleUpdateDeleteTest):
+#     """The base tests fail if operations return rows for some reason."""
+
+#     def test_update(self):
+#         t = self.tables.plain_pk
+#         r = config.db.execute(t.update().where(t.c.id == 2), data="d2_new")
+#         assert not r.is_insert
+#         # assert not r.returns_rows
+
+#         eq_(
+#             config.db.execute(t.select().order_by(t.c.id)).fetchall(),
+#             [(1, "d1"), (2, "d2_new"), (3, "d3")],
+#         )
+
+#     def test_delete(self):
+#         t = self.tables.plain_pk
+#         r = config.db.execute(t.delete().where(t.c.id == 2))
+#         assert not r.is_insert
+#         # assert not r.returns_rows
+#         eq_(
+#             config.db.execute(t.select().order_by(t.c.id)).fetchall(),
+#             [(1, "d1"), (3, "d3")],
+#         )
+
+
+class CTETest(_CTETest):
+    @pytest.mark.skip("Can't use CTEs with insert")
+    def test_insert_from_select_round_trip(self):
         pass
 
-    test_bound_offset = test_simple_offset
-    test_expr_offset = test_simple_offset_zero = test_simple_offset
-    test_limit_offset_nobinds = test_simple_offset  # TODO figure out
-    # how to prevent this from failing
-    # The original test is missing an order by.
-
-    # Also, note that sqlalchemy union is a union distinct, not a
-    # union all. This test caught that were were getting that wrong.
-    def test_limit_render_multiple_times(self, connection):
-        table = self.tables.some_table
-        stmt = select(table.c.id).order_by(table.c.id).limit(1).scalar_subquery()
-
-        u = sqlalchemy.union(select(stmt), select(stmt)).subquery().select()
-
-        self._assert_result(
-            connection,
-            u,
-            [(1,)],
-        )
-
-
-class InsertBehaviorTest(_InsertBehaviorTest):
-    @pytest.mark.skip(
-        "BQ has no autoinc and client-side defaults can't work for select."
-    )
-    def test_insert_from_select_autoinc(cls):
-        pass
-
-    @pytest.mark.skip(
-        "BQ has no autoinc and client-side defaults can't work for select."
-    )
-    def test_no_results_for_non_returning_insert(cls):
+    @pytest.mark.skip("Recusive CTEs aren't supported.")
+    def test_select_recursive_round_trip(self):
         pass
 
 
@@ -628,9 +780,3 @@ del ComponentReflectionTest  # Multiple tests re: CHECK CONSTRAINTS, etc which
 del ArrayTest  # only appears to apply to postgresql
 del BizarroCharacterFKResolutionTest
 del HasTableTest.test_has_table_cache  # TODO confirm whether BQ has table caching
-del DistinctOnTest  # expects unquoted table names.
-del HasIndexTest  # BQ doesn't do the indexes that SQLA is loooking for.
-del IdentityAutoincrementTest  # BQ doesn't do autoincrement
-del LongNameBlowoutTest  # Requires features (indexes, primary keys, etc., that BigQuery doesn't have.
-del PostCompileParamsTest  # BQ adds backticks to bind parameters, causing failure of tests TODO: fix this?
-del QuotedNameArgumentTest  # Quotes aren't allowed in BigQuery table names.
