@@ -163,7 +163,7 @@ class BigQueryExecutionContext(DefaultExecutionContext):
         """,
         flags=re.IGNORECASE | re.VERBOSE,
     )
-    def __distribute_types_to_expanded_placeholders(self, m):
+    def __distribute_types_to_expanded_placeholders(self, m):  # pragma: NO COVER
         # If we have an in parameter, it sometimes gets expaned to 0 or more
         # parameters and we need to move the type marker to each
         # parameter.
@@ -174,6 +174,8 @@ class BigQueryExecutionContext(DefaultExecutionContext):
         # suffixes refect that when an array parameter is expanded,
         # numeric suffixes are added.  For example, a placeholder like
         # `%(foo)s` gets expaneded to `%(foo_0)s, `%(foo_1)s, ...`.
+
+        # Coverage: despite our best efforts, never recognized this segment of code as being tested.
         placeholders, type_ = m.groups()
         if placeholders:
             placeholders = placeholders.replace(")", f":{type_})")
@@ -356,11 +358,7 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
 
     __sqlalchemy_version_info = packaging.version.parse(sqlalchemy.__version__)
 
-    __expanding_text = (
-        "EXPANDING"
-        if __sqlalchemy_version_info < packaging.version.parse("1.4")
-        else "POSTCOMPILE"
-    )
+    __expanding_text = "POSTCOMPILE"
 
     # https://github.com/sqlalchemy/sqlalchemy/commit/f79df12bd6d99b8f6f09d4bf07722638c4b4c159
     __expanding_conflict = (
@@ -387,9 +385,6 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
         return self.__in_expanding_bind(
             self._generate_generic_binary(binary, " IN ", **kw)
         )
-
-    def visit_empty_set_expr(self, element_types, **kw):
-        return ""
 
     def visit_not_in_op_binary(self, binary, operator, **kw):
         return (
@@ -424,28 +419,13 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
             self._maybe_reescape(binary), operator, **kw
         )
 
-    def visit_notcontains_op_binary(self, binary, operator, **kw):
-        return super(BigQueryCompiler, self).visit_notcontains_op_binary(
-            self._maybe_reescape(binary), operator, **kw
-        )
-
     def visit_startswith_op_binary(self, binary, operator, **kw):
         return super(BigQueryCompiler, self).visit_startswith_op_binary(
             self._maybe_reescape(binary), operator, **kw
         )
 
-    def visit_notstartswith_op_binary(self, binary, operator, **kw):
-        return super(BigQueryCompiler, self).visit_notstartswith_op_binary(
-            self._maybe_reescape(binary), operator, **kw
-        )
-
     def visit_endswith_op_binary(self, binary, operator, **kw):
         return super(BigQueryCompiler, self).visit_endswith_op_binary(
-            self._maybe_reescape(binary), operator, **kw
-        )
-
-    def visit_notendswith_op_binary(self, binary, operator, **kw):
-        return super(BigQueryCompiler, self).visit_notendswith_op_binary(
             self._maybe_reescape(binary), operator, **kw
         )
 
@@ -510,7 +490,8 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
             # here, because then we can't do a recompile later (e.g., first
             # print the statment, then execute it).  See issue #357.
             #
-            if getattr(bindparam, "expand_op", None) is not None:
+            # Coverage: despite our best efforts, never recognized this segment of code as being tested.
+            if getattr(bindparam, "expand_op", None) is not None:  # pragma: NO COVER
                 assert bindparam.expand_op.__name__.endswith("in_op")  # in in
                 bindparam = bindparam._clone(maintain_key=True)
                 bindparam.expanding = False
@@ -1277,10 +1258,6 @@ class BigQueryDialect(DefaultDialect):
     def do_rollback(self, dbapi_connection):
         # BigQuery has no support for transactions.
         pass
-
-    def _check_unicode_returns(self, connection, additional_tests=None):
-        # requests gives back Unicode strings
-        return True
 
     def get_view_definition(self, connection, view_name, schema=None, **kw):
         if isinstance(connection, Engine):
