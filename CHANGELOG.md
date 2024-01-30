@@ -13,13 +13,20 @@ Older versions of this project were distributed as [pybigquery][0].
 
 [2]: https://pypi.org/project/pybigquery/#history
 
+## [1.11.0.dev1](https://github.com/googleapis/python-bigquery-sqlalchemy/compare/v1.9.0...v1.11.0.dev1) (2024-01-30)
+
+
+### Bug Fixes
+
+* Fix coverage test issues in SQLAlchemy migration ([#987](https://github.com/googleapis/python-bigquery-sqlalchemy/pull/987))
+* Cleanup test_sqlalchemy_dialect file for readability ([#1018](https://github.com/googleapis/python-bigquery-sqlalchemy/pull/1018))
+
 ## [1.11.0.dev0](https://github.com/googleapis/python-bigquery-sqlalchemy/compare/v1.9.0...v1.11.0.dev0) (2024-01-25)
 
 
 ### Features
 
 * Drop support for SQLAlchemy versions 1.2 and 1.3, maintain support for 1.4 and add support for 2.0 ([#920](https://github.com/googleapis/python-bigquery-sqlalchemy/pull/920))
-* Fix coverage test issues in SQLAlchemy migration ([#987](https://github.com/googleapis/python-bigquery-sqlalchemy/pull/987))
 
 ## [1.9.0](https://github.com/googleapis/python-bigquery-sqlalchemy/compare/v1.8.0...v1.9.0) (2023-12-10)
 
