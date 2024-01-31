@@ -22,6 +22,7 @@ import sqlalchemy.exc
 
 from .conftest import setup_table
 from .conftest import sqlalchemy_1_4_or_higher, sqlalchemy_before_1_4
+from sqlalchemy.sql.functions import rollup, cube, grouping_sets
 
 
 def test_constraints_are_ignored(faux_conn, metadata):
@@ -278,3 +279,66 @@ def test_no_implicit_join_for_inner_unnest_no_table2_column(faux_conn, metadata)
     )
     found_outer_sql = q.compile(faux_conn).string
     assert found_outer_sql == expected_outer_sql
+
+
+def test_grouping_sets(faux_conn, metadata):
+    table = setup_table(
+        faux_conn,
+        "table1",
+        metadata,
+        sqlalchemy.Column("foo", sqlalchemy.Integer),
+        sqlalchemy.Column("bar", sqlalchemy.Integer),
+    )
+
+    q = sqlalchemy.select(table.c.foo, table.c.bar).group_by(
+        grouping_sets(table.c.foo, table.c.bar)
+    )
+
+    expected_sql = (
+        "SELECT `table1`.`foo`, `table1`.`bar` \n"
+        "FROM `table1` GROUP BY GROUPING SETS ((`table1`.`foo`), (`table1`.`bar`))"
+    )
+    found_sql = q.compile(faux_conn).string
+    assert found_sql == expected_sql
+
+
+def test_rollup(faux_conn, metadata):
+    table = setup_table(
+        faux_conn,
+        "table1",
+        metadata,
+        sqlalchemy.Column("foo", sqlalchemy.Integer),
+        sqlalchemy.Column("bar", sqlalchemy.Integer),
+    )
+
+    q = sqlalchemy.select(table.c.foo, table.c.bar).group_by(
+        rollup(table.c.foo, table.c.bar)
+    )
+
+    expected_sql = (
+        "SELECT `table1`.`foo`, `table1`.`bar` \n"
+        "FROM `table1` GROUP BY ROLLUP(`table1`.`foo`, `table1`.`bar`)"
+    )
+    found_sql = q.compile(faux_conn).string
+    assert found_sql == expected_sql
+
+
+def test_cube(faux_conn, metadata):
+    table = setup_table(
+        faux_conn,
+        "table1",
+        metadata,
+        sqlalchemy.Column("foo", sqlalchemy.Integer),
+        sqlalchemy.Column("bar", sqlalchemy.Integer),
+    )
+
+    q = sqlalchemy.select(table.c.foo, table.c.bar).group_by(
+        cube(table.c.foo, table.c.bar)
+    )
+
+    expected_sql = (
+        "SELECT `table1`.`foo`, `table1`.`bar` \n"
+        "FROM `table1` GROUP BY CUBE(`table1`.`foo`, `table1`.`bar`)"
+    )
+    found_sql = q.compile(faux_conn).string
+    assert found_sql == expected_sql
