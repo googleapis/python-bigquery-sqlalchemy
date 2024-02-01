@@ -342,37 +342,8 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
             kwargs["render_label_as_label"] = args[0]
         return super(BigQueryCompiler, self).visit_label(*args, **kwargs)
 
-    def group_by_clause(self, select, **kw):
-        grouping_sets_exprs = []
-        rollup_exprs = []
-        cube_exprs = []
-
-        # Traverse select statement to extract grouping sets, rollup, and cube expressions
-        for expr in select._group_by_clause:
-            if isinstance(expr, grouping_sets):
-                grouping_sets_exprs.append(
-                    self.process(expr.clauses)
-                )  # Assuming SQLAlchemy syntax
-            elif isinstance(expr, rollup):  # Assuming SQLAlchemy syntax
-                rollup_exprs.append(self.process(expr.clauses))
-            elif isinstance(expr, cube):  # Assuming SQLAlchemy syntax
-                cube_exprs.append(self.process(expr.clauses))
-            else:
-                # Handle regular group by expressions
-                pass
-
-        clause = super(BigQueryCompiler, self).group_by_clause(select, **kw)
-
-        if grouping_sets_exprs:
-            clause = (
-                f"GROUP BY {clause} GROUPING SETS ({', '.join(grouping_sets_exprs)})"
-            )
-        if rollup_exprs:
-            clause = f"GROUP BY {clause} ROLLUP ({', '.join(rollup_exprs)})"
-        if cube_exprs:
-            clause = f"GROUP BY {clause} CUBE ({', '.join(cube_exprs)})"
-
-        return clause
+    def group_by_clause(self, select, **kwargs):
+        return super(BigQueryCompiler, self).group_by_clause(select, **kwargs)
 
     ############################################################################
     # Handle parameters in in

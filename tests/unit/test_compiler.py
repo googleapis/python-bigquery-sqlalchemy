@@ -297,7 +297,7 @@ def test_grouping_sets(faux_conn, metadata):
 
     expected_sql = (
         "SELECT `table1`.`foo`, `table1`.`bar` \n"
-        "FROM `table1` GROUP BY GROUPING SETS ((`table1`.`foo`), (`table1`.`bar`))"
+        "FROM `table1` GROUP BY GROUPING SETS(`table1`.`foo`, `table1`.`bar`)"
     )
     found_sql = q.compile(faux_conn).string
     assert found_sql == expected_sql
