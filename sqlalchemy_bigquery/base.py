@@ -38,7 +38,6 @@ import packaging.version
 import sqlalchemy
 import sqlalchemy.sql.expression
 import sqlalchemy.sql.functions
-from sqlalchemy.sql.functions import rollup, cube, grouping_sets
 import sqlalchemy.sql.sqltypes
 import sqlalchemy.sql.type_api
 from sqlalchemy.exc import NoSuchTableError, NoSuchColumnError
@@ -333,13 +332,7 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
 
             return self.preparer.quote(tablename) + "." + name
 
-    def visit_label(self, *args, within_group_by=False, **kwargs):
-        # Use labels in GROUP BY clause.
-        #
-        # Flag set in the group_by_clause method. Works around missing
-        # equivalent to supports_simple_order_by_label for group by.
-        if within_group_by:
-            kwargs["render_label_as_label"] = args[0]
+    def visit_label(self, *args, **kwargs):
         return super(BigQueryCompiler, self).visit_label(*args, **kwargs)
 
     def group_by_clause(self, select, **kwargs):
