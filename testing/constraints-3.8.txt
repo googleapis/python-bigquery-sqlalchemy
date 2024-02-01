@@ -3,7 +3,7 @@
 # List *all* library dependencies and extras in this file.
 # Pin the version to the lower bound.
 #
-# e.g., if setup.py has "foo >= 1.14.0, < 2.0.0dev",
+# e.g., if setup.py has "foo >= 1.14.1, < 2.0.0dev",
 sqlalchemy==1.4.16
 google-auth==1.25.0
 google-cloud-bigquery==3.3.6
