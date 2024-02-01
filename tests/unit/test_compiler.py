@@ -21,7 +21,10 @@ import pytest
 import sqlalchemy.exc
 
 from .conftest import setup_table
-from .conftest import sqlalchemy_1_4_or_higher, sqlalchemy_before_1_4
+from .conftest import (
+    sqlalchemy_2_0_or_higher,
+    sqlalchemy_before_2_0,
+)
 from sqlalchemy.sql.functions import rollup, cube, grouping_sets
 
 
@@ -59,7 +62,6 @@ def test_cant_compile_unnamed_column(faux_conn, metadata):
         sqlalchemy.Column(sqlalchemy.Integer).compile(faux_conn)
 
 
-@sqlalchemy_1_4_or_higher
 def test_no_alias_for_known_tables(faux_conn, metadata):
     # See: https://github.com/googleapis/python-bigquery-sqlalchemy/issues/353
     table = setup_table(
@@ -81,7 +83,6 @@ def test_no_alias_for_known_tables(faux_conn, metadata):
     assert found_sql == expected_sql
 
 
-@sqlalchemy_1_4_or_higher
 def test_no_alias_for_known_tables_cte(faux_conn, metadata):
     # See: https://github.com/googleapis/python-bigquery-sqlalchemy/issues/368
     table = setup_table(
@@ -143,30 +144,8 @@ def prepare_implicit_join_base_query(
     return q
 
 
-@sqlalchemy_before_1_4
-def test_no_implicit_join_asterix_for_inner_unnest_before_1_4(faux_conn, metadata):
-    # See: https://github.com/googleapis/python-bigquery-sqlalchemy/issues/368
-    q = prepare_implicit_join_base_query(faux_conn, metadata, True, True)
-    expected_initial_sql = (
-        "SELECT `table1`.`foo`, `table2`.`bar` \n"
-        "FROM `table2`, unnest(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`"
-    )
-    found_initial_sql = q.compile(faux_conn).string
-    assert found_initial_sql == expected_initial_sql
-
-    q = sqlalchemy.select(["*"]).select_from(q)
-
-    expected_outer_sql = (
-        "SELECT * \n"
-        "FROM (SELECT `table1`.`foo` AS `foo`, `table2`.`bar` AS `bar` \n"
-        "FROM `table2`, unnest(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`)"
-    )
-    found_outer_sql = q.compile(faux_conn).string
-    assert found_outer_sql == expected_outer_sql
-
-
-@sqlalchemy_1_4_or_higher
-def test_no_implicit_join_asterix_for_inner_unnest(faux_conn, metadata):
+@sqlalchemy_before_2_0
+def test_no_implicit_join_asterix_for_inner_unnest_before_2_0(faux_conn, metadata):
     # See: https://github.com/googleapis/python-bigquery-sqlalchemy/issues/368
     q = prepare_implicit_join_base_query(faux_conn, metadata, True, False)
     expected_initial_sql = (
@@ -188,30 +167,31 @@ def test_no_implicit_join_asterix_for_inner_unnest(faux_conn, metadata):
     assert found_outer_sql == expected_outer_sql
 
 
-@sqlalchemy_before_1_4
-def test_no_implicit_join_for_inner_unnest_before_1_4(faux_conn, metadata):
+@sqlalchemy_2_0_or_higher
+def test_no_implicit_join_asterix_for_inner_unnest(faux_conn, metadata):
     # See: https://github.com/googleapis/python-bigquery-sqlalchemy/issues/368
-    q = prepare_implicit_join_base_query(faux_conn, metadata, True, True)
+    q = prepare_implicit_join_base_query(faux_conn, metadata, True, False)
     expected_initial_sql = (
         "SELECT `table1`.`foo`, `table2`.`bar` \n"
-        "FROM `table2`, unnest(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`"
+        "FROM unnest(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`, `table2`"
     )
     found_initial_sql = q.compile(faux_conn).string
     assert found_initial_sql == expected_initial_sql
 
-    q = sqlalchemy.select([q.c.foo]).select_from(q)
+    q = q.subquery()
+    q = sqlalchemy.select("*").select_from(q)
 
     expected_outer_sql = (
-        "SELECT `foo` \n"
+        "SELECT * \n"
         "FROM (SELECT `table1`.`foo` AS `foo`, `table2`.`bar` AS `bar` \n"
-        "FROM `table2`, unnest(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`)"
+        "FROM unnest(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`, `table2`) AS `anon_1`"
     )
     found_outer_sql = q.compile(faux_conn).string
     assert found_outer_sql == expected_outer_sql
 
 
-@sqlalchemy_1_4_or_higher
-def test_no_implicit_join_for_inner_unnest(faux_conn, metadata):
+@sqlalchemy_before_2_0
+def test_no_implicit_join_for_inner_unnest_before_2_0(faux_conn, metadata):
     # See: https://github.com/googleapis/python-bigquery-sqlalchemy/issues/368
     q = prepare_implicit_join_base_query(faux_conn, metadata, True, False)
     expected_initial_sql = (
@@ -233,7 +213,29 @@ def test_no_implicit_join_for_inner_unnest(faux_conn, metadata):
     assert found_outer_sql == expected_outer_sql
 
 
-@sqlalchemy_1_4_or_higher
+@sqlalchemy_2_0_or_higher
+def test_no_implicit_join_for_inner_unnest(faux_conn, metadata):
+    # See: https://github.com/googleapis/python-bigquery-sqlalchemy/issues/368
+    q = prepare_implicit_join_base_query(faux_conn, metadata, True, False)
+    expected_initial_sql = (
+        "SELECT `table1`.`foo`, `table2`.`bar` \n"
+        "FROM unnest(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`, `table2`"
+    )
+    found_initial_sql = q.compile(faux_conn).string
+    assert found_initial_sql == expected_initial_sql
+
+    q = q.subquery()
+    q = sqlalchemy.select(q.c.foo).select_from(q)
+
+    expected_outer_sql = (
+        "SELECT `anon_1`.`foo` \n"
+        "FROM (SELECT `table1`.`foo` AS `foo`, `table2`.`bar` AS `bar` \n"
+        "FROM unnest(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`, `table2`) AS `anon_1`"
+    )
+    found_outer_sql = q.compile(faux_conn).string
+    assert found_outer_sql == expected_outer_sql
+
+
 def test_no_implicit_join_asterix_for_inner_unnest_no_table2_column(
     faux_conn, metadata
 ):
@@ -258,7 +260,6 @@ def test_no_implicit_join_asterix_for_inner_unnest_no_table2_column(
     assert found_outer_sql == expected_outer_sql
 
 
-@sqlalchemy_1_4_or_higher
 def test_no_implicit_join_for_inner_unnest_no_table2_column(faux_conn, metadata):
     # See: https://github.com/googleapis/python-bigquery-sqlalchemy/issues/368
     q = prepare_implicit_join_base_query(faux_conn, metadata, False, False)
