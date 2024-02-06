@@ -332,11 +332,25 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
 
             return self.preparer.quote(tablename) + "." + name
 
-    def visit_label(self, *args, **kwargs):
+    def visit_label(self, *args, within_group_by=False, **kwargs):
+        # Use labels in GROUP BY clause.
+        #
+        # Flag set in the group_by_clause method. Works around missing
+        # equivalent to supports_simple_order_by_label for group by.
+        if within_group_by:
+            if all(
+                keyword not in str(args[0])
+                for keyword in ("GROUPING SETS", "ROLLUP", "CUBE")
+            ):
+                kwargs["render_label_as_label"] = args[0]
         return super(BigQueryCompiler, self).visit_label(*args, **kwargs)
 
-    def group_by_clause(self, select, **kwargs):
-        return super(BigQueryCompiler, self).group_by_clause(select, **kwargs)
+    def group_by_clause(self, select, **kw):
+        return super(BigQueryCompiler, self).group_by_clause(
+            select,
+            **kw,
+            within_group_by=True,
+        )
 
     ############################################################################
     # Handle parameters in in

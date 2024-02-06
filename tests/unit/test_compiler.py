@@ -288,7 +288,7 @@ def test_grouping_sets(faux_conn, metadata):
         "table1",
         metadata,
         sqlalchemy.Column("foo", sqlalchemy.Integer),
-        sqlalchemy.Column("bar", sqlalchemy.Integer),
+        sqlalchemy.Column("bar", sqlalchemy.ARRAY(sqlalchemy.Integer)),
     )
 
     q = sqlalchemy.select(table.c.foo, table.c.bar).group_by(
@@ -309,7 +309,7 @@ def test_rollup(faux_conn, metadata):
         "table1",
         metadata,
         sqlalchemy.Column("foo", sqlalchemy.Integer),
-        sqlalchemy.Column("bar", sqlalchemy.Integer),
+        sqlalchemy.Column("bar", sqlalchemy.ARRAY(sqlalchemy.Integer)),
     )
 
     q = sqlalchemy.select(table.c.foo, table.c.bar).group_by(
@@ -330,7 +330,7 @@ def test_cube(faux_conn, metadata):
         "table1",
         metadata,
         sqlalchemy.Column("foo", sqlalchemy.Integer),
-        sqlalchemy.Column("bar", sqlalchemy.Integer),
+        sqlalchemy.Column("bar", sqlalchemy.ARRAY(sqlalchemy.Integer)),
     )
 
     q = sqlalchemy.select(table.c.foo, table.c.bar).group_by(
