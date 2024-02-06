@@ -26,6 +26,7 @@ from .conftest import (
     sqlalchemy_before_2_0,
 )
 from sqlalchemy.sql.functions import rollup, cube, grouping_sets
+from sqlalchemy import func
 
 
 def test_constraints_are_ignored(faux_conn, metadata):
@@ -340,6 +341,27 @@ def test_cube(faux_conn, metadata):
     expected_sql = (
         "SELECT `table1`.`foo`, `table1`.`bar` \n"
         "FROM `table1` GROUP BY CUBE(`table1`.`foo`, `table1`.`bar`)"
+    )
+    found_sql = q.compile(faux_conn).string
+    assert found_sql == expected_sql
+
+
+def test_multiple_grouping_sets(faux_conn, metadata):
+    table = setup_table(
+        faux_conn,
+        "table1",
+        metadata,
+        sqlalchemy.Column("foo", sqlalchemy.Integer),
+        sqlalchemy.Column("bar", sqlalchemy.ARRAY(sqlalchemy.Integer)),
+    )
+
+    q = sqlalchemy.select(table.c.foo, table.c.bar).group_by(
+        grouping_sets(table.c.foo, table.c.bar), grouping_sets(table.c.foo)
+    )
+
+    expected_sql = (
+        "SELECT `table1`.`foo`, `table1`.`bar` \n"
+        "FROM `table1` GROUP BY GROUPING SETS(`table1`.`foo`, `table1`.`bar`), GROUPING SETS(`table1`.`foo`)"
     )
     found_sql = q.compile(faux_conn).string
     assert found_sql == expected_sql

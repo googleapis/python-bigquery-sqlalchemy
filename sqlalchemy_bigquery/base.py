@@ -343,13 +343,12 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
                 for keyword in ("GROUPING SETS", "ROLLUP", "CUBE")
             ):
                 kwargs["render_label_as_label"] = args[0]
+
         return super(BigQueryCompiler, self).visit_label(*args, **kwargs)
 
     def group_by_clause(self, select, **kw):
         return super(BigQueryCompiler, self).group_by_clause(
-            select,
-            **kw,
-            within_group_by=True,
+            select, **kw, within_group_by=True
         )
 
     ############################################################################
