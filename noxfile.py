@@ -356,6 +356,7 @@ def system_noextras(session):
 @nox.session(python=SYSTEM_TEST_PYTHON_VERSIONS[-1])
 def compliance(session):
     """Run the SQLAlchemy dialect-compliance system tests"""
+
     constraints_path = str(
         CURRENT_DIRECTORY / "testing" / f"constraints-{session.python}.txt"
     )
