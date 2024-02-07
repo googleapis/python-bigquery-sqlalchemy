@@ -198,7 +198,7 @@ def compliance(session):
         "--only-rerun=Not found",
         "--only-rerun=Cannot execute DML over a non-existent table",
         "--only-rerun=Job exceeded rate limits",
-        "--durations=50",
+        "--durations=50",  # shows duration of slowest 50 tests
         "--dist=loadscope",
         "--numprocesses=auto",
         system_test_folder_path,
