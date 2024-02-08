@@ -26,7 +26,6 @@ from .conftest import (
     sqlalchemy_before_2_0,
 )
 from sqlalchemy.sql.functions import rollup, cube, grouping_sets
-from sqlalchemy import func
 
 
 def test_constraints_are_ignored(faux_conn, metadata):

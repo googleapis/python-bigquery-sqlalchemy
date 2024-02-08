@@ -338,11 +338,13 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
         # Flag set in the group_by_clause method. Works around missing
         # equivalent to supports_simple_order_by_label for group by.
         if within_group_by:
-            if all(
-                keyword not in str(args[0])
-                for keyword in ("GROUPING SETS", "ROLLUP", "CUBE")
-            ):
-                kwargs["render_label_as_label"] = args[0]
+            column_label = args[0]
+            sql_keywords = {"GROUPING SETS", "ROLLUP", "CUBE"}
+            for keyword in sql_keywords:
+                if keyword in str(column_label):
+                    break
+            else:  # for/else always happens unless break gets called
+                kwargs["render_label_as_label"] = column_label
 
         return super(BigQueryCompiler, self).visit_label(*args, **kwargs)
 
