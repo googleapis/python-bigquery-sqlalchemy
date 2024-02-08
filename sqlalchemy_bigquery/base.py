@@ -402,8 +402,6 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
             + ")"
         )
 
-    visit_notin_op_binary = visit_not_in_op_binary  # before 1.4
-
     ############################################################################
 
     ############################################################################
