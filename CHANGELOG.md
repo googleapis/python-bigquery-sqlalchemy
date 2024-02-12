@@ -13,6 +13,13 @@ Older versions of this project were distributed as [pybigquery][0].
 
 [2]: https://pypi.org/project/pybigquery/#history
 
+## [1.11.0.dev3](https://github.com/googleapis/python-bigquery-sqlalchemy/compare/v1.9.0...v1.11.0.dev3) (2024-01-30)
+
+
+### Bug Fixes
+
+* Fix grouping sets, rollup and cube rendering issue ([#1019](https://github.com/googleapis/python-bigquery-sqlalchemy/pull/1019))
+
 ## [1.11.0.dev2](https://github.com/googleapis/python-bigquery-sqlalchemy/compare/v1.9.0...v1.11.0.dev2) (2024-02-01)
 
 ## [1.11.0.dev1](https://github.com/googleapis/python-bigquery-sqlalchemy/compare/v1.9.0...v1.11.0.dev1) (2024-01-30)
