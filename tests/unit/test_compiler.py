@@ -282,7 +282,11 @@ def test_no_implicit_join_for_inner_unnest_no_table2_column(faux_conn, metadata)
     assert found_outer_sql == expected_outer_sql
 
 
-def test_grouping_sets(faux_conn, metadata):
+@pytest.mark.parametrize(
+    "grouping_func_name, grouping_func",
+    [("GROUPING SETS", grouping_sets), ("ROLLUP", rollup), ("CUBE", cube)],
+)
+def test_grouping_functions(faux_conn, metadata, grouping_func_name, grouping_func):
     table = setup_table(
         faux_conn,
         "table1",
@@ -292,54 +296,12 @@ def test_grouping_sets(faux_conn, metadata):
     )
 
     q = sqlalchemy.select(table.c.foo, table.c.bar).group_by(
-        grouping_sets(table.c.foo, table.c.bar)
+        grouping_func(table.c.foo, table.c.bar)
     )
 
     expected_sql = (
-        "SELECT `table1`.`foo`, `table1`.`bar` \n"
-        "FROM `table1` GROUP BY GROUPING SETS(`table1`.`foo`, `table1`.`bar`)"
-    )
-    found_sql = q.compile(faux_conn).string
-    assert found_sql == expected_sql
-
-
-def test_rollup(faux_conn, metadata):
-    table = setup_table(
-        faux_conn,
-        "table1",
-        metadata,
-        sqlalchemy.Column("foo", sqlalchemy.Integer),
-        sqlalchemy.Column("bar", sqlalchemy.ARRAY(sqlalchemy.Integer)),
-    )
-
-    q = sqlalchemy.select(table.c.foo, table.c.bar).group_by(
-        rollup(table.c.foo, table.c.bar)
-    )
-
-    expected_sql = (
-        "SELECT `table1`.`foo`, `table1`.`bar` \n"
-        "FROM `table1` GROUP BY ROLLUP(`table1`.`foo`, `table1`.`bar`)"
-    )
-    found_sql = q.compile(faux_conn).string
-    assert found_sql == expected_sql
-
-
-def test_cube(faux_conn, metadata):
-    table = setup_table(
-        faux_conn,
-        "table1",
-        metadata,
-        sqlalchemy.Column("foo", sqlalchemy.Integer),
-        sqlalchemy.Column("bar", sqlalchemy.ARRAY(sqlalchemy.Integer)),
-    )
-
-    q = sqlalchemy.select(table.c.foo, table.c.bar).group_by(
-        cube(table.c.foo, table.c.bar)
-    )
-
-    expected_sql = (
-        "SELECT `table1`.`foo`, `table1`.`bar` \n"
-        "FROM `table1` GROUP BY CUBE(`table1`.`foo`, `table1`.`bar`)"
+        f"SELECT `table1`.`foo`, `table1`.`bar` \n"
+        f"FROM `table1` GROUP BY {grouping_func_name}(`table1`.`foo`, `table1`.`bar`)"
     )
     found_sql = q.compile(faux_conn).string
     assert found_sql == expected_sql
@@ -364,3 +326,74 @@ def test_multiple_grouping_sets(faux_conn, metadata):
     )
     found_sql = q.compile(faux_conn).string
     assert found_sql == expected_sql
+
+
+@pytest.mark.parametrize(
+    "grouping_func_name, grouping_func",
+    [("GROUPING SETS", grouping_sets), ("ROLLUP", rollup), ("CUBE", cube)],
+)
+def test_single_column(faux_conn, metadata, grouping_func_name, grouping_func):
+    table = setup_table(
+        faux_conn, "table1", metadata, sqlalchemy.Column("foo", sqlalchemy.Integer)
+    )
+
+    q = sqlalchemy.select(table.c.foo).group_by(grouping_func(table.c.foo))
+
+    expected_sql = (
+        f"SELECT `table1`.`foo` \n"
+        f"FROM `table1` GROUP BY {grouping_func_name}(`table1`.`foo`)"
+    )
+    found_sql = q.compile(faux_conn).string
+    assert found_sql == expected_sql
+
+
+@pytest.mark.parametrize(
+    "grouping_func_name, grouping_func",
+    [("GROUPING SETS", grouping_sets), ("ROLLUP", rollup), ("CUBE", cube)],
+)
+def test_group_by_with_grouping_sets(
+    faux_conn, metadata, grouping_func_name, grouping_func
+):
+    table = setup_table(
+        faux_conn,
+        "table1",
+        metadata,
+        sqlalchemy.Column("foo", sqlalchemy.Integer),
+        sqlalchemy.Column("bar", sqlalchemy.Integer),
+    )
+
+    q = sqlalchemy.select(table.c.foo, table.c.bar).group_by(
+        table.c.foo, grouping_func(table.c.bar)
+    )
+
+    expected_sql = (
+        f"SELECT `table1`.`foo`, `table1`.`bar` \n"
+        f"FROM `table1` GROUP BY `table1`.`foo`, {grouping_func_name}(`table1`.`bar`)"
+    )
+    found_sql = q.compile(faux_conn).string
+    assert found_sql == expected_sql
+
+
+@pytest.mark.parametrize(
+    "grouping_func_name, grouping_func",
+    [("GROUPING SETS", grouping_sets), ("ROLLUP", rollup), ("CUBE", cube)],
+)
+def test_complex_grouping(faux_conn, grouping_func_name, grouping_func, metadata):
+    table = setup_table(
+        faux_conn,
+        "table1",
+        metadata,
+        sqlalchemy.Column("foo", sqlalchemy.Integer),
+        sqlalchemy.Column("bar", sqlalchemy.Integer),
+    )
+
+    q = sqlalchemy.select(table.c.foo, table.c.bar).group_by(
+        grouping_sets(table.c.foo, grouping_func(table.c.bar))
+    )
+
+    expected_sql1 = (
+        f"SELECT `table1`.`foo`, `table1`.`bar` \n"
+        f"FROM `table1` GROUP BY GROUPING SETS(`table1`.`foo`, {grouping_func_name}(`table1`.`bar`))"
+    )
+
+    assert q.compile(faux_conn).string == expected_sql1
