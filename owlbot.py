@@ -96,7 +96,7 @@ s.replace(
     """"protobuf",
         # dependency of grpc""",
     """"protobuf",
-        "sqlalchemy>=1.4.16,<2.1",
+        "sqlalchemy",
         # dependency of grpc""",
 )
 
@@ -115,13 +115,6 @@ def place_before(path, text, *before_text, escape=None):
             text = text.replace(c, "\\" + c)
     s.replace([path], text, replacement)
 
-
-place_before(
-    "noxfile.py",
-    "SYSTEM_TEST_PYTHON_VERSIONS=",
-    "",
-    "# We're using two Python versions to test with sqlalchemy>=1.4.16",
-)
 
 place_before(
     "noxfile.py",
@@ -166,8 +159,6 @@ def compliance(session):
     if not os.path.exists(system_test_folder_path):
         session.skip("Compliance tests were not found")
 
-    session.install("--pre", "grpcio")
-    session.install("--pre", "--no-deps", "--upgrade", "sqlalchemy>=1.4.16,<2.1") 
     session.install(
         "mock",
         "pytest",
