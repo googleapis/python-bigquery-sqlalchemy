@@ -313,7 +313,13 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
 
             for args in combinations:
                 eq_(
-                    list(sorted(connection.scalars(select(t.c.x).where(t.c.x.like(args[0]))).all())),
+                    list(
+                        sorted(
+                            connection.scalars(
+                                select(t.c.x).where(t.c.x.like(args[0]))
+                            ).all()
+                        )
+                    ),
                     list(sorted(args[1])),
                 )
 
