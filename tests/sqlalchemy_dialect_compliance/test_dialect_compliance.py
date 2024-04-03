@@ -584,7 +584,7 @@ class FetchLimitOffsetTest(_FetchLimitOffsetTest):
     # The original test is missing an order by.
 
     # Also, note that sqlalchemy union is a union distinct, not a
-    # union all. This test caught that were were getting that wrong.
+    # union all. This test caught that we were getting that wrong.
     def test_limit_render_multiple_times(self, connection):
         table = self.tables.some_table
         stmt = select(table.c.id).order_by(table.c.id).limit(1).scalar_subquery()
