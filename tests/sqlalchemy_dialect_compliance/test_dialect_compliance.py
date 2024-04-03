@@ -313,8 +313,8 @@ if packaging.version.parse(sqlalchemy.__version__) >= packaging.version.parse("2
 
             for args in combinations:
                 eq_(
-                    connection.scalars(select(t.c.x).where(t.c.x.like(args[0]))).all(),
-                    args[1],
+                    list(sorted(connection.scalars(select(t.c.x).where(t.c.x.like(args[0]))).all())),
+                    list(sorted(args[1])),
                 )
 
     class UuidTest(_UuidTest):
