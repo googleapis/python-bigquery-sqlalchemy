@@ -388,6 +388,14 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
         repl=r" IN UNNEST([ \1 ])",
     )
 
+    def update_from_clause(
+        self, update_stmt, from_table, extra_froms, from_hints, **kw
+    ):
+        kw["asfrom"] = True
+        return "FROM " + ", ".join(
+            t._compiler_dispatch(self, fromhints=from_hints, **kw) for t in extra_froms
+        )
+
     def visit_in_op_binary(self, binary, operator_, **kw):
         return self.__in_expanding_bind(
             self._generate_generic_binary(binary, " IN ", **kw)
