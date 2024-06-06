@@ -161,6 +161,8 @@ def prepare_implicit_join_base_query(
     return q
 
 
+# Test vendored method update_from_clause()
+# from sqlalchemy_bigquery_vendored.sqlalchemy.postgresql.base.PGCompiler
 def test_update_from_clause(faux_conn, metadata):
     table1 = setup_table(
         faux_conn,
