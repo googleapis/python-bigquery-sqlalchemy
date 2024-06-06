@@ -68,8 +68,6 @@ extras = {
 
 extras["all"] = set(itertools.chain.from_iterable(extras.values()))
 
-packages = ["sqlalchemy_bigquery", "sqlalchemy_bigquery_vendored"]
-
 packages = [
     package
     for package in setuptools.find_namespace_packages()
