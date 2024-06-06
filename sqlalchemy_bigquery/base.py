@@ -60,6 +60,7 @@ import re
 
 from .parse_url import parse_url
 from . import _helpers, _struct, _types
+import sqlalchemy_bigquery_vendored.sqlalchemy.postgresql.base
 
 # Illegal characters is intended to be all characters that are not explicitly
 # allowed as part of the flexible column names.
@@ -189,7 +190,10 @@ class BigQueryExecutionContext(DefaultExecutionContext):
         )
 
 
-class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
+class BigQueryCompiler(
+    _struct.SQLCompiler,
+    sqlalchemy_bigquery_vendored.sqlalchemy.postgresql.base.PGCompiler,
+):
     compound_keywords = SQLCompiler.compound_keywords.copy()
     compound_keywords[selectable.CompoundSelect.UNION] = "UNION DISTINCT"
     compound_keywords[selectable.CompoundSelect.UNION_ALL] = "UNION ALL"
