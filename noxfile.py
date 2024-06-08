@@ -225,6 +225,7 @@ def default(session, install_extras=True):
         "--cov-report=",
         "--cov-fail-under=0",
         os.path.join("tests", "unit"),
+        os.path.join("third_party", "sqlalchemy_bigquery_vendored"),
         *session.posargs,
     )
 
