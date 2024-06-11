@@ -8,12 +8,12 @@
 
 from sqlalchemy.sql import compiler
 
+
 class PGCompiler(compiler.SQLCompiler):
     def update_from_clause(
         self, update_stmt, from_table, extra_froms, from_hints, **kw
     ):
         kw["asfrom"] = True
         return "FROM " + ", ".join(
-            t._compiler_dispatch(self, fromhints=from_hints, **kw)
-            for t in extra_froms
+            t._compiler_dispatch(self, fromhints=from_hints, **kw) for t in extra_froms
         )
