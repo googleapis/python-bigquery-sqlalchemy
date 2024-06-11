@@ -79,7 +79,7 @@ s.replace(
 
 s.replace(
     ["noxfile.py"],
-    "LINT_PATHS = [",
+    "LINT_PATHS = \[",
     "LINT_PATHS = [\"third_party\", "
 )
 
