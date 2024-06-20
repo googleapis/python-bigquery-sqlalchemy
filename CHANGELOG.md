@@ -14,6 +14,18 @@ Older versions of this project were distributed as [pybigquery][0].
 [2]: https://pypi.org/project/pybigquery/#history
 
 
+## [1.12.0](https://github.com/googleapis/python-bigquery-sqlalchemy/compare/v1.11.0...v1.12.0) (2024-06-20)
+
+
+### Features
+
+* Support UPDATE + JOIN in BigQuery dialect ([#1083](https://github.com/googleapis/python-bigquery-sqlalchemy/issues/1083)) ([d766d21](https://github.com/googleapis/python-bigquery-sqlalchemy/commit/d766d21053f7d9df5019d0d6dedf4476ef6125a9))
+
+
+### Bug Fixes
+
+* Fix partitioning by DATE column ([#1074](https://github.com/googleapis/python-bigquery-sqlalchemy/issues/1074)) ([ad69c63](https://github.com/googleapis/python-bigquery-sqlalchemy/commit/ad69c630833bce207784dfbea8eb3c58f316e511))
+
 ## [1.11.0](https://github.com/googleapis/python-bigquery-sqlalchemy/compare/v1.10.0...v1.11.0) (2024-04-12)
 
 
