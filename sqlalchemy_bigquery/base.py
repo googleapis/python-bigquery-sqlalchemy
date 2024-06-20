@@ -1072,6 +1072,7 @@ class BigQueryDialect(DefaultDialect):
             credentials_base64,
             default_query_job_config,
             list_tables_page_size,
+            with_subject,
             user_supplied_client,
         ) = parse_url(url)
 
@@ -1097,6 +1098,7 @@ class BigQueryDialect(DefaultDialect):
                 project_id=project_id,
                 location=self.location,
                 default_query_job_config=default_query_job_config,
+                with_subject=with_subject,
             )
             return ([], {"client": client})
 
