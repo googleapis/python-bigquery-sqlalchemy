@@ -366,18 +366,6 @@ def test_reflect_dataset_does_not_exist(engine):
         )
 
 
-def test_tables_list(engine, engine_using_test_dataset, bigquery_dataset):
-    tables = sqlalchemy.inspect(engine).get_table_names()
-    assert f"{bigquery_dataset}.sample" in tables
-    assert f"{bigquery_dataset}.sample_one_row" in tables
-    assert f"{bigquery_dataset}.sample_view" not in tables
-
-    tables = sqlalchemy.inspect(engine_using_test_dataset).get_table_names()
-    assert "sample" in tables
-    assert "sample_one_row" in tables
-    assert "sample_view" not in tables
-
-
 def test_group_by(session, table, session_using_test_dataset, table_using_test_dataset):
     """labels in SELECT clause should be correclty formatted (dots are replaced with underscores)"""
     for session, table in [
@@ -612,14 +600,15 @@ def test_schemas_names(inspector, inspector_using_test_dataset, bigquery_dataset
     assert f"{bigquery_dataset}" in datasets
 
 
-def test_table_names_in_schema(
-    inspector, inspector_using_test_dataset, bigquery_dataset
-):
+def test_table_names(inspector, inspector_using_test_dataset, bigquery_dataset):
+    tables = inspector.get_table_names()
+    assert not tables
+
     tables = inspector.get_table_names(bigquery_dataset)
-    assert f"{bigquery_dataset}.sample" in tables
-    assert f"{bigquery_dataset}.sample_one_row" in tables
-    assert f"{bigquery_dataset}.sample_dml_empty" in tables
-    assert f"{bigquery_dataset}.sample_view" not in tables
+    assert "sample" in tables
+    assert "sample_one_row" in tables
+    assert "sample_dml_empty" in tables
+    assert "sample_view" not in tables
     assert len(tables) == 3
 
     tables = inspector_using_test_dataset.get_table_names()
@@ -632,8 +621,11 @@ def test_table_names_in_schema(
 
 def test_view_names(inspector, inspector_using_test_dataset, bigquery_dataset):
     view_names = inspector.get_view_names()
-    assert f"{bigquery_dataset}.sample_view" in view_names
-    assert f"{bigquery_dataset}.sample" not in view_names
+    assert not view_names
+
+    view_names = inspector.get_view_names(bigquery_dataset)
+    assert "sample_view" in view_names
+    assert "sample" not in view_names
 
     view_names = inspector_using_test_dataset.get_view_names()
     assert "sample_view" in view_names
