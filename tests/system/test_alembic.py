@@ -99,10 +99,11 @@ def test_alembic_scenario(alembic_table):
     op.add_column(
         "account", Column("last_transaction_date", DateTime, comment="when updated")
     )
+    op.alter_column("account", "name", new_column_name="friendly_name")
 
     assert alembic_table("account", "schema") == [
         SchemaField("id", "INTEGER", "REQUIRED"),
-        SchemaField("name", "STRING(50)", "REQUIRED", description="The name"),
+        SchemaField("friendly_name", "STRING(50)", "REQUIRED", description="The name"),
         SchemaField("description", "STRING(200)"),
         SchemaField("last_transaction_date", "DATETIME", description="when updated"),
     ]

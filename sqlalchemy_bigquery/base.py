@@ -1330,10 +1330,25 @@ except ImportError:  # pragma: NO COVER
     pass
 else:
     from alembic.ddl import impl
-    from alembic.ddl.base import ColumnType, format_type, alter_table, alter_column
+    from alembic.ddl.base import (
+        ColumnName,
+        ColumnType,
+        format_column_name,
+        format_type,
+        alter_table,
+        alter_column,
+    )
 
     class SqlalchemyBigqueryImpl(impl.DefaultImpl):
         __dialect__ = "bigquery"
+
+    @compiles(ColumnName, "bigquery")
+    def visit_column_name(element: ColumnName, compiler: DDLCompiler, **kw) -> str:
+        return "%s RENAME COLUMN %s TO %s" % (
+            alter_table(compiler, element.table_name, element.schema),
+            format_column_name(compiler, element.column_name),
+            format_column_name(compiler, element.newname),
+        )
 
     @compiles(ColumnType, "bigquery")
     def visit_column_type(element: ColumnType, compiler: DDLCompiler, **kw) -> str:
