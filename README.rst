@@ -235,7 +235,8 @@ Here are examples of all the supported arguments. Any not present are either for
         'priority=INTERACTIVE' '&'
         'schema_update_options=ALLOW_FIELD_ADDITION,ALLOW_FIELD_RELAXATION' '&'
         'use_query_cache=true' '&'
-        'write_disposition=WRITE_APPEND'
+        'write_disposition=WRITE_APPEND'  '&'
+        'with_subject={email}'
     )
 
 In cases where you wish to include the full credentials in the connection URI you can base64 the credentials JSON file and supply the encoded string to the ``credentials_base64`` parameter.
@@ -258,12 +259,20 @@ In cases where you wish to include the full credentials in the connection URI yo
         'priority=INTERACTIVE' '&'
         'schema_update_options=ALLOW_FIELD_ADDITION,ALLOW_FIELD_RELAXATION' '&'
         'use_query_cache=true' '&'
-        'write_disposition=WRITE_APPEND'
+        'write_disposition=WRITE_APPEND' '&'
+        'with_subject={email}'
     )
 
 To create the base64 encoded string you can use the command line tool ``base64``, or ``openssl base64``, or ``python -m base64``.
 
 Alternatively, you can use an online generator like `www.base64encode.org <https://www.base64encode.org>_` to paste your credentials JSON file to be encoded.
+
+with_subject impersonation
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If the service account has `domain-wide delegation authority`_, you may pass in `with_subject={email}` to impersonate the user.
+
+.. _domain-wide delegation authority: https://developers.google.com/identity/protocols/oauth2/service-account#delegatingauthority
 
 
 Supplying Your Own BigQuery Client
