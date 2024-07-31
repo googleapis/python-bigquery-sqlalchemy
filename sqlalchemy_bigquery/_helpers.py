@@ -6,6 +6,7 @@
 
 import functools
 import re
+from typing import Optional
 
 from google.api_core import client_info
 import google.auth
@@ -14,6 +15,7 @@ from google.oauth2 import service_account
 import sqlalchemy
 import base64
 import json
+
 
 
 USER_AGENT_TEMPLATE = "sqlalchemy/{}"
