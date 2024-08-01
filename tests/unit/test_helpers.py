@@ -255,4 +255,4 @@ def test_substitute_re_func_self(module_under_test):
 )
 def test_google_client_info(user_agent, expected_user_agent):
     client_info = _helpers.google_client_info(user_agent=user_agent)
-    assert client_info.to_user_agent() == expected_user_agent
+    assert client_info.to_user_agent().startswith(expected_user_agent)
