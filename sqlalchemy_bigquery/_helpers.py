@@ -17,7 +17,6 @@ import base64
 import json
 
 
-
 USER_AGENT_TEMPLATE = "sqlalchemy/{}"
 SCOPES = (
     "https://www.googleapis.com/auth/bigquery",
@@ -46,11 +45,10 @@ def create_bigquery_client(
     project_id: Optional[str] = None,
     user_agent: Optional[str] = None,
 ) -> google.cloud.bigquery.Client:
-    
     """Construct a BigQuery client object.
 
     Args:
-        credentials_info Optional[dict]: 
+        credentials_info Optional[dict]:
         credentials_path Optional[str]:
         credentials_base64 Optional[str]:
         default_query_job_config (Optional[google.cloud.bigquery.job.QueryJobConfig]):
@@ -66,7 +64,7 @@ def create_bigquery_client(
             you only need to set this if you're developing your own library
             or partner tool.
     """
-    
+
     default_project = None
 
     if credentials_base64:

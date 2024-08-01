@@ -246,6 +246,7 @@ def test_substitute_re_func_self(module_under_test):
         == "some hah and FOO is good"
     )
 
+
 @pytest.mark.parametrize(
     "user_agent, expected_user_agent",
     [
