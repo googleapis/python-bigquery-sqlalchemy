@@ -25,7 +25,9 @@ SCOPES = (
 )
 
 
-def google_client_info(user_agent=None):
+def google_client_info(
+    user_agent: Optional[str] = None,
+) -> google.api_core.client_info.ClientInfo:
     """
     Return a client_info object, with an optional user agent
     string.  If user_agent is None, use a default value.
