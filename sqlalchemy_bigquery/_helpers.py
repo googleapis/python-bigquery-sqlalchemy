@@ -45,7 +45,7 @@ def create_bigquery_client(
     default_query_job_config: Optional[google.cloud.bigquery.job.QueryJobConfig] = None,
     location: Optional[str] = None,
     project_id: Optional[str] = None,
-    user_agent: Optional[str] = None,
+    user_agent: Optional[google.api_core.client_info.ClientInfo] = None,
 ) -> google.cloud.bigquery.Client:
     """Construct a BigQuery client object.
 
