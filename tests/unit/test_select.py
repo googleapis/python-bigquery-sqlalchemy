@@ -515,7 +515,7 @@ def test_window_rows_between(faux_conn):
     test in sqlalchemy's suite of compliance tests.
 
     Their test is expecting things in sorted order and BQ
-    doesn't return sorted results they way they expect so that
+    doesn't return sorted results the way they expect so that
     test fails.
 
     Note: that test only appears in:
