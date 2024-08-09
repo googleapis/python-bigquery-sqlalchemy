@@ -521,7 +521,7 @@ def test_window_rows_between(faux_conn):
     Note: that test only appears in:
     sqlalchemy/lib/sqlalchemy/testing/suite/test_select.py
     in version 2.0.32. It appears as though that test will be
-    replaced with the a similar but new test called:
+    replaced with a similar but new test called:
     'test_window_rows_between_w_caching'
     due to the fact the rows are part of the cache key right now and
     not handled as binds.  This is related to sqlalchemy Issue #11515
