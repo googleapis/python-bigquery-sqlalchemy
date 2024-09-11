@@ -812,7 +812,9 @@ class BigQueryDDLCompiler(DDLCompiler):
             )
 
     def _process_time_partitioning(
-        self, table: Table, time_partitioning: TimePartitioning
+        self,
+        table: Table,
+        time_partitioning: TimePartitioning,
     ):
         """
         Generates a SQL 'PARTITION BY' clause for partitioning a table by a date or timestamp.
@@ -830,23 +832,61 @@ class BigQueryDDLCompiler(DDLCompiler):
         - Given a table with a TIMESTAMP type column 'event_timestamp' and setting
         'time_partitioning.field' to 'event_timestamp', the function returns
         "PARTITION BY TIMESTAMP_TRUNC(event_timestamp, DAY)".
+
+        Current inputs allowed by BQ and covered by this function include:
+        * _PARTITIONDATE
+        * DATETIME_TRUNC(<datetime_column>, DAY/HOUR/MONTH/YEAR)
+        * TIMESTAMP_TRUNC(<timestamp_column>, DAY/HOUR/MONTH/YEAR)
+        * DATE_TRUNC(<date_column>, MONTH/YEAR)
+
+        Additional allowed options not explicitly covered by this function
+        include:
+        * DATE(_PARTITIONTIME)
+        * DATE(<timestamp_column>)
+        * DATE(<datetime_column>)
+        * DATE column
         """
+
         field = "_PARTITIONDATE"
         trunc_fn = "DATE_TRUNC"
 
+        # Format used with _PARTITIONDATE which can only be used for
+        # DAY / MONTH / YEAR
+        if time_partitioning.field is None and field == "_PARTITIONDATE":
+            if time_partitioning.type_ in {"DAY", "MONTH", "YEAR"}:
+                return f"PARTITION BY {trunc_fn}({field})"
+            else:
+                raise ValueError(
+                    f"_PARTITIONDATE can only be used with TimePartitioningTypes {{DAY, MONTH, YEAR}} received {time_partitioning.type_}"
+                )
+
         if time_partitioning.field is not None:
             field = time_partitioning.field
+
             if isinstance(
-                table.columns[time_partitioning.field].type,
-                sqlalchemy.sql.sqltypes.DATE,
-            ):
-                return f"PARTITION BY {field}"
-            elif isinstance(
-                table.columns[time_partitioning.field].type,
-                sqlalchemy.sql.sqltypes.TIMESTAMP,
+                table.columns[field].type,
+                (sqlalchemy.sql.sqltypes.TIMESTAMP),
             ):
                 trunc_fn = "TIMESTAMP_TRUNC"
+            elif isinstance(
+                table.columns[field].type,
+                sqlalchemy.sql.sqltypes.DATETIME,
+            ):
+                trunc_fn = "DATETIME_TRUNC"
 
+            if isinstance(
+                table.columns[field].type,
+                sqlalchemy.sql.sqltypes.DATE,
+            ):
+                if time_partitioning.type_ in {"DAY", "MONTH", "YEAR"}:
+                    # CHECK for type: DAY/MONTH/YEAR
+                    trunc_fn = "DATE_TRUNC"
+                else:
+                    raise ValueError(
+                        f"DATE_TRUNC can only be used with TimePartitioningTypes {{DAY, MONTH, YEAR}} received {time_partitioning.type_}"
+                    )
+
+        # Format used with generically with DATE, TIMESTAMP, DATETIME
         return f"PARTITION BY {trunc_fn}({field}, {time_partitioning.type_})"
 
     def _process_range_partitioning(
