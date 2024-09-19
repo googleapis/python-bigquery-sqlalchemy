@@ -838,7 +838,7 @@ class BigQueryDDLCompiler(DDLCompiler):
             field = time_partitioning.field
             if isinstance(
                 table.columns[time_partitioning.field].type,
-                sqlalchemy.sql.sqltypes.DATE,
+                (sqlalchemy.sql.sqltypes.DATE, sqlalchemy.sql.sqltypes.Date),
             ):
                 return f"PARTITION BY {field}"
             elif isinstance(

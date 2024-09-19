@@ -193,14 +193,15 @@ def test_table_time_partitioning_with_timestamp_dialect_option(faux_conn):
     )
 
 
-def test_table_time_partitioning_with_date_dialect_option(faux_conn):
+@pytest.mark.parametrize("date_type", [sqlalchemy.DATE, sqlalchemy.Date])
+def test_table_time_partitioning_with_date_dialect_option(faux_conn, date_type):
     # expect table creation to fail as SQLite does not support partitioned tables
     with pytest.raises(sqlite3.OperationalError):
         setup_table(
             faux_conn,
             "some_table_2",
             sqlalchemy.Column("id", sqlalchemy.Integer),
-            sqlalchemy.Column("createdAt", sqlalchemy.DATE),
+            sqlalchemy.Column("createdAt", date_type),
             bigquery_time_partitioning=TimePartitioning(field="createdAt"),
         )
 
