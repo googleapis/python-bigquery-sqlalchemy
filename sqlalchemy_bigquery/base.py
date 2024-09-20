@@ -60,6 +60,7 @@ import re
 
 from .parse_url import parse_url
 from . import _helpers, _struct, _types
+import sqlalchemy_bigquery_vendored.sqlalchemy.postgresql.base as vendored_postgresql
 
 # Illegal characters is intended to be all characters that are not explicitly
 # allowed as part of the flexible column names.
@@ -189,10 +190,12 @@ class BigQueryExecutionContext(DefaultExecutionContext):
         )
 
 
-class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
+class BigQueryCompiler(_struct.SQLCompiler, vendored_postgresql.PGCompiler):
     compound_keywords = SQLCompiler.compound_keywords.copy()
     compound_keywords[selectable.CompoundSelect.UNION] = "UNION DISTINCT"
     compound_keywords[selectable.CompoundSelect.UNION_ALL] = "UNION ALL"
+    compound_keywords[selectable.CompoundSelect.EXCEPT] = "EXCEPT DISTINCT"
+    compound_keywords[selectable.CompoundSelect.INTERSECT] = "INTERSECT DISTINCT"
 
     def __init__(self, dialect, statement, *args, **kwargs):
         if isinstance(statement, Column):
@@ -579,6 +582,9 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
 
     def visit_not_regexp_match_op_binary(self, binary, operator, **kw):
         return "NOT %s" % self.visit_regexp_match_op_binary(binary, operator, **kw)
+
+    def visit_mod_binary(self, binary, operator, **kw):
+        return f"MOD({self.process(binary.left, **kw)}, {self.process(binary.right, **kw)})"
 
 
 class BigQueryTypeCompiler(GenericTypeCompiler):
@@ -986,6 +992,7 @@ class BigQueryDialect(DefaultDialect):
     type_compiler = BigQueryTypeCompiler
     ddl_compiler = BigQueryDDLCompiler
     execution_ctx_cls = BigQueryExecutionContext
+    cte_follows_insert = True
     supports_alter = False
     supports_comments = True
     inline_comments = True
@@ -1011,6 +1018,7 @@ class BigQueryDialect(DefaultDialect):
         sqlalchemy.sql.sqltypes.Time: BQClassTaggedStr,
         sqlalchemy.sql.sqltypes.TIMESTAMP: BQTimestamp,
         sqlalchemy.sql.sqltypes.ARRAY: BQArray,
+        sqlalchemy.sql.sqltypes.Enum: sqlalchemy.sql.sqltypes.Enum,
     }
 
     def __init__(

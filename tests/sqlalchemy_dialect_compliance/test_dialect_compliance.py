@@ -47,6 +47,7 @@ from sqlalchemy.testing.suite import (
     QuotedNameArgumentTest,
     SimpleUpdateDeleteTest as _SimpleUpdateDeleteTest,
     TimestampMicrosecondsTest as _TimestampMicrosecondsTest,
+    WindowFunctionTest,
 )
 
 from sqlalchemy.testing.suite.test_types import (
@@ -537,10 +538,6 @@ else:
 
 
 class CTETest(_CTETest):
-    @pytest.mark.skip("Can't use CTEs with insert")
-    def test_insert_from_select_round_trip(self):
-        pass
-
     @pytest.mark.skip("Recusive CTEs aren't supported.")
     def test_select_recursive_round_trip(self):
         pass
@@ -640,3 +637,6 @@ del IdentityAutoincrementTest  # BQ doesn't do autoincrement
 del LongNameBlowoutTest  # Requires features (indexes, primary keys, etc., that BigQuery doesn't have.
 del PostCompileParamsTest  # BQ adds backticks to bind parameters, causing failure of tests TODO: fix this?
 del QuotedNameArgumentTest  # Quotes aren't allowed in BigQuery table names.
+del (
+    WindowFunctionTest.test_window_rows_between
+)  # test expects BQ to return sorted results
