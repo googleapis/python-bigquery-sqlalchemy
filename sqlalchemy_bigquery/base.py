@@ -344,8 +344,9 @@ class BigQueryCompiler(_struct.SQLCompiler, vendored_postgresql.PGCompiler):
             column_label = args[0]
             sql_keywords = {"GROUPING SETS", "ROLLUP", "CUBE"}
             for keyword in sql_keywords:
-                if keyword in str(column_label):
-                    break
+                # if keyword in str(column_label):
+                #     break
+                pass
             else:  # for/else always happens unless break gets called
                 kwargs["render_label_as_label"] = column_label
 
