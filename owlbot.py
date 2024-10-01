@@ -285,14 +285,6 @@ s.replace(
     ["setup.cfg"],
     "universal = 1\n",
     """universal = 1
-
-[sqla_testing]
-requirement_cls=sqlalchemy_bigquery.requirements:Requirements
-profile_file=.sqlalchemy_dialect_compliance-profiles.txt
-
-[tool:pytest]
-addopts= --tb native -v -r fxX -p no:warnings
-python_files=tests/*test_*.py
 """,
 )
 
