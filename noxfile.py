@@ -226,14 +226,6 @@ def unit(session, protobuf_implementation):
     if protobuf_implementation == "cpp":
         session.install("protobuf<4")
 
-    if install_extras and session.python in ["3.11", "3.12"]:
-        install_target = ".[geography,alembic,tests,bqstorage]"
-    elif install_extras:
-        install_target = ".[all]"
-    else:
-        install_target = "."
-    session.install("-e", install_target, "-c", constraints_path)
-
     # Run py.test against the unit tests.
     session.run(
         "py.test",
