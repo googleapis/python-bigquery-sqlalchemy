@@ -20,6 +20,8 @@
 SQLAlchemy dialect for Google BigQuery
 """
 
+import warnings
+
 from .version import __version__
 
 from .base import BigQueryDialect, dialect
@@ -43,10 +45,9 @@ from ._types import (
     TIMESTAMP,
 )
 
-import _versions_helpers 
+from . import _versions_helpers
 
 sys_major, sys_minor, sys_micro = _versions_helpers.extract_runtime_version()
-
 if sys_major == 3 and sys_minor in (7, 8):
     warnings.warn(
         "The python-bigquery library will stop supporting Python 3.7 "

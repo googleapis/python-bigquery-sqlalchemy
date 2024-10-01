@@ -16,8 +16,10 @@
 
 
 import sys
+from typing import Tuple
 
-def extract_runtime_version() -> tuple[int, int, int]:
+
+def extract_runtime_version() -> Tuple[int, int, int]:
     # Retrieve the version information
     version_info = sys.version_info
 
