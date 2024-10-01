@@ -147,7 +147,7 @@ install_logic = """
 
 place_before(
     "noxfile.py",
-    "# TODO(https://github.com/googleapis/synthtool/issues/1976):",
+    "    # TODO(https://github.com/googleapis/synthtool/issues/1976):",
     install_logic,
 )
 
