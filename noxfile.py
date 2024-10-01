@@ -224,6 +224,7 @@ def default(session, install_extras=True):
     session.run(
         "py.test",
         "--quiet",
+        "-W default::PendingDeprecationWarning",
         f"--junitxml=unit_{session.python}_sponge_log.xml",
         "--cov=sqlalchemy_bigquery",
         "--cov=tests/unit",
@@ -301,6 +302,7 @@ def system(session):
         session.run(
             "py.test",
             "--quiet",
+            "-W default::PendingDeprecationWarning",
             f"--junitxml=system_{session.python}_sponge_log.xml",
             system_test_path,
             *session.posargs,
@@ -309,6 +311,7 @@ def system(session):
         session.run(
             "py.test",
             "--quiet",
+            "-W default::PendingDeprecationWarning",
             f"--junitxml=system_{session.python}_sponge_log.xml",
             system_test_folder_path,
             *session.posargs,
@@ -346,6 +349,7 @@ def system_noextras(session):
         session.run(
             "py.test",
             "--quiet",
+            "-W default::PendingDeprecationWarning",
             f"--junitxml=system_{session.python}_sponge_log.xml",
             system_test_path,
             *session.posargs,
@@ -354,6 +358,7 @@ def system_noextras(session):
         session.run(
             "py.test",
             "--quiet",
+            "-W default::PendingDeprecationWarning",
             f"--junitxml=system_{session.python}_sponge_log.xml",
             system_test_folder_path,
             *session.posargs,
@@ -396,6 +401,7 @@ def compliance(session):
     session.run(
         "py.test",
         "-vv",
+        "-W default::PendingDeprecationWarning",
         f"--junitxml=compliance_{session.python}_sponge_log.xml",
         "--reruns=3",
         "--reruns-delay=60",
@@ -579,7 +585,11 @@ def prerelease_deps(session):
     session.run("python", "-c", "import grpc; print(grpc.__version__)")
     session.run("python", "-c", "import google.auth; print(google.auth.__version__)")
 
-    session.run("py.test", "tests/unit")
+    session.run(
+        "py.test",
+        "-W default::PendingDeprecationWarning",
+        "tests/unit"
+    )
 
     system_test_path = os.path.join("tests", "system.py")
     system_test_folder_path = os.path.join("tests", "system")
@@ -589,6 +599,7 @@ def prerelease_deps(session):
         session.run(
             "py.test",
             "--verbose",
+            "-W default::PendingDeprecationWarning",
             f"--junitxml=system_{session.python}_sponge_log.xml",
             system_test_path,
             *session.posargs,
@@ -597,6 +608,7 @@ def prerelease_deps(session):
         session.run(
             "py.test",
             "--verbose",
+            "-W default::PendingDeprecationWarning",
             f"--junitxml=system_{session.python}_sponge_log.xml",
             system_test_folder_path,
             *session.posargs,
