@@ -113,13 +113,6 @@ s.replace(
 )
 
 
-s.replace(
-    ["noxfile.py"],
-    r"def default\(session\)",
-    "def default(session, install_extras=True)",
-)
-
-
 def place_before(path, text, *before_text, escape=None):
     replacement = "\n".join(before_text) + "\n" + text
     if escape:
@@ -132,23 +125,6 @@ place_before(
     "noxfile.py",
     "nox.options.error_on_missing_interpreters = True",
     "nox.options.stop_on_first_error = True",
-)
-
-
-install_logic = """
-    if install_extras and session.python in ["3.11", "3.12"]:
-        install_target = ".[geography,alembic,tests,bqstorage]"
-    elif install_extras:
-        install_target = ".[all]"
-    else:
-        install_target = "."
-    session.install("-e", install_target, "-c", constraints_path)
-"""
-
-place_before(
-    "noxfile.py",
-    "# Run py.test against the unit tests.",
-    install_logic,
 )
 
 
