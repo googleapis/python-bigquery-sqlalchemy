@@ -220,7 +220,15 @@ def unit(session, protobuf_implementation, install_extras=True):
     )
     install_unittest_dependencies(session, "-c", constraints_path)
 
-    # TODO(https://github.com/googleapis/synthtool/issues/1976):
+    if install_extras and session.python in ["3.11", "3.12"]:
+        install_target = ".[geography,alembic,tests,bqstorage]"
+    elif install_extras:
+        install_target = ".[all]"
+    else:
+        install_target = "."
+    session.install("-e", install_target, "-c", constraints_path)
+
+    # TODO\(https://github.com/googleapis/synthtool/issues/1976\):
     # Remove the 'cpp' implementation once support for Protobuf 3.x is dropped.
     # The 'cpp' implementation requires Protobuf<4.
     if protobuf_implementation == "cpp":
