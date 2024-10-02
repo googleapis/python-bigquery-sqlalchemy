@@ -145,10 +145,10 @@ install_logic = """
     session.install("-e", install_target, "-c", constraints_path)
 """
 
-place_before(
-    "noxfile.py",
-    r"https://github.com/googleapis/synthtool/issues/1976",
-    install_logic,
+s.replace(
+    ["noxfile.py"],
+    r"# TODO\(https://github.com/googleapis/synthtool/issues/1976\):",
+    install_logic + "\n" + "# TODO(https://github.com/googleapis/synthtool/issues/1976):",
 )
 
 

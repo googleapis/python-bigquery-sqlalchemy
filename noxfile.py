@@ -228,7 +228,7 @@ def unit(session, protobuf_implementation, install_extras=True):
         install_target = "."
     session.install("-e", install_target, "-c", constraints_path)
 
-    # TODO\(https://github.com/googleapis/synthtool/issues/1976\):
+    # TODO(https://github.com/googleapis/synthtool/issues/1976):
     # Remove the 'cpp' implementation once support for Protobuf 3.x is dropped.
     # The 'cpp' implementation requires Protobuf<4.
     if protobuf_implementation == "cpp":
