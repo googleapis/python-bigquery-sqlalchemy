@@ -43,6 +43,9 @@ if [[ $KOKORO_BUILD_ARTIFACTS_SUBDIR = *"continuous"* ]]; then
   trap cleanup EXIT HUP
 fi
 
+# Install pip
+python -m ensurepip --upgrade
+
 # Remove old nox
 python3 -m pip uninstall --yes --quiet nox-automation
 
