@@ -817,20 +817,21 @@ class BigQueryDDLCompiler(DDLCompiler):
         time_partitioning: TimePartitioning,
     ):
         """
-        Generates a SQL 'PARTITION BY' clause for partitioning a table by a date or timestamp.
+        Generates a SQL 'PARTITION BY' clause for partitioning a table,
 
         Args:
-        - table (Table): The SQLAlchemy table object representing the BigQuery table to be partitioned.
+        - table (Table): The SQLAlchemy table object representing the BigQuery
+            table to be partitioned.
         - time_partitioning (TimePartitioning): The time partitioning details,
             including the field to be used for partitioning.
 
         Returns:
-        - str: A SQL 'PARTITION BY' clause that uses either TIMESTAMP_TRUNC or DATE_TRUNC to
-        partition data on the specified field.
+        - str: A SQL 'PARTITION BY' clause.
 
         Example:
-        - Given a table with a TIMESTAMP type column 'event_timestamp' and setting
-        'time_partitioning.field' to 'event_timestamp', the function returns
+        - Given a table with an 'event_timestamp' and setting time_partitioning.type
+        as DAY and by setting 'time_partitioning.field' as 'event_timestamp', the
+        function returns:
         "PARTITION BY TIMESTAMP_TRUNC(event_timestamp, DAY)".
 
         Current inputs allowed by BQ and covered by this function include:
@@ -839,55 +840,52 @@ class BigQueryDDLCompiler(DDLCompiler):
         * TIMESTAMP_TRUNC(<timestamp_column>, DAY/HOUR/MONTH/YEAR)
         * DATE_TRUNC(<date_column>, MONTH/YEAR)
 
-        Additional allowed options not explicitly covered by this function
-        include:
+        Additional options allowed by BQ but not explicitly covered by this
+        function include:
         * DATE(_PARTITIONTIME)
         * DATE(<timestamp_column>)
         * DATE(<datetime_column>)
         * DATE column
         """
 
-        field = "_PARTITIONDATE"
-        trunc_fn = "DATE_TRUNC"
+        sqltypes = {
+            "_PARTITIONDATE": ("_PARTITIONDATE", None),
+            "TIMESTAMP": ("TIMESTAMP_TRUNC", {"DAY", "HOUR", "MONTH", "YEAR"}),
+            "DATETIME": ("DATETIME_TRUNC", {"DAY", "HOUR", "MONTH", "YEAR"}),
+            "DATE": ("DATE_TRUNC", {"DAY", "MONTH", "YEAR"}),
+        }
 
-        # Format used with _PARTITIONDATE which can only be used for
-        # DAY / MONTH / YEAR
-        if time_partitioning.field is None and field == "_PARTITIONDATE":
-            if time_partitioning.type_ in {"DAY", "MONTH", "YEAR"}:
-                return f"PARTITION BY {trunc_fn}({field})"
-            else:
-                raise ValueError(
-                    f"_PARTITIONDATE can only be used with TimePartitioningTypes {{DAY, MONTH, YEAR}} received {time_partitioning.type_}"
-                )
-
+        # Extract field (i.e <column_name> or _PARTITIONDATE)
+        # AND extract the name of the column_type (i.e. "TIMESTAMP", "DATE",
+        # "DATETIME", "_PARTITIONDATE")
         if time_partitioning.field is not None:
             field = time_partitioning.field
+            column_type = table.columns[field].type.__visit_name__.upper()
 
-            if isinstance(
-                table.columns[field].type,
-                (sqlalchemy.sql.sqltypes.TIMESTAMP),
-            ):
-                trunc_fn = "TIMESTAMP_TRUNC"
-            elif isinstance(
-                table.columns[field].type,
-                sqlalchemy.sql.sqltypes.DATETIME,
-            ):
-                trunc_fn = "DATETIME_TRUNC"
+        else:
+            field = "_PARTITIONDATE"
+            column_type = "_PARTITIONDATE"
 
-            if isinstance(
-                table.columns[field].type,
-                sqlalchemy.sql.sqltypes.DATE,
-            ):
-                if time_partitioning.type_ in {"DAY", "MONTH", "YEAR"}:
-                    # CHECK for type: DAY/MONTH/YEAR
-                    trunc_fn = "DATE_TRUNC"
-                else:
-                    raise ValueError(
-                        f"DATE_TRUNC can only be used with TimePartitioningTypes {{DAY, MONTH, YEAR}} received {time_partitioning.type_}"
-                    )
+        # Extract time_partitioning.type_ (DAY, HOUR, MONTH, YEAR)
+        # i.e. generates one partition per type (1/DAY, 1/HOUR)
+        if time_partitioning.type_ is not None:
+            partitioning_period = time_partitioning.type_
 
-        # Format used with generically with DATE, TIMESTAMP, DATETIME
-        return f"PARTITION BY {trunc_fn}({field}, {time_partitioning.type_})"
+        # Extract the truncation_function (i.e. DATE_TRUNC)
+        # and the set of allowable partition_periods
+        # that can be used in that function
+        trunc_fn, allowed_partitions = sqltypes[column_type]
+
+        # Create output:
+        # Special Case: _PARTITIONDATE does NOT use a function or partitioning_period
+        if trunc_fn == "_PARTITIONDATE":
+            return f"PARTITION BY {field}"
+
+        # Generic Case
+        if partitioning_period not in allowed_partitions:
+            raise ValueError("error msg")
+
+        return f"PARTITION BY {trunc_fn}({field}, {partitioning_period})"
 
     def _process_range_partitioning(
         self, table: Table, range_partitioning: RangePartitioning
