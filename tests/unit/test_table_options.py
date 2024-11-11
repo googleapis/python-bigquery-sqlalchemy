@@ -110,11 +110,16 @@ def test_table_clustering_fields_dialect_option_type_error(faux_conn):
         # DATE dtype
         pytest.param(
             sqlalchemy.DATE,
-            TimePartitioningType.HOUR,
+            TimePartitioningType.HOUR,  # Only MONTH/YEAR are permitted in BigQuery
             "DATE_TRUNC",
             marks=pytest.mark.xfail,
         ),
-        (sqlalchemy.DATE, TimePartitioningType.DAY, "DATE_TRUNC"),
+        pytest.param(
+            sqlalchemy.DATE,
+            TimePartitioningType.DAY,  # Only MONTH/YEAR are permitted in BigQuery
+            "DATE_TRUNC",
+            marks=pytest.mark.xfail,
+        ),
         (sqlalchemy.DATE, TimePartitioningType.MONTH, "DATE_TRUNC"),
         (sqlalchemy.DATE, TimePartitioningType.YEAR, "DATE_TRUNC"),
         # TIMESTAMP dtype
@@ -206,7 +211,6 @@ def test_table_time_partitioning_with_field_dialect_option(faux_conn):
         "CREATE TABLE `some_table` ( `id` INT64, `createdAt` DATETIME )"
         " PARTITION BY DATETIME_TRUNC(createdAt, DAY)"
     )
-    print(f"DINOSAUR: {result}\n\n{expected}")
     assert result == expected
 
 

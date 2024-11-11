@@ -852,7 +852,7 @@ class BigQueryDDLCompiler(DDLCompiler):
             "_PARTITIONDATE": ("_PARTITIONDATE", None),
             "TIMESTAMP": ("TIMESTAMP_TRUNC", {"DAY", "HOUR", "MONTH", "YEAR"}),
             "DATETIME": ("DATETIME_TRUNC", {"DAY", "HOUR", "MONTH", "YEAR"}),
-            "DATE": ("DATE_TRUNC", {"DAY", "MONTH", "YEAR"}),
+            "DATE": ("DATE_TRUNC", {"MONTH", "YEAR"}),
         }
 
         # Extract field (i.e <column_name> or _PARTITIONDATE)
@@ -868,6 +868,7 @@ class BigQueryDDLCompiler(DDLCompiler):
 
         # Extract time_partitioning.type_ (DAY, HOUR, MONTH, YEAR)
         # i.e. generates one partition per type (1/DAY, 1/HOUR)
+
         if time_partitioning.type_ is not None:
             partitioning_period = time_partitioning.type_
 
@@ -881,9 +882,27 @@ class BigQueryDDLCompiler(DDLCompiler):
         if trunc_fn == "_PARTITIONDATE":
             return f"PARTITION BY {field}"
 
+        # Special Case: BigQuery will not accept DAY as partitioning_period for
+        # DATE_TRUNC.
+        # However, the default argument in python-bigquery for TimePartioning
+        # is DAY. This case overwrites that to avoid making a breaking change in
+        # python-bigquery.
+        # https://github.com/googleapis/python-bigquery/blob/a4d9534a900f13ae7355904cda05097d781f27e3/google/cloud/bigquery/table.py#L2916
+        if trunc_fn == "DATE_TRUNC" and partitioning_period == "DAY":
+            raise ValueError(
+                "The TimePartitioning.type_ must be one of: "
+                f"{allowed_partitions}, received {partitioning_period}."
+                "NOTE: the `default` value for TimePartioning.type_ as set in "
+                "python-bigquery is 'DAY', if you wish to use 'DATE_TRUNC' "
+                "ensure that you overwrite the default TimePartitioning.type_. "
+            )
+
         # Generic Case
         if partitioning_period not in allowed_partitions:
-            raise ValueError("error msg")
+            raise ValueError(
+                "The TimePartitioning.type_ must be one of: "
+                f"{allowed_partitions}, received {partitioning_period}."
+            )
 
         return f"PARTITION BY {trunc_fn}({field}, {partitioning_period})"
 
