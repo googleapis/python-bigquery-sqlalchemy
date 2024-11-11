@@ -132,6 +132,8 @@ def test_table_clustering_fields_dialect_option_type_error(faux_conn):
         (sqlalchemy.DATETIME, TimePartitioningType.DAY, "DATETIME_TRUNC"),
         (sqlalchemy.DATETIME, TimePartitioningType.MONTH, "DATETIME_TRUNC"),
         (sqlalchemy.DATETIME, TimePartitioningType.YEAR, "DATETIME_TRUNC"),
+        # TimePartitioning.type_ == None
+        (sqlalchemy.DATETIME, None, "DATETIME_TRUNC"),
     ],
 )
 def test_table_time_partitioning_date_timestamp_and_datetime_dialect_option(
@@ -148,7 +150,13 @@ def test_table_time_partitioning_date_timestamp_and_datetime_dialect_option(
     `DATE_TRUNC` only returns a result if TimePartitioningType is DAY, MONTH,
     YEAR. BigQuery cannot partition on DATE by HOUR, so that is expected to
     xfail.
+
+    IF time_partitioning_type is None, the __init__() in TimePartitioning will
+    overwrite it with TimePartitioningType.DAY as the default.
     """
+
+    if time_partitioning_type is None:
+        time_partitioning_type = TimePartitioningType.DAY
 
     with pytest.raises(sqlite3.OperationalError):
         setup_table(
