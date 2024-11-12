@@ -868,7 +868,7 @@ class BigQueryDDLCompiler(DDLCompiler):
 
         # Extract time_partitioning.type_ (DAY, HOUR, MONTH, YEAR)
         # i.e. generates one partition per type (1/DAY, 1/HOUR)
-        # NOTE: if time_partitioning.type_ == None, it gets 
+        # NOTE: if time_partitioning.type_ == None, it gets
         # immediately overwritten by python-bigquery to a default of DAY.
         partitioning_period = time_partitioning.type_
 
