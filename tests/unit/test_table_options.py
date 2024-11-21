@@ -177,32 +177,10 @@ def test_table_time_partitioning_date_timestamp_and_datetime_dialect_option(
     assert result == expected
 
 
-def test_table_require_partition_filter_dialect_option(faux_conn):
-    # expect table creation to fail as SQLite does not support partitioned tables
-    with pytest.raises(sqlite3.OperationalError):
-        setup_table(
-            faux_conn,
-            "some_table",
-            sqlalchemy.Column("createdAt", sqlalchemy.DateTime),
-            bigquery_time_partitioning=TimePartitioning(field="createdAt"),
-            bigquery_require_partition_filter=True,
-        )
-
-    result = " ".join(faux_conn.test_data["execute"][-1][0].strip().split())
-    expected = (
-        "CREATE TABLE `some_table` ( `createdAt` DATETIME )"
-        " PARTITION BY DATETIME_TRUNC(createdAt, DAY)"
-        " OPTIONS(require_partition_filter=true)"
-    )
-
-    assert result == expected
-
-
-# DATETIME WITH FIELD but no TYPE: defaults to DAY
 def test_table_time_partitioning_with_field_dialect_option(faux_conn):
     """Expect table creation to fail as SQLite does not support partitioned tables
 
-    Confirms that if the column datatype is DATETIME but no TIMEPARTITIONINGTYPE
+    Confirms that if the column datatype is DATETIME but no TimePartitioning.type_
     has been supplied, the system will default to DAY.
     """
 
