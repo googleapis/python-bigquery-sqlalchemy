@@ -136,7 +136,7 @@ def test_table_clustering_fields_dialect_option_type_error(faux_conn):
         (sqlalchemy.DATETIME, None, "DATETIME_TRUNC"),
     ],
 )
-def test_table_time_partitioning_date_timestamp_and_datetime_dialect_option(
+def test_table_time_partitioning_given_field_and_type__dialect_options(
     faux_conn, column_dtype, time_partitioning_type, func_name
 ):
     """NOTE: Expect table creation to fail as SQLite does not support
@@ -151,8 +151,12 @@ def test_table_time_partitioning_date_timestamp_and_datetime_dialect_option(
     YEAR. BigQuery cannot partition on DATE by HOUR, so that is expected to
     xfail.
 
-    IF time_partitioning_type is None, the __init__() in TimePartitioning will
-    overwrite it with TimePartitioningType.DAY as the default.
+    A distinguishing characteristic of this test is we provide an argument to
+    the TimePartitioning class for both field and type_.
+
+    Special case: IF time_partitioning_type is None, the __init__() in the
+    TimePartitioning class will overwrite it with TimePartitioningType.DAY as
+    the default.
     """
 
     if time_partitioning_type is None:
@@ -177,11 +181,14 @@ def test_table_time_partitioning_date_timestamp_and_datetime_dialect_option(
     assert result == expected
 
 
-def test_table_time_partitioning_with_field_dialect_option(faux_conn):
+def test_table_time_partitioning_given_field_but_no_type__dialect_option(faux_conn):
     """Expect table creation to fail as SQLite does not support partitioned tables
 
     Confirms that if the column datatype is DATETIME but no TimePartitioning.type_
     has been supplied, the system will default to DAY.
+
+    A distinguishing characteristic of this test is we provide an argument to
+    the TimePartitioning class for field but not type_.
     """
 
     with pytest.raises(sqlite3.OperationalError):
@@ -213,7 +220,7 @@ def test_table_time_partitioning_with_field_dialect_option(faux_conn):
         (sqlalchemy.DATE, TimePartitioningType.YEAR),
     ],
 )
-def test_table_time_partitioning_with_partitiondate_option(
+def test_table_time_partitioning_given_type__but_no_field_dialect_option(
     faux_conn,
     column_dtype,
     time_partitioning_type,
@@ -222,13 +229,16 @@ def test_table_time_partitioning_with_partitiondate_option(
     partitioned tables, despite that, we are still able to test the generation
     of SQL statements
 
-    If the `field` argument to TimePartitioning() is not provided, it detaults to
+    If the `field` argument to TimePartitioning() is not provided, it defaults to
     None. That causes the pseudocolumn "_PARTITIONDATE" to be used by default as
     the column to partition by.
 
     _PARTITIONTIME only returns a result if TimePartitioningType is DAY, MONTH,
     YEAR. BigQuery cannot partition on _PARTITIONDATE by HOUR, so that is
     expected to xfail.
+
+    A distinguishing characteristic of this test is we provide an argument to
+    the TimePartitioning class for type_ but not field.
     """
 
     with pytest.raises(sqlite3.OperationalError):
