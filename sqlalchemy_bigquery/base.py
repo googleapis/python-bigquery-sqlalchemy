@@ -1345,6 +1345,9 @@ else:
 
     @compiles(ColumnName, "bigquery")
     def visit_column_name(element: ColumnName, compiler: DDLCompiler, **kw) -> str:
+        """Replaces the visit_column_name() function in alembic/alembic/ddl/base.py.
+        See https://github.com/googleapis/python-bigquery-sqlalchemy/issues/1097"""
+
         return "%s RENAME COLUMN %s TO %s" % (
             alter_table(compiler, element.table_name, element.schema),
             format_column_name(compiler, element.column_name),
@@ -1357,7 +1360,7 @@ else:
         The alembic version ends in TYPE <element type>, but bigquery requires this syntax:
         SET DATA TYPE <element type>"""
 
-        return "%s %s %s" % (  # pragma: NO COVER
+        return "%s %s %s" % (
             alter_table(compiler, element.table_name, element.schema),
             alter_column(compiler, element.column_name),
             "SET DATA TYPE %s" % format_type(compiler, element.type_),
