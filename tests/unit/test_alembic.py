@@ -17,20 +17,21 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-from alembic import op
-from alembic.testing.fixtures import op_fixture
-from alembic.testing.fixtures import TestBase
+from alembic.ddl.base import ColumnName, ColumnType
 from sqlalchemy import Integer
 
 
-class OpTest(TestBase):
+def test_alter_table_rename_column_bigquery(ddl_compiler):
+    from sqlalchemy_bigquery.base import visit_column_name
 
-    def test_alter_table_rename_oracle(self):
-        context = op_fixture("bigquery")
-        op.rename_table("s", "t")
-        context.assert_("ALTER TABLE s RENAME COLUMN TO t")
+    column = ColumnName(name="t", column_name="a", newname="b")
+    res = visit_column_name(element=column, compiler=ddl_compiler)
+    assert res == "ALTER TABLE `t` RENAME COLUMN `a` TO `b`"
 
-    def test_alter_column_new_type(self):
-        context = op_fixture("bigquery")
-        op.alter_column("t", "c", type_=Integer)
-        context.assert_("ALTER TABLE t SET DATA TYPE c INTEGER")
+
+def test_alter_column_new_type_bigquery(ddl_compiler):
+    from sqlalchemy_bigquery.base import visit_column_type
+
+    column = ColumnType(name="t", column_name="a", type_=Integer())
+    res = visit_column_type(element=column, compiler=ddl_compiler)
+    assert res == "ALTER TABLE `t` ALTER COLUMN `a` SET DATA TYPE INT64"
