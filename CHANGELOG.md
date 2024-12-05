@@ -14,6 +14,23 @@ Older versions of this project were distributed as [pybigquery][0].
 [2]: https://pypi.org/project/pybigquery/#history
 
 
+## [1.12.1](https://github.com/googleapis/python-bigquery-sqlalchemy/compare/v1.12.0...v1.12.1) (2024-12-05)
+
+
+### Features
+
+* Update partitioning by DATE, DATETIME, TIMESTAMP, _PARTITIONDATE ([#1113](https://github.com/googleapis/python-bigquery-sqlalchemy/issues/1113)) ([413cd24](https://github.com/googleapis/python-bigquery-sqlalchemy/commit/413cd242d17f92c04cdfebf70595421c96cbbae4))
+
+
+### Bug Fixes
+
+* Alembic column rename ([#1141](https://github.com/googleapis/python-bigquery-sqlalchemy/issues/1141)) ([9f7f78b](https://github.com/googleapis/python-bigquery-sqlalchemy/commit/9f7f78becc8e1241eabdc7cc50bfb12ac4860d65))
+
+
+### Documentation
+
+* Fix typo on credentials_info usage sample ([#1145](https://github.com/googleapis/python-bigquery-sqlalchemy/issues/1145)) ([736d4a2](https://github.com/googleapis/python-bigquery-sqlalchemy/commit/736d4a26ca9fd1e343e7c5c02637e8707ab57fee))
+
 ## [1.12.0](https://github.com/googleapis/python-bigquery-sqlalchemy/compare/v1.11.0...v1.12.0) (2024-08-14)
 
 
