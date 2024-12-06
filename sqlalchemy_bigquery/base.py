@@ -49,7 +49,7 @@ from sqlalchemy.sql.compiler import (
     DDLCompiler,
     IdentifierPreparer,
 )
-from sqlalchemy.sql.sqltypes import Integer, String, NullType, Numeric
+from sqlalchemy.sql.sqltypes import Integer, JSON, String, NullType, Numeric
 from sqlalchemy.engine.default import DefaultDialect, DefaultExecutionContext
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.sql.schema import Column
@@ -59,7 +59,7 @@ from sqlalchemy.sql import elements, selectable
 import re
 
 from .parse_url import parse_url
-from . import _helpers, _struct, _types
+from . import _helpers, _json, _struct, _types
 import sqlalchemy_bigquery_vendored.sqlalchemy.postgresql.base as vendored_postgresql
 
 # Illegal characters is intended to be all characters that are not explicitly
@@ -531,6 +531,17 @@ class BigQueryCompiler(_struct.SQLCompiler, vendored_postgresql.PGCompiler):
         if literal_binds or isinstance(type_, NullType):
             return param
 
+        # FIXME: Adapt to dialect-specific JSON element types
+        # This feels weird, but I cannot figure out how to get sqlalchemy
+        # to consult `colspecs` in this context, and it feels more correct
+        # vs skipping these types here.
+
+        if isinstance(type_, JSON.JSONIntIndexType):
+            type_ = type_.adapt(_json.JSONIntIndexType)
+
+        if isinstance(type_, JSON.JSONStrIndexType):
+            type_ = type_.adapt(_json.JSONStrIndexType)
+
         if (
             isinstance(type_, Numeric)
             and (type_.precision is None or type_.scale is None)
@@ -570,6 +581,12 @@ class BigQueryCompiler(_struct.SQLCompiler, vendored_postgresql.PGCompiler):
         left = self.process(binary.left, **kw)
         right = self.process(binary.right, **kw)
         return f"{left}[OFFSET({right})]"
+
+    def visit_json_getitem_op_binary(self, binary, operator_, **kw):
+        return "JSON_QUERY(%s, %s)" % (
+            self.process(binary.left, **kw),
+            self.process(binary.right, **kw),
+        )
 
     def _get_regexp_args(self, binary, kw):
         string = self.process(binary.left, **kw)
@@ -640,6 +657,15 @@ class BigQueryTypeCompiler(GenericTypeCompiler):
         ) + suffix
 
     visit_DECIMAL = visit_NUMERIC
+
+    def visit_JSON(self, type_, **kw):
+        return "JSON"
+
+    def visit_json_int_index(self, type_, **kw):
+        return "STRING"
+
+    def visit_json_str_index(self, type_, **kw):
+        return "STRING"
 
 
 class BigQueryDDLCompiler(DDLCompiler):
@@ -1076,6 +1102,10 @@ class BigQueryDialect(DefaultDialect):
         sqlalchemy.sql.sqltypes.TIMESTAMP: BQTimestamp,
         sqlalchemy.sql.sqltypes.ARRAY: BQArray,
         sqlalchemy.sql.sqltypes.Enum: sqlalchemy.sql.sqltypes.Enum,
+        sqlalchemy.sql.sqltypes.JSON: _json.JSON,
+        sqlalchemy.sql.sqltypes.JSON.JSONIndexType: _json.JSONIndexType,
+        sqlalchemy.sql.sqltypes.JSON.JSONIntIndexType: _json.JSONIntIndexType,
+        sqlalchemy.sql.sqltypes.JSON.JSONStrIndexType: _json.JSONStrIndexType,
     }
 
     def __init__(
@@ -1086,6 +1116,8 @@ class BigQueryDialect(DefaultDialect):
         credentials_info=None,
         credentials_base64=None,
         list_tables_page_size=1000,
+        json_serializer=None,
+        json_deserializer=None,
         *args,
         **kwargs,
     ):
@@ -1098,6 +1130,8 @@ class BigQueryDialect(DefaultDialect):
         self.identifier_preparer = self.preparer(self)
         self.dataset_id = None
         self.list_tables_page_size = list_tables_page_size
+        self._json_serializer = json_serializer
+        self._json_deserializer = json_deserializer
 
     @classmethod
     def dbapi(cls):
