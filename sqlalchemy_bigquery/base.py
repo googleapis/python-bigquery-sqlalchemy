@@ -588,6 +588,12 @@ class BigQueryCompiler(_struct.SQLCompiler, vendored_postgresql.PGCompiler):
             self.process(binary.right, **kw),
         )
 
+    def visit_json_path_getitem_op_binary(self, binary, operator, **kw):
+        return "JSON_QUERY(%s, %s)" % (
+            self.process(binary.left, **kw),
+            self.process(binary.right, **kw),
+        )
+
     def _get_regexp_args(self, binary, kw):
         string = self.process(binary.left, **kw)
         pattern = self.process(binary.right, **kw)
@@ -660,6 +666,9 @@ class BigQueryTypeCompiler(GenericTypeCompiler):
 
     def visit_JSON(self, type_, **kw):
         return "JSON"
+
+    def visit_json_path(self, type_, **kw):
+        return "STRING"
 
     def visit_json_int_index(self, type_, **kw):
         return "STRING"
@@ -1104,6 +1113,7 @@ class BigQueryDialect(DefaultDialect):
         sqlalchemy.sql.sqltypes.Enum: sqlalchemy.sql.sqltypes.Enum,
         sqlalchemy.sql.sqltypes.JSON: _json.JSON,
         sqlalchemy.sql.sqltypes.JSON.JSONIndexType: _json.JSONIndexType,
+        sqlalchemy.sql.sqltypes.JSON.JSONPathType: _json.JSONPathType,
         sqlalchemy.sql.sqltypes.JSON.JSONIntIndexType: _json.JSONIntIndexType,
         sqlalchemy.sql.sqltypes.JSON.JSONStrIndexType: _json.JSONStrIndexType,
     }

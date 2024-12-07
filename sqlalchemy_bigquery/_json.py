@@ -37,9 +37,8 @@ class JSONIndexType(_FormatTypeMixin, sqltypes.JSON.JSONIndexType):
         if isinstance(value, int):
             value = "$[%s]" % value
         else:
-            value = '$.%s' % value
+            value = '$."%s"' % value
         return value
-
 
 class JSONIntIndexType(JSONIndexType):
     __visit_name__ = "json_int_index"
@@ -47,3 +46,17 @@ class JSONIntIndexType(JSONIndexType):
 
 class JSONStrIndexType(JSONIndexType):
     __visit_name__ = "json_str_index"
+
+
+class JSONPathType(_FormatTypeMixin, sqltypes.JSON.JSONPathType):
+    def _format_value(self, value):
+        return "$%s" % (
+            "".join(
+                [
+                    "[%s]" % elem if isinstance(elem, int) else '."%s"' % elem
+                    for elem in value
+                ]
+            )
+        )
+
+

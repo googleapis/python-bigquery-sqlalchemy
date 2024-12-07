@@ -56,8 +56,13 @@ def test_json_insert_type_info(faux_conn, metadata, json_table, json_data):
         (
             ["name"],
             "JSON_QUERY(`json_table`.`cart`, %(cart_1:STRING)s)",
-            "JSON_QUERY(`json_table`.`cart`, '$.name')",
+            "JSON_QUERY(`json_table`.`cart`, '$.\"name\"')",
         ),
+        # (
+        #     ["items", 0],
+        #     "JSON_QUERY(`json_table`.`cart`, %(cart_1:STRING)s)",
+        #     "JSON_QUERY(`json_table`.`cart`, '$.items[0]')",
+        # ),
     ),
 )
 def test_json_index(faux_conn, json_column, index_values, sql, literal_sql):
@@ -65,6 +70,33 @@ def test_json_index(faux_conn, json_column, index_values, sql, literal_sql):
 
     for value in index_values:
         expr = expr[value]
+
+    expected_sql = f"SELECT {sql} AS `anon_1` \nFROM `json_table`"
+    expected_literal_sql = f"SELECT {literal_sql} AS `anon_1` \nFROM `json_table`"
+
+    actual_sql = sqlalchemy.select(expr).compile(faux_conn).string
+    actual_literal_sql = sqlalchemy.select(expr).compile(faux_conn, compile_kwargs={"literal_binds": True}).string
+
+    assert expected_sql == actual_sql
+    assert expected_literal_sql == actual_literal_sql
+
+@pytest.mark.parametrize(
+    "index_values,sql,literal_sql",
+    (
+        (
+            ["name"],
+            "JSON_QUERY(`json_table`.`cart`, %(cart_1:STRING)s)",
+            "JSON_QUERY(`json_table`.`cart`, '$.\"name\"')",
+        ),
+        # (
+        #     ["items", 0],
+        #     "JSON_QUERY(`json_table`.`cart`, %(cart_1:STRING)s)",
+        #     "JSON_QUERY(`json_table`.`cart`, '$.items[0]')",
+        # ),
+    ),
+)
+def test_json_path(faux_conn, json_column, index_values, sql, literal_sql):
+    expr = json_column[index_values]
 
     expected_sql = f"SELECT {sql} AS `anon_1` \nFROM `json_table`"
     expected_literal_sql = f"SELECT {literal_sql} AS `anon_1` \nFROM `json_table`"
