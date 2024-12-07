@@ -109,6 +109,36 @@ def test_json_literal(faux_conn):
     assert expected_sql == actual_sql
     assert expected_literal_sql == actual_literal_sql
 
+
+@pytest.mark.parametrize("lax", (False, True))
+def test_json_casts(faux_conn, json_column, json_data, lax):
+    from sqlalchemy_bigquery import JSON
+    prefix = 'LAX_' if lax else ''  # FIXME: Manually parameterize
+
+    expr = sqlalchemy.select(1).where(json_column[["name"]].as_string(lax=lax) == 'Alice')
+    assert expr.compile(faux_conn, compile_kwargs={"literal_binds": True}).string == (
+        "SELECT 1 \n"
+        "FROM `json_table` \n"
+        f"WHERE {prefix}STRING(JSON_QUERY(`json_table`.`cart`, '$.\"name\"')) = 'Alice'"
+    )
+
+    expr = sqlalchemy.select(1).where(json_column[["items", 1, "price"]].as_integer(lax=lax) == 10)
+    assert expr.compile(faux_conn, compile_kwargs={"literal_binds": True}).string == (
+        "SELECT 1 \n"
+        "FROM `json_table` \n"
+        f"WHERE {prefix}INT64(JSON_QUERY(`json_table`.`cart`, '$.\"items\"[1].\"price\"')) = 10"
+    )
+
+    expr = sqlalchemy.select(sqlalchemy.literal(10.0, type_=JSON).as_float(lax=lax) == 10.0)
+    assert expr.compile(faux_conn, compile_kwargs={"literal_binds": True}).string == (
+        f"SELECT {prefix}FLOAT64(PARSE_JSON('10.0')) = 10.0 AS `anon_1`"
+    )
+
+    expr = sqlalchemy.select(sqlalchemy.literal(True, type_=JSON).as_boolean(lax=lax) == sqlalchemy.true())
+    assert expr.compile(faux_conn, compile_kwargs={"literal_binds": True}).string == (
+        f"SELECT {prefix}BOOL(PARSE_JSON('true')) = true AS `anon_1`"
+    )
+
 # TODO: Casting as described in https://docs.sqlalchemy.org/en/20/core/type_basics.html#sqlalchemy.types.JSON
 
 # TODO: Test SQL NULL vs JSON null as described above

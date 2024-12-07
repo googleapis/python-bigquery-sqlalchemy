@@ -40,9 +40,39 @@ class JSON(sqltypes.JSON):
 
         def process(value):
             value = json_serializer(value)
-            return f"'{value}'"
+            return repr(value)
 
         return process
+
+    class Comparator(sqltypes.JSON.Comparator):
+        def _generate_converter(self, name, lax):
+            prefix = 'LAX_' if lax else ''
+            func_ = getattr(sqlalchemy.func, f"{prefix}{name}")
+            return func_
+
+        def as_boolean(self, lax=False):
+            func_ = self._generate_converter("BOOL", lax)
+            return func_(self.expr, type_=sqltypes.Boolean)
+
+        def as_string(self, lax=False):
+            func_ = self._generate_converter("STRING", lax)
+            return func_(self.expr, type_=sqltypes.String)
+
+        def as_integer(self, lax=False):
+            func_ = self._generate_converter("INT64", lax)
+            return func_(self.expr, type_=sqltypes.Integer)
+
+        def as_float(self, lax=False):
+            func_ = self._generate_converter("FLOAT64", lax)
+            return func_(self.expr, type_=sqltypes.Float)
+
+        def as_numeric(self, precision, scale, asdecimal=True):
+            # No converter available - technically we could cast, but even
+            # then we can't satisfy this interface because it is not possible
+            # to cast to parameterized types.
+            raise NotImplementedError()
+
+    comparator_factory = Comparator
 
 
 class JSONPathType(_FormatTypeMixin, sqltypes.JSON.JSONPathType):
