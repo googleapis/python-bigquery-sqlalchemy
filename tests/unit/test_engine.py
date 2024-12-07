@@ -16,6 +16,8 @@
 # COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+import json
+from unittest import mock
 
 import pytest
 import sqlalchemy
@@ -64,3 +66,31 @@ def test_arraysize_querystring_takes_precedence_over_default(faux_conn, metadata
     metadata.create_all(engine)
 
     assert conn.connection.test_data["arraysize"] == arraysize
+
+
+def test_set_json_serde(faux_conn, metadata):
+    from sqlalchemy_bigquery import JSON
+    json_serializer = mock.Mock(side_effect=json.dumps)
+    json_deserializer = mock.Mock(side_effect=json.loads)
+
+    engine = sqlalchemy.create_engine(
+        f"bigquery://myproject/mydataset",
+        json_serializer=json_serializer,
+        json_deserializer=json_deserializer
+    )
+
+    json_data = {"foo": "bar"}
+    json_table = sqlalchemy.Table("json_table", metadata, sqlalchemy.Column("json", JSON))
+
+    metadata.create_all(engine)
+    faux_conn.ex(f"insert into json_table values ('{json.dumps(json_data)}')")
+
+    with engine.begin() as conn:
+        row = conn.execute(sqlalchemy.select(json_table.c.json)).first()
+        assert row == (json_data,)
+        assert json_deserializer.mock_calls == [mock.call(json.dumps(json_data))]
+
+    expr = sqlalchemy.select(sqlalchemy.literal(json_data, type_=JSON))
+    literal_sql = expr.compile(engine, compile_kwargs={"literal_binds": True}).string
+    assert literal_sql == f"SELECT PARSE_JSON('{json.dumps(json_data)}') AS `anon_1`"
+    assert json_serializer.mock_calls == [mock.call(json_data)]

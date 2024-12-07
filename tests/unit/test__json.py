@@ -109,11 +109,11 @@ def test_json_literal(faux_conn):
     assert expected_sql == actual_sql
     assert expected_literal_sql == actual_literal_sql
 
-# TODO: Test _json_serializer set from create_engine
-
 # TODO: Casting as described in https://docs.sqlalchemy.org/en/20/core/type_basics.html#sqlalchemy.types.JSON
 
-# TODO: Test differences between JSON and JSON-formatted STRING
+# TODO: Test SQL NULL vs JSON null as described above
+
+# TODO: Test documented differences between JSON and JSON-formatted STRING
 
 # TODO: Support lax + lax recursive
 
