@@ -547,6 +547,13 @@ class BigQueryCompiler(_struct.SQLCompiler, vendored_postgresql.PGCompiler):
         bq_type = self.dialect.type_compiler.process(type_)
         bq_type = self.__remove_type_parameter(bq_type)
 
+        if bq_type == 'JSON':
+            # FIXME: JSON is not a member of `SqlParameterScalarTypes` in the DBAPI
+            # For now, we hack around this by:
+            # - Rewriting the bindparam type to STRING
+            # - Applying a bind expression that converts the parameter back to JSON
+            bq_type = 'STRING'
+
         assert_(param != "%s", f"Unexpected param: {param}")
 
         if bindparam.expanding:  # pragma: NO COVER

@@ -1,3 +1,5 @@
+import json
+import sqlalchemy
 from sqlalchemy.sql import sqltypes
 
 
@@ -29,10 +31,22 @@ class _FormatTypeMixin:
 
 
 class JSON(sqltypes.JSON):
-    ...
+    def bind_expression(self, bindvalue):
+        # JSON query parameters are STRINGs
+        return sqlalchemy.func.PARSE_JSON(bindvalue, type_=self)
+
+    def literal_processor(self, dialect):
+        json_serializer = dialect._json_serializer or json.dumps
+
+        def process(value):
+            value = json_serializer(value)
+            return f"'{value}'"
+
+        return process
 
 
 class JSONPathType(_FormatTypeMixin, sqltypes.JSON.JSONPathType):
+    # TODO: Handle lax, lax recursive
     def _format_value(self, value):
         return "$%s" % (
             "".join(

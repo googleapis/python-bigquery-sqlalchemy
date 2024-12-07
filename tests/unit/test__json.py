@@ -47,7 +47,7 @@ def test_insert_json(faux_conn, metadata, json_table, json_data):
         .compile(faux_conn.engine)
     )
 
-    assert actual == "INSERT INTO `json_table` (`cart`) VALUES (%(cart:JSON)s)"
+    assert actual == "INSERT INTO `json_table` (`cart`) VALUES (PARSE_JSON(%(cart:STRING)s))"
 
 
 @pytest.mark.parametrize(
@@ -95,8 +95,26 @@ def test_json_value(faux_conn, json_column, json_data):
     assert expected_sql == actual_sql
     assert expected_literal_sql == actual_literal_sql
 
-# TODO: AFAICT, JSON is not a supported query parameter type - enforce this
+
+def test_json_literal(faux_conn):
+    from sqlalchemy_bigquery import JSON
+    expr = sqlalchemy.select(sqlalchemy.func.STRING(sqlalchemy.sql.expression.literal("purple", type_=JSON)).label("color"))
+
+    expected_sql = "SELECT STRING(PARSE_JSON(%(param_1:STRING)s)) AS `color`"
+    expected_literal_sql = "SELECT STRING(PARSE_JSON('\"purple\"')) AS `color`"
+
+    actual_sql = expr.compile(faux_conn).string
+    actual_literal_sql = expr.compile(faux_conn, compile_kwargs={"literal_binds": True}).string
+
+    assert expected_sql == actual_sql
+    assert expected_literal_sql == actual_literal_sql
 
 # TODO: Test _json_serializer set from create_engine
 
 # TODO: Casting as described in https://docs.sqlalchemy.org/en/20/core/type_basics.html#sqlalchemy.types.JSON
+
+# TODO: Test differences between JSON and JSON-formatted STRING
+
+# TODO: Support lax + lax recursive
+
+# TODO: Provide some GenericFunction, or at least docs for how to use type_
