@@ -139,12 +139,13 @@ def test_json_casts(faux_conn, json_column, json_data, lax):
         f"SELECT {prefix}BOOL(PARSE_JSON('true')) = true AS `anon_1`"
     )
 
-# TODO: Casting as described in https://docs.sqlalchemy.org/en/20/core/type_basics.html#sqlalchemy.types.JSON
+def test_nulls(faux_conn, json_column, json_data):
+    pass
 
 # TODO: Test SQL NULL vs JSON null as described above
 
-# TODO: Test documented differences between JSON and JSON-formatted STRING
-
 # TODO: Support lax + lax recursive
+
+# TODO: Test documented differences between JSON and JSON-formatted STRING
 
 # TODO: Provide some GenericFunction, or at least docs for how to use type_

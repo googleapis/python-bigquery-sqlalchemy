@@ -36,10 +36,10 @@ class JSON(sqltypes.JSON):
         return sqlalchemy.func.PARSE_JSON(bindvalue, type_=self)
 
     def literal_processor(self, dialect):
-        json_serializer = dialect._json_serializer or json.dumps
+        super_proc = self.bind_processor(dialect)
 
         def process(value):
-            value = json_serializer(value)
+            value = super_proc(value)
             return repr(value)
 
         return process
@@ -67,9 +67,7 @@ class JSON(sqltypes.JSON):
             return func_(self.expr, type_=sqltypes.Float)
 
         def as_numeric(self, precision, scale, asdecimal=True):
-            # No converter available - technically we could cast, but even
-            # then we can't satisfy this interface because it is not possible
-            # to cast to parameterized types.
+            # No converter available in BigQuery
             raise NotImplementedError()
 
     comparator_factory = Comparator
