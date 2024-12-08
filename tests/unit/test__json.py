@@ -46,29 +46,29 @@ def test_insert_json(faux_conn, metadata, json_table, json_data):
 
 
 @pytest.mark.parametrize(
-    "path,sql,literal_sql",
+    "path,literal_sql",
     (
         (
             ["name"],
-            "JSON_QUERY(`json_table`.`cart`, %(cart_1:STRING)s)",
             "JSON_QUERY(`json_table`.`cart`, '$.\"name\"')",
         ),
         (
             ["items", 0],
-            "JSON_QUERY(`json_table`.`cart`, %(cart_1:STRING)s)",
             "JSON_QUERY(`json_table`.`cart`, '$.\"items\"[0]')",
         ),
         (
             ["items", 0, "price"],
-            "JSON_QUERY(`json_table`.`cart`, %(cart_1:STRING)s)",
             'JSON_QUERY(`json_table`.`cart`, \'$."items"[0]."price"\')',
         ),
     ),
 )
-def test_json_query(faux_conn, json_column, path, sql, literal_sql):
+def test_json_query(faux_conn, json_column, path, literal_sql):
     expr = sqlalchemy.select(json_column[path])
 
-    expected_sql = f"SELECT {sql} AS `anon_1` \nFROM `json_table`"
+    expected_sql = (
+        "SELECT JSON_QUERY(`json_table`.`cart`, %(cart_1:STRING)s) AS `anon_1` \n"
+        "FROM `json_table`"
+    )
     expected_literal_sql = f"SELECT {literal_sql} AS `anon_1` \nFROM `json_table`"
 
     actual_sql = expr.compile(faux_conn).string
@@ -85,8 +85,16 @@ def test_json_value(faux_conn, json_column, json_data):
         sqlalchemy.func.JSON_VALUE(json_column[["name"]]) == "Alice"
     )
 
-    expected_sql = "SELECT JSON_QUERY(`json_table`.`cart`, %(cart_1:STRING)s) AS `first_item` \nFROM `json_table` \nWHERE JSON_VALUE(JSON_QUERY(`json_table`.`cart`, %(cart_2:STRING)s)) = %(JSON_VALUE_1:STRING)s"
-    expected_literal_sql = "SELECT JSON_QUERY(`json_table`.`cart`, '$.\"items\"[0]') AS `first_item` \nFROM `json_table` \nWHERE JSON_VALUE(JSON_QUERY(`json_table`.`cart`, '$.\"name\"')) = 'Alice'"
+    expected_sql = (
+        "SELECT JSON_QUERY(`json_table`.`cart`, %(cart_1:STRING)s) AS `first_item` \n"
+        "FROM `json_table` \n"
+        "WHERE JSON_VALUE(JSON_QUERY(`json_table`.`cart`, %(cart_2:STRING)s)) = %(JSON_VALUE_1:STRING)s"
+    )
+    expected_literal_sql = (
+        "SELECT JSON_QUERY(`json_table`.`cart`, '$.\"items\"[0]') AS `first_item` \n"
+        "FROM `json_table` \n"
+        "WHERE JSON_VALUE(JSON_QUERY(`json_table`.`cart`, '$.\"name\"')) = 'Alice'"
+    )
 
     actual_sql = expr.compile(faux_conn).string
     actual_literal_sql = expr.compile(
@@ -118,11 +126,9 @@ def test_json_literal(faux_conn):
     assert expected_literal_sql == actual_literal_sql
 
 
-@pytest.mark.parametrize("lax", (False, True))
-def test_json_casts(faux_conn, json_column, json_data, lax):
+@pytest.mark.parametrize("lax,prefix", ((False, ""), (True, "LAX_")))
+def test_json_casts(faux_conn, json_column, json_data, lax, prefix):
     from sqlalchemy_bigquery import JSON
-
-    prefix = "LAX_" if lax else ""  # FIXME: Manually parameterize
 
     expr = sqlalchemy.select(1).where(
         json_column[["name"]].as_string(lax=lax) == "Alice"
@@ -157,13 +163,23 @@ def test_json_casts(faux_conn, json_column, json_data, lax):
     )
 
 
-def test_json_path_mode(faux_conn, json_column):
+@pytest.mark.parametrize(
+    "mode,prefix", ((None, ""), ("LAX", "lax "), ("LAX_RECURSIVE", "lax recursive "))
+)
+def test_json_path_mode(faux_conn, json_column, mode, prefix):
     from sqlalchemy_bigquery import JSON
 
-    expr = sqlalchemy.select(json_column[[JSON.JSONPathMode.LAX, "items", "price"]])
+    if mode == "LAX":
+        path = [JSON.JSONPathMode.LAX, "items", "price"]
+    elif mode == "LAX_RECURSIVE":
+        path = [JSON.JSONPathMode.LAX_RECURSIVE, "items", "price"]
+    else:
+        path = ["items", "price"]
+
+    expr = sqlalchemy.select(json_column[path])
 
     expected_literal_sql = (
-        'SELECT JSON_QUERY(`json_table`.`cart`, \'lax $."items"."price"\') AS `anon_1` \n'
+        f'SELECT JSON_QUERY(`json_table`.`cart`, \'{prefix}$."items"."price"\') AS `anon_1` \n'
         "FROM `json_table`"
     )
     actual_literal_sql = expr.compile(

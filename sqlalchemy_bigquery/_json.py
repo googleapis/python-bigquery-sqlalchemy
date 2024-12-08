@@ -80,7 +80,7 @@ class JSON(sqltypes.JSON):
 class JSONPathType(_FormatTypeMixin, sqltypes.JSON.JSONPathType):
     def _mode_prefix(self, mode):
         if mode == JSON.JSONPathMode.LAX:
-            mode_prefix = "lax "
+            mode_prefix = "lax"
         elif mode == JSON.JSONPathMode.LAX_RECURSIVE:
             mode_prefix = "lax recursive"
         else:
@@ -96,7 +96,7 @@ class JSONPathType(_FormatTypeMixin, sqltypes.JSON.JSONPathType):
             mode_prefix = ""
 
         return "%s$%s" % (
-            mode_prefix,
+            mode_prefix + " " if mode_prefix else "",
             "".join(
                 [
                     "[%s]" % elem if isinstance(elem, int) else '."%s"' % elem
