@@ -1,4 +1,4 @@
-import json
+from enum import StrEnum
 import sqlalchemy
 from sqlalchemy.sql import sqltypes
 
@@ -46,7 +46,7 @@ class JSON(sqltypes.JSON):
 
     class Comparator(sqltypes.JSON.Comparator):
         def _generate_converter(self, name, lax):
-            prefix = 'LAX_' if lax else ''
+            prefix = "LAX_" if lax else ""
             func_ = getattr(sqlalchemy.func, f"{prefix}{name}")
             return func_
 
@@ -72,17 +72,26 @@ class JSON(sqltypes.JSON):
 
     comparator_factory = Comparator
 
+    class JSONPathMode(StrEnum):
+        LAX = "lax"
+        LAX_RECURSIVE = "lax recursive"
+
 
 class JSONPathType(_FormatTypeMixin, sqltypes.JSON.JSONPathType):
-    # TODO: Handle lax, lax recursive
     def _format_value(self, value):
-        return "$%s" % (
+        if isinstance(value[0], JSON.JSONPathMode):
+            mode = value[0]
+            mode_prefix = mode.value + " "
+            value = value[1:]
+        else:
+            mode_prefix = ""
+
+        return "%s$%s" % (
+            mode_prefix,
             "".join(
                 [
                     "[%s]" % elem if isinstance(elem, int) else '."%s"' % elem
                     for elem in value
                 ]
-            )
+            ),
         )
-
-

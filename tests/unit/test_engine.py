@@ -70,17 +70,20 @@ def test_arraysize_querystring_takes_precedence_over_default(faux_conn, metadata
 
 def test_set_json_serde(faux_conn, metadata):
     from sqlalchemy_bigquery import JSON
+
     json_serializer = mock.Mock(side_effect=json.dumps)
     json_deserializer = mock.Mock(side_effect=json.loads)
 
     engine = sqlalchemy.create_engine(
         f"bigquery://myproject/mydataset",
         json_serializer=json_serializer,
-        json_deserializer=json_deserializer
+        json_deserializer=json_deserializer,
     )
 
     json_data = {"foo": "bar"}
-    json_table = sqlalchemy.Table("json_table", metadata, sqlalchemy.Column("json", JSON))
+    json_table = sqlalchemy.Table(
+        "json_table", metadata, sqlalchemy.Column("json", JSON)
+    )
 
     metadata.create_all(engine)
     faux_conn.ex(f"insert into json_table values ('{json.dumps(json_data)}')")

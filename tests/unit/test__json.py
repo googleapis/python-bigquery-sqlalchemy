@@ -7,6 +7,7 @@ import sqlalchemy
 @pytest.fixture
 def json_table(metadata):
     from sqlalchemy_bigquery import JSON
+
     return sqlalchemy.Table(
         "json_table",
         metadata,
@@ -23,10 +24,7 @@ def json_column(json_table):
 def json_data():
     return {
         "name": "Alice",
-        "items": [
-            {"product": "book", "price": 10},
-            {"product": "food", "price": 5}
-        ]
+        "items": [{"product": "book", "price": 10}, {"product": "food", "price": 5}],
     }
 
 
@@ -39,15 +37,12 @@ def test_select_json(faux_conn, json_table, json_data):
 
 
 def test_insert_json(faux_conn, metadata, json_table, json_data):
-    actual = str(
-        json_table.insert()
-        .values(
-            cart=json_data
-        )
-        .compile(faux_conn.engine)
-    )
+    actual = str(json_table.insert().values(cart=json_data).compile(faux_conn.engine))
 
-    assert actual == "INSERT INTO `json_table` (`cart`) VALUES (PARSE_JSON(%(cart:STRING)s))"
+    assert (
+        actual
+        == "INSERT INTO `json_table` (`cart`) VALUES (PARSE_JSON(%(cart:STRING)s))"
+    )
 
 
 @pytest.mark.parametrize(
@@ -66,7 +61,7 @@ def test_insert_json(faux_conn, metadata, json_table, json_data):
         (
             ["items", 0, "price"],
             "JSON_QUERY(`json_table`.`cart`, %(cart_1:STRING)s)",
-            "JSON_QUERY(`json_table`.`cart`, '$.\"items\"[0].\"price\"')",
+            'JSON_QUERY(`json_table`.`cart`, \'$."items"[0]."price"\')',
         ),
     ),
 )
@@ -77,20 +72,26 @@ def test_json_query(faux_conn, json_column, path, sql, literal_sql):
     expected_literal_sql = f"SELECT {literal_sql} AS `anon_1` \nFROM `json_table`"
 
     actual_sql = expr.compile(faux_conn).string
-    actual_literal_sql = expr.compile(faux_conn, compile_kwargs={"literal_binds": True}).string
+    actual_literal_sql = expr.compile(
+        faux_conn, compile_kwargs={"literal_binds": True}
+    ).string
 
     assert expected_sql == actual_sql
     assert expected_literal_sql == actual_literal_sql
 
 
 def test_json_value(faux_conn, json_column, json_data):
-    expr = sqlalchemy.select(json_column[["items", 0]].label("first_item")).where(sqlalchemy.func.JSON_VALUE(json_column[["name"]]) == 'Alice')
+    expr = sqlalchemy.select(json_column[["items", 0]].label("first_item")).where(
+        sqlalchemy.func.JSON_VALUE(json_column[["name"]]) == "Alice"
+    )
 
     expected_sql = f"SELECT JSON_QUERY(`json_table`.`cart`, %(cart_1:STRING)s) AS `first_item` \nFROM `json_table` \nWHERE JSON_VALUE(JSON_QUERY(`json_table`.`cart`, %(cart_2:STRING)s)) = %(JSON_VALUE_1:STRING)s"
     expected_literal_sql = f"SELECT JSON_QUERY(`json_table`.`cart`, '$.\"items\"[0]') AS `first_item` \nFROM `json_table` \nWHERE JSON_VALUE(JSON_QUERY(`json_table`.`cart`, '$.\"name\"')) = 'Alice'"
 
     actual_sql = expr.compile(faux_conn).string
-    actual_literal_sql = expr.compile(faux_conn, compile_kwargs={"literal_binds": True}).string
+    actual_literal_sql = expr.compile(
+        faux_conn, compile_kwargs={"literal_binds": True}
+    ).string
 
     assert expected_sql == actual_sql
     assert expected_literal_sql == actual_literal_sql
@@ -98,13 +99,20 @@ def test_json_value(faux_conn, json_column, json_data):
 
 def test_json_literal(faux_conn):
     from sqlalchemy_bigquery import JSON
-    expr = sqlalchemy.select(sqlalchemy.func.STRING(sqlalchemy.sql.expression.literal("purple", type_=JSON)).label("color"))
+
+    expr = sqlalchemy.select(
+        sqlalchemy.func.STRING(
+            sqlalchemy.sql.expression.literal("purple", type_=JSON)
+        ).label("color")
+    )
 
     expected_sql = "SELECT STRING(PARSE_JSON(%(param_1:STRING)s)) AS `color`"
     expected_literal_sql = "SELECT STRING(PARSE_JSON('\"purple\"')) AS `color`"
 
     actual_sql = expr.compile(faux_conn).string
-    actual_literal_sql = expr.compile(faux_conn, compile_kwargs={"literal_binds": True}).string
+    actual_literal_sql = expr.compile(
+        faux_conn, compile_kwargs={"literal_binds": True}
+    ).string
 
     assert expected_sql == actual_sql
     assert expected_literal_sql == actual_literal_sql
@@ -113,39 +121,53 @@ def test_json_literal(faux_conn):
 @pytest.mark.parametrize("lax", (False, True))
 def test_json_casts(faux_conn, json_column, json_data, lax):
     from sqlalchemy_bigquery import JSON
-    prefix = 'LAX_' if lax else ''  # FIXME: Manually parameterize
 
-    expr = sqlalchemy.select(1).where(json_column[["name"]].as_string(lax=lax) == 'Alice')
+    prefix = "LAX_" if lax else ""  # FIXME: Manually parameterize
+
+    expr = sqlalchemy.select(1).where(
+        json_column[["name"]].as_string(lax=lax) == "Alice"
+    )
     assert expr.compile(faux_conn, compile_kwargs={"literal_binds": True}).string == (
         "SELECT 1 \n"
         "FROM `json_table` \n"
         f"WHERE {prefix}STRING(JSON_QUERY(`json_table`.`cart`, '$.\"name\"')) = 'Alice'"
     )
 
-    expr = sqlalchemy.select(1).where(json_column[["items", 1, "price"]].as_integer(lax=lax) == 10)
+    expr = sqlalchemy.select(1).where(
+        json_column[["items", 1, "price"]].as_integer(lax=lax) == 10
+    )
     assert expr.compile(faux_conn, compile_kwargs={"literal_binds": True}).string == (
         "SELECT 1 \n"
         "FROM `json_table` \n"
-        f"WHERE {prefix}INT64(JSON_QUERY(`json_table`.`cart`, '$.\"items\"[1].\"price\"')) = 10"
+        f'WHERE {prefix}INT64(JSON_QUERY(`json_table`.`cart`, \'$."items"[1]."price"\')) = 10'
     )
 
-    expr = sqlalchemy.select(sqlalchemy.literal(10.0, type_=JSON).as_float(lax=lax) == 10.0)
+    expr = sqlalchemy.select(
+        sqlalchemy.literal(10.0, type_=JSON).as_float(lax=lax) == 10.0
+    )
     assert expr.compile(faux_conn, compile_kwargs={"literal_binds": True}).string == (
         f"SELECT {prefix}FLOAT64(PARSE_JSON('10.0')) = 10.0 AS `anon_1`"
     )
 
-    expr = sqlalchemy.select(sqlalchemy.literal(True, type_=JSON).as_boolean(lax=lax) == sqlalchemy.true())
+    expr = sqlalchemy.select(
+        sqlalchemy.literal(True, type_=JSON).as_boolean(lax=lax) == sqlalchemy.true()
+    )
     assert expr.compile(faux_conn, compile_kwargs={"literal_binds": True}).string == (
         f"SELECT {prefix}BOOL(PARSE_JSON('true')) = true AS `anon_1`"
     )
 
-def test_nulls(faux_conn, json_column, json_data):
-    pass
 
-# TODO: Test SQL NULL vs JSON null as described above
+def test_json_path_mode(faux_conn, json_column):
+    from sqlalchemy_bigquery import JSON
 
-# TODO: Support lax + lax recursive
+    expr = sqlalchemy.select(json_column[[JSON.JSONPathMode.LAX, "items", "price"]])
 
-# TODO: Test documented differences between JSON and JSON-formatted STRING
+    expected_literal_sql = (
+        f'SELECT JSON_QUERY(`json_table`.`cart`, \'lax $."items"."price"\') AS `anon_1` \n'
+        "FROM `json_table`"
+    )
+    actual_literal_sql = expr.compile(
+        faux_conn, compile_kwargs={"literal_binds": True}
+    ).string
 
-# TODO: Provide some GenericFunction, or at least docs for how to use type_
+    assert expected_literal_sql == actual_literal_sql
