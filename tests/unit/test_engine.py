@@ -75,7 +75,7 @@ def test_set_json_serde(faux_conn, metadata):
     json_deserializer = mock.Mock(side_effect=json.loads)
 
     engine = sqlalchemy.create_engine(
-        f"bigquery://myproject/mydataset",
+        "bigquery://myproject/mydataset",
         json_serializer=json_serializer,
         json_deserializer=json_deserializer,
     )

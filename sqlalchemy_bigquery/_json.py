@@ -1,4 +1,4 @@
-from enum import StrEnum
+from enum import auto, Enum
 import sqlalchemy
 from sqlalchemy.sql import sqltypes
 
@@ -72,16 +72,25 @@ class JSON(sqltypes.JSON):
 
     comparator_factory = Comparator
 
-    class JSONPathMode(StrEnum):
-        LAX = "lax"
-        LAX_RECURSIVE = "lax recursive"
+    class JSONPathMode(Enum):
+        LAX = auto()
+        LAX_RECURSIVE = auto()
 
 
 class JSONPathType(_FormatTypeMixin, sqltypes.JSON.JSONPathType):
+    def _mode_prefix(self, mode):
+        if mode == JSON.JSONPathMode.LAX:
+            mode_prefix = "lax "
+        elif mode == JSON.JSONPathMode.LAX_RECURSIVE:
+            mode_prefix = "lax recursive"
+        else:
+            raise NotImplementedError(f"Unhandled JSONPathMode: {mode}")
+        return mode_prefix
+
     def _format_value(self, value):
         if isinstance(value[0], JSON.JSONPathMode):
             mode = value[0]
-            mode_prefix = mode.value + " "
+            mode_prefix = self._mode_prefix(mode)
             value = value[1:]
         else:
             mode_prefix = ""

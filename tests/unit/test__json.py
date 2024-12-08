@@ -29,7 +29,7 @@ def json_data():
 
 
 def test_select_json(faux_conn, json_table, json_data):
-    faux_conn.ex(f"create table json_table (cart JSON)")
+    faux_conn.ex("create table json_table (cart JSON)")
     faux_conn.ex(f"insert into json_table values ('{json.dumps(json_data)}')")
 
     row = list(faux_conn.execute(sqlalchemy.select(json_table)))[0]
@@ -85,8 +85,8 @@ def test_json_value(faux_conn, json_column, json_data):
         sqlalchemy.func.JSON_VALUE(json_column[["name"]]) == "Alice"
     )
 
-    expected_sql = f"SELECT JSON_QUERY(`json_table`.`cart`, %(cart_1:STRING)s) AS `first_item` \nFROM `json_table` \nWHERE JSON_VALUE(JSON_QUERY(`json_table`.`cart`, %(cart_2:STRING)s)) = %(JSON_VALUE_1:STRING)s"
-    expected_literal_sql = f"SELECT JSON_QUERY(`json_table`.`cart`, '$.\"items\"[0]') AS `first_item` \nFROM `json_table` \nWHERE JSON_VALUE(JSON_QUERY(`json_table`.`cart`, '$.\"name\"')) = 'Alice'"
+    expected_sql = "SELECT JSON_QUERY(`json_table`.`cart`, %(cart_1:STRING)s) AS `first_item` \nFROM `json_table` \nWHERE JSON_VALUE(JSON_QUERY(`json_table`.`cart`, %(cart_2:STRING)s)) = %(JSON_VALUE_1:STRING)s"
+    expected_literal_sql = "SELECT JSON_QUERY(`json_table`.`cart`, '$.\"items\"[0]') AS `first_item` \nFROM `json_table` \nWHERE JSON_VALUE(JSON_QUERY(`json_table`.`cart`, '$.\"name\"')) = 'Alice'"
 
     actual_sql = expr.compile(faux_conn).string
     actual_literal_sql = expr.compile(
@@ -163,7 +163,7 @@ def test_json_path_mode(faux_conn, json_column):
     expr = sqlalchemy.select(json_column[[JSON.JSONPathMode.LAX, "items", "price"]])
 
     expected_literal_sql = (
-        f'SELECT JSON_QUERY(`json_table`.`cart`, \'lax $."items"."price"\') AS `anon_1` \n'
+        'SELECT JSON_QUERY(`json_table`.`cart`, \'lax $."items"."price"\') AS `anon_1` \n'
         "FROM `json_table`"
     )
     actual_literal_sql = expr.compile(
