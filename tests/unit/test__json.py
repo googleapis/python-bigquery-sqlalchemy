@@ -43,7 +43,7 @@ def test_set_json_serde(faux_conn, metadata, json_table, json_data):
 def test_json_create(faux_conn, metadata, json_table, json_data):
     expr = sqlalchemy.schema.CreateTable(json_table)
     sql = expr.compile(faux_conn.engine).string
-    assert sql == ("\nCREATE TABLE `json_table` (\n" "\t`json` JSON\n" ") \n\n")
+    assert sql == "\nCREATE TABLE `json_table` (\n\t`json` JSON\n) \n\n"
 
 
 def test_json_insert(faux_conn, metadata, json_table, json_data):
