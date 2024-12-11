@@ -547,13 +547,6 @@ class BigQueryCompiler(_struct.SQLCompiler, vendored_postgresql.PGCompiler):
         bq_type = self.dialect.type_compiler.process(type_)
         bq_type = self.__remove_type_parameter(bq_type)
 
-        if bq_type == "JSON":
-            # FIXME: JSON is not a member of `SqlParameterScalarTypes` in the DBAPI
-            # For now, we hack around this by:
-            # - Rewriting the bindparam type to STRING
-            # - Applying a bind expression that converts the parameter back to JSON
-            bq_type = "STRING"
-
         assert_(param != "%s", f"Unexpected param: {param}")
 
         if bindparam.expanding:  # pragma: NO COVER
@@ -649,7 +642,15 @@ class BigQueryTypeCompiler(GenericTypeCompiler):
     visit_DECIMAL = visit_NUMERIC
 
     def visit_JSON(self, type_, **kw):
-        return "JSON"
+        if isinstance(
+            kw.get("type_expression"), Column
+        ):  # column def
+            return "JSON"
+        # FIXME: JSON is not a member of `SqlParameterScalarTypes` in the DBAPI
+        # For now, we hack around this by:
+        # - Rewriting the bindparam type to STRING
+        # - Applying a bind expression that converts the parameter back to JSON
+        return "STRING"
 
 
 class BigQueryDDLCompiler(DDLCompiler):
