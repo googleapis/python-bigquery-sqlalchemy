@@ -426,7 +426,8 @@ def test_label_compiler(faux_conn, metadata):
     @sqlalchemy.ext.compiler.compiles(CustomLower)
     def compile_custom_intersect(element, compiler, **kwargs):
         if compiler.dialect.name != "bigquery":
-            raise sqlalchemy.exc.CompileError(
+            # We only test with the BigQuery dialect, so this should never happen.
+            raise sqlalchemy.exc.CompileError(  # pragma: NO COVER
                 f"custom_lower is not supported for dialect {compiler.dialect.name}"
             )
 
