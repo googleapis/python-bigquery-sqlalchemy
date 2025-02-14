@@ -630,11 +630,12 @@ class BigQueryTypeCompiler(GenericTypeCompiler):
         else:
             suffix = ""
 
+        # From the GCP Console for BQ when creating a NUMERIC column:
+        # > precision and scale for NUMERIC must be: 0 <= precision - scale <= 29
         return (
-            "BIGNUMERIC"
-            if (type_.precision is not None and type_.precision > 38)
-            or (type_.scale is not None and type_.scale > 9)
-            else "NUMERIC"
+            "NUMERIC"
+            if (0 <= (type_.precision or 0) - (type_.scale or 0) <= 29)
+            else "BIGNUMERIC"
         ) + suffix
 
     visit_DECIMAL = visit_NUMERIC
