@@ -15,6 +15,7 @@
 """This script is used to synthesize generated parts of this library."""
 
 import pathlib
+import re
 
 import synthtool as s
 from synthtool import gcp
@@ -42,14 +43,17 @@ templated_files = common.py_library(
     system_test_extras=extras,
     system_test_extras_by_python=extras_by_python,
 )
-s.move(templated_files, excludes=[
-    # sqlalchemy-bigquery was originally licensed MIT
-    "LICENSE", 
-    "docs/multiprocessing.rst",
-    # exclude gh actions as credentials are needed for tests
-    ".github/workflows",
-    "README.rst",
-])
+s.move(
+    templated_files,
+    excludes=[
+        # sqlalchemy-bigquery was originally licensed MIT
+        "LICENSE",
+        "docs/multiprocessing.rst",
+        # exclude gh actions as credentials are needed for tests
+        ".github/workflows",
+        "README.rst",
+    ],
+)
 
 # ----------------------------------------------------------------------------
 # Fixup files
@@ -59,7 +63,7 @@ s.replace(
     [".coveragerc"],
     "google/cloud/__init__.py",
     "sqlalchemy_bigquery/requirements.py",
-    )
+)
 
 s.replace(
     ["noxfile.py"],
@@ -73,14 +77,27 @@ s.replace(
     "import re\nimport shutil",
 )
 
-
 s.replace(
-    ["noxfile.py"], "--cov=google", "--cov=sqlalchemy_bigquery",
+    ["noxfile.py"],
+    "LINT_PATHS = \[",
+    "LINT_PATHS = [\"third_party\", "
 )
 
+s.replace(
+    ["noxfile.py"],
+    "--cov=google",
+    "--cov=sqlalchemy_bigquery",
+)
 
 s.replace(
-    ["noxfile.py"], 
+    ["noxfile.py"],
+    """os.path.join("tests", "unit"),""",
+    """os.path.join("tests", "unit"),
+        os.path.join("third_party", "sqlalchemy_bigquery_vendored"),""",
+)
+
+s.replace(
+    ["noxfile.py"],
     "\+ SYSTEM_TEST_EXTRAS",
     "",
 )
@@ -88,36 +105,28 @@ s.replace(
 
 s.replace(
     ["noxfile.py"],
-    '''"protobuf",
-        # dependency of grpc''',
-    '''"protobuf",
-        "sqlalchemy<2.0.0",
-        # dependency of grpc''',
+    """"protobuf",
+        # dependency of grpc""",
+    """"protobuf",
+        "sqlalchemy",
+        # dependency of grpc""",
 )
 
 
 s.replace(
     ["noxfile.py"],
-    r"def default\(session\)",
-    "def default(session, install_extras=True)",    
+    r"def unit\(session, protobuf_implementation\)",
+    "def unit(session, protobuf_implementation, install_extras=True)",
 )
-
-
 
 
 def place_before(path, text, *before_text, escape=None):
     replacement = "\n".join(before_text) + "\n" + text
     if escape:
         for c in escape:
-            text = text.replace(c, '\\' + c)
+            text = text.replace(c, "\\" + c)
     s.replace([path], text, replacement)
 
-place_before(
-    "noxfile.py",
-    "SYSTEM_TEST_PYTHON_VERSIONS=",
-    "",
-    "# We're using two Python versions to test with sqlalchemy 1.3 and 1.4.",
-)
 
 place_before(
     "noxfile.py",
@@ -126,7 +135,7 @@ place_before(
 )
 
 
-install_logic = '''
+install_logic = """
     if install_extras and session.python in ["3.11", "3.12"]:
         install_target = ".[geography,alembic,tests,bqstorage]"
     elif install_extras:
@@ -134,12 +143,12 @@ install_logic = '''
     else:
         install_target = "."
     session.install("-e", install_target, "-c", constraints_path)
-'''
+"""
 
-place_before(
-    "noxfile.py",
-    "# Run py.test against the unit tests.",
-    install_logic,
+s.replace(
+    ["noxfile.py"],
+    r"# TODO\(https://github.com/googleapis/synthtool/issues/1976\):",
+    install_logic + "\n" + "# TODO(https://github.com/googleapis/synthtool/issues/1976):",
 )
 
 
@@ -162,8 +171,6 @@ def compliance(session):
     if not os.path.exists(system_test_folder_path):
         session.skip("Compliance tests were not found")
 
-    session.install("--pre", "grpcio")
-    session.install("--pre", "--no-deps", "--upgrade", "sqlalchemy<2.0.0") 
     session.install(
         "mock",
         "pytest",
@@ -206,12 +213,11 @@ def compliance(session):
 '''
 
 place_before(
-     "noxfile.py",
-     "@nox.session(python=DEFAULT_PYTHON_VERSION)\n"
-     "def cover(session):",
-     compliance,
-     escape="()",
-     )
+    "noxfile.py",
+    "@nox.session(python=DEFAULT_PYTHON_VERSION)\n" "def cover(session):",
+    compliance,
+    escape="()",
+)
 
 s.replace(["noxfile.py"], '"alabaster"', '"alabaster", "geoalchemy2", "shapely"')
 
@@ -267,11 +273,10 @@ def system_noextras(session):
 
 place_before(
     "noxfile.py",
-    "@nox.session(python=SYSTEM_TEST_PYTHON_VERSIONS[-1])\n"
-    "def compliance(session):", 
+    "@nox.session(python=SYSTEM_TEST_PYTHON_VERSIONS[-1])\n" "def compliance(session):",
     system_noextras,
     escape="()[]",
-    )
+)
 
 
 # Add DB config for SQLAlchemy dialect test suite.
@@ -280,15 +285,16 @@ s.replace(
     ["setup.cfg"],
     "universal = 1\n",
     """universal = 1
+""",
+)
 
-[sqla_testing]
-requirement_cls=sqlalchemy_bigquery.requirements:Requirements
-profile_file=.sqlalchemy_dialect_compliance-profiles.txt
 
-[tool:pytest]
-addopts= --tb native -v -r fxX -p no:warnings
-python_files=tests/*test_*.py
-"""
+# Make sure build includes all necessary files.
+s.replace(
+    ["MANIFEST.in"],
+    re.escape("recursive-include google"),
+    """recursive-include third_party/sqlalchemy_bigquery_vendored *
+recursive-include sqlalchemy_bigquery""",
 )
 
 # ----------------------------------------------------------------------------
@@ -299,7 +305,7 @@ python_files=tests/*test_*.py
 python.py_samples(skip_readmes=True)
 
 s.replace(
-    ["./samples/snippets/noxfile.py"], 
+    ["./samples/snippets/noxfile.py"],
     """session.install\("-e", _get_repo_root\(\)\)""",
     """session.install("-e", _get_repo_root())
     else:

@@ -14,6 +14,70 @@ Older versions of this project were distributed as [pybigquery][0].
 [2]: https://pypi.org/project/pybigquery/#history
 
 
+## [1.12.1](https://github.com/googleapis/python-bigquery-sqlalchemy/compare/v1.12.0...v1.12.1) (2025-01-21)
+
+
+### Features
+
+* Update partitioning by DATE, DATETIME, TIMESTAMP, _PARTITIONDATE ([#1113](https://github.com/googleapis/python-bigquery-sqlalchemy/issues/1113)) ([413cd24](https://github.com/googleapis/python-bigquery-sqlalchemy/commit/413cd242d17f92c04cdfebf70595421c96cbbae4))
+
+
+### Bug Fixes
+
+* Alembic column rename ([#1141](https://github.com/googleapis/python-bigquery-sqlalchemy/issues/1141)) ([9f7f78b](https://github.com/googleapis/python-bigquery-sqlalchemy/commit/9f7f78becc8e1241eabdc7cc50bfb12ac4860d65))
+* Compilation of a labeled custom FunctionElement when used in grouping ([#1155](https://github.com/googleapis/python-bigquery-sqlalchemy/issues/1155)) ([4a0f8ad](https://github.com/googleapis/python-bigquery-sqlalchemy/commit/4a0f8ad92172baa6551ad2a79e1446d807bfd4dd))
+
+
+### Documentation
+
+* Fix typo on credentials_info usage sample ([#1145](https://github.com/googleapis/python-bigquery-sqlalchemy/issues/1145)) ([736d4a2](https://github.com/googleapis/python-bigquery-sqlalchemy/commit/736d4a26ca9fd1e343e7c5c02637e8707ab57fee))
+
+## [1.12.0](https://github.com/googleapis/python-bigquery-sqlalchemy/compare/v1.11.0...v1.12.0) (2024-08-14)
+
+
+### Features
+
+* Adds user agent parameters to two functions ([#1100](https://github.com/googleapis/python-bigquery-sqlalchemy/issues/1100)) ([f9324e3](https://github.com/googleapis/python-bigquery-sqlalchemy/commit/f9324e35a6aa2f3d9c9f2511d1104fdf60c97c83))
+* Support UPDATE + JOIN in BigQuery dialect ([#1083](https://github.com/googleapis/python-bigquery-sqlalchemy/issues/1083)) ([d766d21](https://github.com/googleapis/python-bigquery-sqlalchemy/commit/d766d21053f7d9df5019d0d6dedf4476ef6125a9))
+* Update colspec to account for sqlalchemy Enum ([#1111](https://github.com/googleapis/python-bigquery-sqlalchemy/issues/1111)) ([b54bdde](https://github.com/googleapis/python-bigquery-sqlalchemy/commit/b54bdde0a01cabf5844c2b2794994b1ae5f4952f))
+
+
+### Bug Fixes
+
+* Fix partitioning by DATE column ([#1074](https://github.com/googleapis/python-bigquery-sqlalchemy/issues/1074)) ([ad69c63](https://github.com/googleapis/python-bigquery-sqlalchemy/commit/ad69c630833bce207784dfbea8eb3c58f316e511))
+* Implement modulus operator ([#1048](https://github.com/googleapis/python-bigquery-sqlalchemy/issues/1048)) ([f5fb1a2](https://github.com/googleapis/python-bigquery-sqlalchemy/commit/f5fb1a2543e8196e076d74848a7ae0dcf169f667))
+* Set cte_follows_insert to True ([#1095](https://github.com/googleapis/python-bigquery-sqlalchemy/issues/1095)) ([9e0b117](https://github.com/googleapis/python-bigquery-sqlalchemy/commit/9e0b117b6966ad72bc94c0916be95189e4bd9654))
+* Use except distinct and intersect distinct ([#1094](https://github.com/googleapis/python-bigquery-sqlalchemy/issues/1094)) ([80781ef](https://github.com/googleapis/python-bigquery-sqlalchemy/commit/80781ef99287af2e950f21ca399c84d20422b732))
+
+## [1.11.0](https://github.com/googleapis/python-bigquery-sqlalchemy/compare/v1.10.0...v1.11.0) (2024-04-12)
+
+
+### Features
+
+* Support SQLAlchemy 2.0, raise minimum required version to 1.4.x ([[#920](https://github.com/googleapis/python-bigquery-sqlalchemy/issues/920)](https://github.com/googleapis/python-bigquery-sqlalchemy/pull/920), [[#1053](https://github.com/googleapis/python-bigquery-sqlalchemy/issues/1053)](https://github.com/googleapis/python-bigquery-sqlalchemy/pull/1053)) ([7a4c3c2](https://github.com/googleapis/python-bigquery-sqlalchemy/commit/7a4c3c28f586c6bb02349ce8620d515f5b56164e))
+
+
+### Bug Fixes
+
+* Fix grouping sets, rollup and cube rendering issue ([[#1019](https://github.com/googleapis/python-bigquery-sqlalchemy/issues/1019)](https://github.com/googleapis/python-bigquery-sqlalchemy/pull/1019), [[#1053](https://github.com/googleapis/python-bigquery-sqlalchemy/issues/1053)](https://github.com/googleapis/python-bigquery-sqlalchemy/pull/1053)) ([7a4c3c2](https://github.com/googleapis/python-bigquery-sqlalchemy/commit/7a4c3c28f586c6bb02349ce8620d515f5b56164e))
+
+
+### Documentation
+
+* Fix docs session ([#1060](https://github.com/googleapis/python-bigquery-sqlalchemy/issues/1060)) ([7e66cc2](https://github.com/googleapis/python-bigquery-sqlalchemy/commit/7e66cc217722456d5669809d68863549c4f4ea39))
+
+## [1.10.0](https://github.com/googleapis/python-bigquery-sqlalchemy/compare/v1.9.0...v1.10.0) (2024-02-27)
+
+
+### Features
+
+* Allow to set clustering and time partitioning options at table creation ([#928](https://github.com/googleapis/python-bigquery-sqlalchemy/issues/928)) ([c2c2958](https://github.com/googleapis/python-bigquery-sqlalchemy/commit/c2c2958886cc3c8a51c4f5fc1a8c36b65921edd9))
+
+
+### Bug Fixes
+
+* Avoid implicit join when using join with unnest ([#924](https://github.com/googleapis/python-bigquery-sqlalchemy/issues/924)) ([ac74a34](https://github.com/googleapis/python-bigquery-sqlalchemy/commit/ac74a3434c437f60b6f215ac09dea224aa406f8a))
+
 ## [1.9.0](https://github.com/googleapis/python-bigquery-sqlalchemy/compare/v1.8.0...v1.9.0) (2023-12-10)
 
 

@@ -60,6 +60,7 @@ import re
 
 from .parse_url import parse_url
 from . import _helpers, _struct, _types
+import sqlalchemy_bigquery_vendored.sqlalchemy.postgresql.base as vendored_postgresql
 
 # Illegal characters is intended to be all characters that are not explicitly
 # allowed as part of the flexible column names.
@@ -163,7 +164,7 @@ class BigQueryExecutionContext(DefaultExecutionContext):
         """,
         flags=re.IGNORECASE | re.VERBOSE,
     )
-    def __distribute_types_to_expanded_placeholders(self, m):
+    def __distribute_types_to_expanded_placeholders(self, m):  # pragma: NO COVER
         # If we have an in parameter, it sometimes gets expaned to 0 or more
         # parameters and we need to move the type marker to each
         # parameter.
@@ -174,6 +175,8 @@ class BigQueryExecutionContext(DefaultExecutionContext):
         # suffixes refect that when an array parameter is expanded,
         # numeric suffixes are added.  For example, a placeholder like
         # `%(foo)s` gets expaneded to `%(foo_0)s, `%(foo_1)s, ...`.
+
+        # Coverage: despite our best efforts, never recognized this segment of code as being tested.
         placeholders, type_ = m.groups()
         if placeholders:
             placeholders = placeholders.replace(")", f":{type_})")
@@ -187,10 +190,12 @@ class BigQueryExecutionContext(DefaultExecutionContext):
         )
 
 
-class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
+class BigQueryCompiler(_struct.SQLCompiler, vendored_postgresql.PGCompiler):
     compound_keywords = SQLCompiler.compound_keywords.copy()
     compound_keywords[selectable.CompoundSelect.UNION] = "UNION DISTINCT"
     compound_keywords[selectable.CompoundSelect.UNION_ALL] = "UNION ALL"
+    compound_keywords[selectable.CompoundSelect.EXCEPT] = "EXCEPT DISTINCT"
+    compound_keywords[selectable.CompoundSelect.INTERSECT] = "INTERSECT DISTINCT"
 
     def __init__(self, dialect, statement, *args, **kwargs):
         if isinstance(statement, Column):
@@ -219,7 +224,7 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
         # For example, given SQLAlchemy code:
         #
         #   print(
-        #      select([func.unnest(foo.c.objects).alias('foo_objects').column])
+        #      select(func.unnest(foo.c.objects).alias('foo_objects').column)
         #      .compile(engine))
         #
         # Left to it's own devices, SQLAlchemy would outout:
@@ -336,7 +341,12 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
         # Flag set in the group_by_clause method. Works around missing
         # equivalent to supports_simple_order_by_label for group by.
         if within_group_by:
-            kwargs["render_label_as_label"] = args[0]
+            column_label = args[0]
+            sql_keywords = {"GROUPING SETS", "ROLLUP", "CUBE"}
+            label_str = column_label.compile(dialect=self.dialect).string
+            if not any(keyword in label_str for keyword in sql_keywords):
+                kwargs["render_label_as_label"] = column_label
+
         return super(BigQueryCompiler, self).visit_label(*args, **kwargs)
 
     def group_by_clause(self, select, **kw):
@@ -356,11 +366,7 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
 
     __sqlalchemy_version_info = packaging.version.parse(sqlalchemy.__version__)
 
-    __expanding_text = (
-        "EXPANDING"
-        if __sqlalchemy_version_info < packaging.version.parse("1.4")
-        else "POSTCOMPILE"
-    )
+    __expanding_text = "POSTCOMPILE"
 
     # https://github.com/sqlalchemy/sqlalchemy/commit/f79df12bd6d99b8f6f09d4bf07722638c4b4c159
     __expanding_conflict = (
@@ -388,9 +394,6 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
             self._generate_generic_binary(binary, " IN ", **kw)
         )
 
-    def visit_empty_set_expr(self, element_types):
-        return ""
-
     def visit_not_in_op_binary(self, binary, operator, **kw):
         return (
             "("
@@ -399,8 +402,6 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
             )
             + ")"
         )
-
-    visit_notin_op_binary = visit_not_in_op_binary  # before 1.4
 
     ############################################################################
 
@@ -424,8 +425,8 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
             self._maybe_reescape(binary), operator, **kw
         )
 
-    def visit_notcontains_op_binary(self, binary, operator, **kw):
-        return super(BigQueryCompiler, self).visit_notcontains_op_binary(
+    def visit_not_contains_op_binary(self, binary, operator, **kw):
+        return super(BigQueryCompiler, self).visit_not_contains_op_binary(
             self._maybe_reescape(binary), operator, **kw
         )
 
@@ -434,8 +435,8 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
             self._maybe_reescape(binary), operator, **kw
         )
 
-    def visit_notstartswith_op_binary(self, binary, operator, **kw):
-        return super(BigQueryCompiler, self).visit_notstartswith_op_binary(
+    def visit_not_startswith_op_binary(self, binary, operator, **kw):
+        return super(BigQueryCompiler, self).visit_not_startswith_op_binary(
             self._maybe_reescape(binary), operator, **kw
         )
 
@@ -444,8 +445,8 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
             self._maybe_reescape(binary), operator, **kw
         )
 
-    def visit_notendswith_op_binary(self, binary, operator, **kw):
-        return super(BigQueryCompiler, self).visit_notendswith_op_binary(
+    def visit_not_endswith_op_binary(self, binary, operator, **kw):
+        return super(BigQueryCompiler, self).visit_not_endswith_op_binary(
             self._maybe_reescape(binary), operator, **kw
         )
 
@@ -510,7 +511,8 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
             # here, because then we can't do a recompile later (e.g., first
             # print the statment, then execute it).  See issue #357.
             #
-            if getattr(bindparam, "expand_op", None) is not None:
+            # Coverage: despite our best efforts, never recognized this segment of code as being tested.
+            if getattr(bindparam, "expand_op", None) is not None:  # pragma: NO COVER
                 assert bindparam.expand_op.__name__.endswith("in_op")  # in in
                 bindparam = bindparam._clone(maintain_key=True)
                 bindparam.expanding = False
@@ -579,6 +581,9 @@ class BigQueryCompiler(_struct.SQLCompiler, SQLCompiler):
     def visit_not_regexp_match_op_binary(self, binary, operator, **kw):
         return "NOT %s" % self.visit_regexp_match_op_binary(binary, operator, **kw)
 
+    def visit_mod_binary(self, binary, operator, **kw):
+        return f"MOD({self.process(binary.left, **kw)}, {self.process(binary.right, **kw)})"
+
 
 class BigQueryTypeCompiler(GenericTypeCompiler):
     def visit_INTEGER(self, type_, **kw):
@@ -644,15 +649,15 @@ class BigQueryDDLCompiler(DDLCompiler):
     }
 
     # BigQuery has no support for foreign keys.
-    def visit_foreign_key_constraint(self, constraint):
+    def visit_foreign_key_constraint(self, constraint, **kw):
         return None
 
     # BigQuery has no support for primary keys.
-    def visit_primary_key_constraint(self, constraint):
+    def visit_primary_key_constraint(self, constraint, **kw):
         return None
 
     # BigQuery has no support for unique constraints.
-    def visit_unique_constraint(self, constraint):
+    def visit_unique_constraint(self, constraint, **kw):
         return None
 
     def get_column_specification(self, column, **kwargs):
@@ -760,14 +765,14 @@ class BigQueryDDLCompiler(DDLCompiler):
 
         return " " + "\n".join(clauses)
 
-    def visit_set_table_comment(self, create):
+    def visit_set_table_comment(self, create, **kw):
         table_name = self.preparer.format_table(create.element)
         description = self.sql_compiler.render_literal_value(
             create.element.comment, sqlalchemy.sql.sqltypes.String()
         )
         return f"ALTER TABLE {table_name} SET OPTIONS(description={description})"
 
-    def visit_drop_table_comment(self, drop):
+    def visit_drop_table_comment(self, drop, **kw):
         table_name = self.preparer.format_table(drop.element)
         return f"ALTER TABLE {table_name} SET OPTIONS(description=null)"
 
@@ -805,37 +810,99 @@ class BigQueryDDLCompiler(DDLCompiler):
             )
 
     def _process_time_partitioning(
-        self, table: Table, time_partitioning: TimePartitioning
+        self,
+        table: Table,
+        time_partitioning: TimePartitioning,
     ):
         """
-        Generates a SQL 'PARTITION BY' clause for partitioning a table by a date or timestamp.
+        Generates a SQL 'PARTITION BY' clause for partitioning a table,
 
         Args:
-        - table (Table): The SQLAlchemy table object representing the BigQuery table to be partitioned.
+        - table (Table): The SQLAlchemy table object representing the BigQuery
+            table to be partitioned.
         - time_partitioning (TimePartitioning): The time partitioning details,
             including the field to be used for partitioning.
 
         Returns:
-        - str: A SQL 'PARTITION BY' clause that uses either TIMESTAMP_TRUNC or DATE_TRUNC to
-        partition data on the specified field.
+        - str: A SQL 'PARTITION BY' clause.
 
         Example:
-        - Given a table with a TIMESTAMP type column 'event_timestamp' and setting
-        'time_partitioning.field' to 'event_timestamp', the function returns
+        - Given a table with an 'event_timestamp' and setting time_partitioning.type
+        as DAY and by setting 'time_partitioning.field' as 'event_timestamp', the
+        function returns:
         "PARTITION BY TIMESTAMP_TRUNC(event_timestamp, DAY)".
-        """
-        field = "_PARTITIONDATE"
-        trunc_fn = "DATE_TRUNC"
 
+        Current inputs allowed by BQ and covered by this function include:
+        * _PARTITIONDATE
+        * DATETIME_TRUNC(<datetime_column>, DAY/HOUR/MONTH/YEAR)
+        * TIMESTAMP_TRUNC(<timestamp_column>, DAY/HOUR/MONTH/YEAR)
+        * DATE_TRUNC(<date_column>, MONTH/YEAR)
+
+        Additional options allowed by BQ but not explicitly covered by this
+        function include:
+        * DATE(_PARTITIONTIME)
+        * DATE(<timestamp_column>)
+        * DATE(<datetime_column>)
+        * DATE column
+        """
+
+        sqltypes = {
+            "_PARTITIONDATE": ("_PARTITIONDATE", None),
+            "TIMESTAMP": ("TIMESTAMP_TRUNC", {"DAY", "HOUR", "MONTH", "YEAR"}),
+            "DATETIME": ("DATETIME_TRUNC", {"DAY", "HOUR", "MONTH", "YEAR"}),
+            "DATE": ("DATE_TRUNC", {"MONTH", "YEAR"}),
+        }
+
+        # Extract field (i.e <column_name> or _PARTITIONDATE)
+        # AND extract the name of the column_type (i.e. "TIMESTAMP", "DATE",
+        # "DATETIME", "_PARTITIONDATE")
         if time_partitioning.field is not None:
             field = time_partitioning.field
-            if isinstance(
-                table.columns[time_partitioning.field].type,
-                sqlalchemy.sql.sqltypes.TIMESTAMP,
-            ):
-                trunc_fn = "TIMESTAMP_TRUNC"
+            column_type = table.columns[field].type.__visit_name__.upper()
 
-        return f"PARTITION BY {trunc_fn}({field}, {time_partitioning.type_})"
+        else:
+            field = "_PARTITIONDATE"
+            column_type = "_PARTITIONDATE"
+
+        # Extract time_partitioning.type_ (DAY, HOUR, MONTH, YEAR)
+        # i.e. generates one partition per type (1/DAY, 1/HOUR)
+        # NOTE: if time_partitioning.type_ == None, it gets
+        # immediately overwritten by python-bigquery to a default of DAY.
+        partitioning_period = time_partitioning.type_
+
+        # Extract the truncation_function (i.e. DATE_TRUNC)
+        # and the set of allowable partition_periods
+        # that can be used in that function
+        trunc_fn, allowed_partitions = sqltypes[column_type]
+
+        # Create output:
+        # Special Case: _PARTITIONDATE does NOT use a function or partitioning_period
+        if trunc_fn == "_PARTITIONDATE":
+            return f"PARTITION BY {field}"
+
+        # Special Case: BigQuery will not accept DAY as partitioning_period for
+        # DATE_TRUNC.
+        # However, the default argument in python-bigquery for TimePartioning
+        # is DAY. This case overwrites that to avoid making a breaking change in
+        # python-bigquery.
+        # https://github.com/googleapis/python-bigquery/blob/a4d9534a900f13ae7355904cda05097d781f27e3/google/cloud/bigquery/table.py#L2916
+        if trunc_fn == "DATE_TRUNC" and partitioning_period == "DAY":
+            raise ValueError(
+                "The TimePartitioning.type_ must be one of: "
+                f"{allowed_partitions}, received {partitioning_period}."
+                "NOTE: the `default` value for TimePartioning.type_ as set in "
+                "python-bigquery is 'DAY', if you wish to use 'DATE_TRUNC' "
+                "ensure that you overwrite the default TimePartitioning.type_. "
+            )
+
+        # Generic Case
+        if partitioning_period not in allowed_partitions:
+            raise ValueError(
+                "The TimePartitioning.type_ must be one of: "
+                f"{allowed_partitions}, received {partitioning_period}."
+            )
+
+        return f"PARTITION BY {trunc_fn}({field}, {partitioning_period})"
 
     def _process_range_partitioning(
         self, table: Table, range_partitioning: RangePartitioning
@@ -980,6 +1047,7 @@ class BigQueryDialect(DefaultDialect):
     type_compiler = BigQueryTypeCompiler
     ddl_compiler = BigQueryDDLCompiler
     execution_ctx_cls = BigQueryExecutionContext
+    cte_follows_insert = True
     supports_alter = False
     supports_comments = True
     inline_comments = True
@@ -1005,6 +1073,7 @@ class BigQueryDialect(DefaultDialect):
         sqlalchemy.sql.sqltypes.Time: BQClassTaggedStr,
         sqlalchemy.sql.sqltypes.TIMESTAMP: BQTimestamp,
         sqlalchemy.sql.sqltypes.ARRAY: BQArray,
+        sqlalchemy.sql.sqltypes.Enum: sqlalchemy.sql.sqltypes.Enum,
     }
 
     def __init__(
@@ -1030,6 +1099,14 @@ class BigQueryDialect(DefaultDialect):
 
     @classmethod
     def dbapi(cls):
+        """
+        Use `import_dbapi()` instead.
+        Maintained for backward compatibility.
+        """
+        return dbapi
+
+    @classmethod
+    def import_dbapi(cls):
         return dbapi
 
     @staticmethod
@@ -1202,7 +1279,21 @@ class BigQueryDialect(DefaultDialect):
             raise NoSuchTableError(table_name)
         return table
 
-    def has_table(self, connection, table_name, schema=None):
+    def has_table(self, connection, table_name, schema=None, **kw):
+        """Checks whether a table exists in BigQuery.
+
+        Args:
+            connection (google.cloud.bigquery.client.Client): The client
+                object used to interact with BigQuery.
+            table_name (str): The name of the table to check for.
+            schema (str, optional): The name of the schema to which the table
+                belongs. Defaults to the default schema.
+            **kw (dict): Any extra keyword arguments will be ignored.
+
+        Returns:
+            bool: True if the table exists, False otherwise.
+
+        """
         try:
             self._get_table(connection, table_name, schema)
             return True
@@ -1256,10 +1347,6 @@ class BigQueryDialect(DefaultDialect):
         # BigQuery has no support for transactions.
         pass
 
-    def _check_unicode_returns(self, connection, additional_tests=None):
-        # requests gives back Unicode strings
-        return True
-
     def get_view_definition(self, connection, view_name, schema=None, **kw):
         if isinstance(connection, Engine):
             connection = connection.connect()
@@ -1279,7 +1366,13 @@ class unnest(sqlalchemy.sql.functions.GenericFunction):
             raise TypeError("The unnest function requires a single argument.")
         arg = args[0]
         if isinstance(arg, sqlalchemy.sql.expression.ColumnElement):
-            if not isinstance(arg.type, sqlalchemy.sql.sqltypes.ARRAY):
+            if not (
+                isinstance(arg.type, sqlalchemy.sql.sqltypes.ARRAY)
+                or (
+                    hasattr(arg.type, "impl")
+                    and isinstance(arg.type.impl, sqlalchemy.sql.sqltypes.ARRAY)
+                )
+            ):
                 raise TypeError("The argument to unnest must have an ARRAY type.")
             self.type = arg.type.item_type
         super().__init__(*args, **kwargs)
@@ -1293,10 +1386,28 @@ except ImportError:  # pragma: NO COVER
     pass
 else:
     from alembic.ddl import impl
-    from alembic.ddl.base import ColumnType, format_type, alter_table, alter_column
+    from alembic.ddl.base import (
+        ColumnName,
+        ColumnType,
+        format_column_name,
+        format_type,
+        alter_table,
+        alter_column,
+    )
 
     class SqlalchemyBigqueryImpl(impl.DefaultImpl):
         __dialect__ = "bigquery"
+
+    @compiles(ColumnName, "bigquery")
+    def visit_column_name(element: ColumnName, compiler: DDLCompiler, **kw) -> str:
+        """Replaces the visit_column_name() function in alembic/alembic/ddl/base.py.
+        See https://github.com/googleapis/python-bigquery-sqlalchemy/issues/1097"""
+
+        return "%s RENAME COLUMN %s TO %s" % (
+            alter_table(compiler, element.table_name, element.schema),
+            format_column_name(compiler, element.column_name),
+            format_column_name(compiler, element.newname),
+        )
 
     @compiles(ColumnType, "bigquery")
     def visit_column_type(element: ColumnType, compiler: DDLCompiler, **kw) -> str:
@@ -1304,7 +1415,7 @@ else:
         The alembic version ends in TYPE <element type>, but bigquery requires this syntax:
         SET DATA TYPE <element type>"""
 
-        return "%s %s %s" % (  # pragma: NO COVER
+        return "%s %s %s" % (
             alter_table(compiler, element.table_name, element.schema),
             alter_column(compiler, element.column_name),
             "SET DATA TYPE %s" % format_type(compiler, element.type_),

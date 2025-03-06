@@ -34,8 +34,6 @@ In order to use this library, you first need to go through the following steps:
 .. _Enable the BigQuery Storage API.: https://console.cloud.google.com/apis/library/bigquery.googleapis.com
 .. _Setup Authentication.: https://googleapis.dev/python/google-api-core/latest/auth.html
 
-.. note::
-   This library is only compatible with SQLAlchemy versions < 2.0.0
 
 Installation
 ------------
@@ -108,7 +106,8 @@ SQLAlchemy
     from sqlalchemy.schema import *
     engine = create_engine('bigquery://project')
     table = Table('dataset.table', MetaData(bind=engine), autoload=True)
-    print(select([func.count('*')], from_obj=table).scalar())
+    print(select([func.count('*')], from_obj=table().scalar()))
+
 
 Project
 ^^^^^^^
@@ -137,7 +136,7 @@ Alternatively, you can choose either of the following approaches:
     credentials_info = {
         "type": "service_account", 
         "project_id": "your-service-account-project-id"
-    },
+    }
     engine = create_engine('bigquery://', credentials_info=credentials_info)
 
 Location
@@ -281,7 +280,7 @@ If you need additional control, you can supply a BigQuery client of your own:
 
     engine = create_engine(
         'bigquery://some-project/some-dataset?user_supplied_client=True',
-	connect_args={'client': custom_bq_client},
+	    connect_args={'client': custom_bq_client},
     )
 
 
