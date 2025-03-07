@@ -1128,6 +1128,7 @@ class BigQueryDialect(DefaultDialect):
         kwargs = {}
         if context is not None and context.execution_options.get("job_config"):
             kwargs["job_config"] = context.execution_options.get("job_config")
+        # breakpoint()
         cursor.execute(statement, parameters, **kwargs)
 
     def create_connect_args(self, url):
