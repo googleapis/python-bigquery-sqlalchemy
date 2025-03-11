@@ -38,4 +38,5 @@ shapely==2.0.7
 six==1.17.0
 sqlalchemy===1.4.27
 typing-extensions==4.12.2
-urllib3==2.3.0
+urllib3===2.2.3; python_version == '3.8'
+urllib3==2.3.0; python_version >= '3.9'
