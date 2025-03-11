@@ -1,4 +1,5 @@
-alembic==1.15.1
+alembic===1.14.0; python_version == '3.8'
+alembic==1.15.1;  python_version >= '3.9'
 certifi==2025.1.31
 charset-normalizer==3.4.1
 geoalchemy2==0.17.1
