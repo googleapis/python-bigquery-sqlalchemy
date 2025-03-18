@@ -22,11 +22,9 @@
 import datetime
 from decimal import Decimal
 import random
-import operator
 import uuid
 
 from google import auth
-import google.api_core.exceptions
 from google.cloud.bigquery import dbapi
 from google.cloud.bigquery.table import (
     RangePartitioning,
@@ -1110,11 +1108,6 @@ class BigQueryDialect(DefaultDialect):
         return dbapi
 
     @staticmethod
-    def _build_formatted_table_id(table):
-        """Build '<dataset_id>.<table_id>' string using given table."""
-        return "{}.{}".format(table.reference.dataset_id, table.table_id)
-
-    @staticmethod
     def _add_default_dataset_to_job_config(job_config, project_id, dataset_id):
         # If dataset_id is set, then we know the job_config isn't None
         if dataset_id:
@@ -1168,36 +1161,34 @@ class BigQueryDialect(DefaultDialect):
             )
             return ([], {"client": client})
 
+    def _get_default_schema_name(self, connection) -> str:
+        return connection.dialect.dataset_id
+
     def _get_table_or_view_names(self, connection, item_types, schema=None):
-        current_schema = schema or self.dataset_id
-        get_table_name = (
-            self._build_formatted_table_id
-            if self.dataset_id is None
-            else operator.attrgetter("table_id")
-        )
-
         client = connection.connection._client
-        datasets = client.list_datasets()
-
-        result = []
-        for dataset in datasets:
-            if current_schema is not None and current_schema != dataset.dataset_id:
-                continue
-
-            try:
-                tables = client.list_tables(
-                    dataset.reference, page_size=self.list_tables_page_size
+        # `schema=None` means to search the default schema. If one isn't set in the
+        # connection string, then we have nothing to search so return an empty list.
+        #
+        # When using Alembic with `include_schemas=False`, it expects to compare to a
+        # single schema. If `include_schemas=True`, it will enumerate all schemas and
+        # then call `get_table_names`/`get_view_names` for each schema.
+        current_schema = schema or self.default_schema_name
+        if current_schema is None:
+            return []
+        try:
+            return [
+                table.table_id
+                for table in client.list_tables(
+                    current_schema, page_size=self.list_tables_page_size
                 )
-                for table in tables:
-                    if table.table_type in item_types:
-                        result.append(get_table_name(table))
-            except google.api_core.exceptions.NotFound:
-                # It's possible that the dataset was deleted between when we
-                # fetched the list of datasets and when we try to list the
-                # tables from it. See:
-                # https://github.com/googleapis/python-bigquery-sqlalchemy/issues/105
-                pass
-        return result
+                if table.table_type in item_types
+            ]
+        except NotFound:
+            # It's possible that the dataset was deleted between when we
+            # fetched the list of datasets and when we try to list the
+            # tables from it. See:
+            # https://github.com/googleapis/python-bigquery-sqlalchemy/issues/105
+            return []
 
     @staticmethod
     def _split_table_name(full_table_name):
