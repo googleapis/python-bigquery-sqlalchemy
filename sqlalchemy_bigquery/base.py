@@ -832,14 +832,11 @@ class BigQueryDDLCompiler(DDLCompiler):
         function returns:
         "PARTITION BY TIMESTAMP_TRUNC(event_timestamp, DAY)".
 
-        Current inputs allowed by BQ and covered by this function include:
+        Current inputs allowed by BQ AND covered by this function include:
         * _PARTITIONDATE
         * DATETIME_TRUNC(<datetime_column>, DAY/HOUR/MONTH/YEAR)
         * TIMESTAMP_TRUNC(<timestamp_column>, DAY/HOUR/MONTH/YEAR)
         * DATE_TRUNC(<date_column>, MONTH/YEAR)
-
-        Additional options allowed by BQ but not explicitly covered by this
-        function include:
         * DATE(_PARTITIONTIME)
         * DATE(<timestamp_column>)
         * DATE(<datetime_column>)
@@ -847,11 +844,39 @@ class BigQueryDDLCompiler(DDLCompiler):
         """
 
         sqltypes = {
-            "_PARTITIONDATE": ("_PARTITIONDATE", None),
-            "TIMESTAMP": ("TIMESTAMP_TRUNC", {"DAY", "HOUR", "MONTH", "YEAR"}),
-            "DATETIME": ("DATETIME_TRUNC", {"DAY", "HOUR", "MONTH", "YEAR"}),
-            "DATE": ("DATE_TRUNC", {"MONTH", "YEAR"}),
+            # column_type | truncation func OR default value | partitioning_period(s)
+            
+            "_PARTITIONDATE": ("_PARTITIONDATE", None), # default value, no period
+            "_PARTITIONTIME": ("DATE", None), # trunc_fn, no period
+            "DATE": {
+                "no_period": (None, None), # date_column, no trunc_fn, no period
+                "period": ("DATE_TRUNC", {"MONTH", "YEAR"}), # date_column, trunc_fn, period(s)
+            },   
+            "DATETIME": {
+                "no_period": ("DATE", None), # datetime_column, trunc_fn, no period
+                "period": ("DATETIME_TRUNC", {"DAY", "HOUR", "MONTH", "YEAR"}), # datetime_column, trunc_fn, period(s)
+            }, 
+            "TIMESTAMP": {
+                "no_period": ("DATE", None), # timestamp_column, trunc_fn, no period
+                "period": ("TIMESTAMP_TRUNC", {"DAY", "HOUR", "MONTH", "YEAR"}), # timestamp_column, trunc_fn, period(s)
+            },
         }
+
+        def parse_sqltypes(coltype, partitioning_period):
+            """Returns the default value OR the truncation function to be used
+            and the allowed partitioning periods.
+            """
+            
+            if coltype in {"_PARTITIONDATE", "_PARTITIONTIME"}:
+                return sqltypes[coltype]
+            
+            # by this point, value must be a nested dict
+            if partitioning_period is None:
+                # use "no_period" key
+                return sqltypes[coltype]["no_period"]
+            else:
+                # use "period" key
+                return sqltypes[coltype]["period"]
 
         # Extract field (i.e <column_name> or _PARTITIONDATE)
         # AND extract the name of the column_type (i.e. "TIMESTAMP", "DATE",
@@ -870,14 +895,14 @@ class BigQueryDDLCompiler(DDLCompiler):
         # immediately overwritten by python-bigquery to a default of DAY.
         partitioning_period = time_partitioning.type_
 
-        # Extract the truncation_function (i.e. DATE_TRUNC)
+        # Extract the default value or truncation_function (i.e. DATE_TRUNC())
         # and the set of allowable partition_periods
         # that can be used in that function
-        trunc_fn, allowed_partitions = sqltypes[column_type]
+        trunc_fn, allowed_partitions = parse_sqltypes(column_type, time_partitioning)
 
         # Create output:
         # Special Case: _PARTITIONDATE does NOT use a function or partitioning_period
-        if trunc_fn == "_PARTITIONDATE":
+        if trunc_fn is None or trunc_fn in {"_PARTITIONDATE"}:
             return f"PARTITION BY {field}"
 
         # Special Case: BigQuery will not accept DAY as partitioning_period for
