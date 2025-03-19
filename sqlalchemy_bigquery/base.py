@@ -845,20 +845,28 @@ class BigQueryDDLCompiler(DDLCompiler):
 
         sqltypes = {
             # column_type | truncation func OR default value | partitioning_period(s)
-            
-            "_PARTITIONDATE": ("_PARTITIONDATE", None), # default value, no period
-            "_PARTITIONTIME": ("DATE", None), # trunc_fn, no period
+            "_PARTITIONDATE": ("_PARTITIONDATE", None),  # default value, no period
+            "_PARTITIONTIME": ("DATE", None),  # trunc_fn, no period
             "DATE": {
-                "no_period": (None, None), # date_column, no trunc_fn, no period
-                "period": ("DATE_TRUNC", {"MONTH", "YEAR"}), # date_column, trunc_fn, period(s)
-            },   
+                "no_period": (None, None),  # date_column, no trunc_fn, no period
+                "period": (
+                    "DATE_TRUNC",
+                    {"MONTH", "YEAR"},
+                ),  # date_column, trunc_fn, period(s)
+            },
             "DATETIME": {
-                "no_period": ("DATE", None), # datetime_column, trunc_fn, no period
-                "period": ("DATETIME_TRUNC", {"DAY", "HOUR", "MONTH", "YEAR"}), # datetime_column, trunc_fn, period(s)
-            }, 
+                "no_period": ("DATE", None),  # datetime_column, trunc_fn, no period
+                "period": (
+                    "DATETIME_TRUNC",
+                    {"DAY", "HOUR", "MONTH", "YEAR"},
+                ),  # datetime_column, trunc_fn, period(s)
+            },
             "TIMESTAMP": {
-                "no_period": ("DATE", None), # timestamp_column, trunc_fn, no period
-                "period": ("TIMESTAMP_TRUNC", {"DAY", "HOUR", "MONTH", "YEAR"}), # timestamp_column, trunc_fn, period(s)
+                "no_period": ("DATE", None),  # timestamp_column, trunc_fn, no period
+                "period": (
+                    "TIMESTAMP_TRUNC",
+                    {"DAY", "HOUR", "MONTH", "YEAR"},
+                ),  # timestamp_column, trunc_fn, period(s)
             },
         }
 
@@ -866,10 +874,10 @@ class BigQueryDDLCompiler(DDLCompiler):
             """Returns the default value OR the truncation function to be used
             and the allowed partitioning periods.
             """
-            
+
             if coltype in {"_PARTITIONDATE", "_PARTITIONTIME"}:
                 return sqltypes[coltype]
-            
+
             # by this point, value must be a nested dict
             if partitioning_period is None:
                 # use "no_period" key
