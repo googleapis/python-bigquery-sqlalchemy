@@ -906,7 +906,7 @@ class BigQueryDDLCompiler(DDLCompiler):
         # Extract the default value or truncation_function (i.e. DATE_TRUNC())
         # and the set of allowable partition_periods
         # that can be used in that function
-        trunc_fn, allowed_partitions = parse_sqltypes(column_type, time_partitioning)
+        trunc_fn, allowed_partitions = parse_sqltypes(column_type, partitioning_period)
 
         # Create output:
         # Special Case: _PARTITIONDATE does NOT use a function or partitioning_period
