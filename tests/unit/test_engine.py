@@ -26,6 +26,10 @@ def test_engine_dataset_but_no_project(faux_conn):
     conn = engine.connect()
     assert conn.connection._client.project == "authproj"
 
+def test_engine_dataset_with_billing_project(faux_conn):
+    engine = sqlalchemy.create_engine("bigquery://foo", billing_project_id="bar")
+    conn = engine.connect()
+    assert conn.connection._client.project == "bar"
 
 def test_engine_no_dataset_no_project(faux_conn):
     engine = sqlalchemy.create_engine("bigquery://")
