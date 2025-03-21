@@ -1080,6 +1080,8 @@ class BigQueryDialect(DefaultDialect):
         self,
         arraysize=5000,
         credentials_path=None,
+        project_id=None,
+        job_project_id=None,
         location=None,
         credentials_info=None,
         credentials_base64=None,
@@ -1092,6 +1094,8 @@ class BigQueryDialect(DefaultDialect):
         self.credentials_path = credentials_path
         self.credentials_info = credentials_info
         self.credentials_base64 = credentials_base64
+        self.project_id = project_id
+        self.job_project_id = job_project_id
         self.location = location
         self.identifier_preparer = self.preparer(self)
         self.dataset_id = None
@@ -1152,6 +1156,9 @@ class BigQueryDialect(DefaultDialect):
         self._add_default_dataset_to_job_config(
             default_query_job_config, project_id, dataset_id
         )
+        self.project_id = project_id
+        if self.job_project_id is None:
+            self.job_project_id = project_id
 
         if user_supplied_client:
             # The user is expected to supply a client with
@@ -1162,7 +1169,7 @@ class BigQueryDialect(DefaultDialect):
                 credentials_path=self.credentials_path,
                 credentials_info=self.credentials_info,
                 credentials_base64=self.credentials_base64,
-                project_id=project_id,
+                project_id=self.job_project_id,
                 location=self.location,
                 default_query_job_config=default_query_job_config,
             )
@@ -1177,7 +1184,7 @@ class BigQueryDialect(DefaultDialect):
         )
 
         client = connection.connection._client
-        datasets = client.list_datasets()
+        datasets = client.list_datasets(self.project_id)
 
         result = []
         for dataset in datasets:
@@ -1278,7 +1285,7 @@ class BigQueryDialect(DefaultDialect):
 
         client = connection.connection._client
 
-        table_ref = self._table_reference(schema, table_name, client.project)
+        table_ref = self._table_reference(schema, table_name, self.project_id)
         try:
             table = client.get_table(table_ref)
         except NotFound:
@@ -1332,7 +1339,7 @@ class BigQueryDialect(DefaultDialect):
         if isinstance(connection, Engine):
             connection = connection.connect()
 
-        datasets = connection.connection._client.list_datasets()
+        datasets = connection.connection._client.list_datasets(self.project_id)
         return [d.dataset_id for d in datasets]
 
     def get_table_names(self, connection, schema=None, **kw):
