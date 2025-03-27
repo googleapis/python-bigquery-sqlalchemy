@@ -5,7 +5,8 @@ charset-normalizer==3.4.1
 geoalchemy2==0.17.1
 google-api-core[grpc]==2.24.2
 google-auth==2.38.0
-google-cloud-bigquery==3.31.0
+google-cloud-bigquery===3.30.0; python_version == '3.8'
+google-cloud-bigquery==3.31.0; python_version >= '3.9'
 google-cloud-core==2.4.3
 google-crc32c===1.5.0; python_version == '3.8'
 google-crc32c==1.7.1; python_version >= '3.9'
