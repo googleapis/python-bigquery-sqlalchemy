@@ -48,6 +48,7 @@ UNIT_TEST_STANDARD_DEPENDENCIES = [
     "asyncmock",
     "pytest",
     "pytest-cov",
+    "pytest-xdist",
     "pytest-asyncio",
 ]
 UNIT_TEST_EXTERNAL_DEPENDENCIES: List[str] = []
@@ -79,6 +80,7 @@ SYSTEM_TEST_STANDARD_DEPENDENCIES: List[str] = [
     "mock",
     "pytest",
     "google-cloud-testutils",
+    "pytest-xdist",
 ]
 SYSTEM_TEST_EXTERNAL_DEPENDENCIES: List[str] = []
 SYSTEM_TEST_LOCAL_DEPENDENCIES: List[str] = []
