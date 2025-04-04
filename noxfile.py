@@ -443,11 +443,11 @@ def compliance(session):
 
     session.run(
         "py.test",
-        "-n=auto",
+        "-n=2",
         "-vv",
         f"--junitxml=compliance_{session.python}_sponge_log.xml",
-        "--reruns=3",
-        "--reruns-delay=60",
+        "--reruns=0",
+        "--reruns-delay=1",
         "--only-rerun=Exceeded rate limits",
         "--only-rerun=Already Exists",
         "--only-rerun=Not found",

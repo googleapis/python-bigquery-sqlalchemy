@@ -69,6 +69,25 @@ FIELD_ILLEGAL_CHARACTERS = re.compile(r'[!"$()*,./;?@[\\\]^{}~\n]+', re.ASCII)
 
 TABLE_VALUED_ALIAS_ALIASES = "bigquery_table_valued_alias_aliases"
 
+from sqlalchemy.testing.provision import create_db, drop_db
+@create_db.for_db("bigquery")
+def _bigquery_create_db(cfg, eng, ident):
+    # This and _bigquery_drop_db are adequate to get past the errors generated when using xdist:
+    # NotImplementedError: no DB creation routine for cfg
+    # NotImplementedError: no DB drop routine for cfg
+    #
+    # HOWEVER... we need to populate this in some way to create dbs that
+    # work. THere are examples of create_db style functions in various 
+    # dialects provision.py files.
+    # This sqlalchemy issue speaks to this problem:
+    # https://github.com/sqlalchemy/sqlalchemy/discussions/10948 
+    pass 
+
+@drop_db.for_db("bigquery")
+def _bigquery_drop_db(cfg, eng, ident):
+    pass # _drop_dbs_w_ident(eng.url.database, eng.driver, ident)
+    # SEE note above for create_db
+
 
 def assert_(cond, message="Assertion failed"):  # pragma: NO COVER
     if not cond:
