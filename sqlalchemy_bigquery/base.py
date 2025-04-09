@@ -859,7 +859,7 @@ class BigQueryDDLCompiler(DDLCompiler):
             partitioning_period = time_partitioning.type_
 
         else:
-            # If no field is given, default to "_PARTITIONDATE" as the 
+            # If no field is given, default to "_PARTITIONDATE" as the
             # field to partition on. In addition, to normalize the processing in
             # the remainder of this function, set column_type and partitioning_period
             # as shown below.
@@ -871,16 +871,16 @@ class BigQueryDDLCompiler(DDLCompiler):
         sqltypes_w_no_partitioning_period = {
             # Keys are columns, values are functions
             "_PARTITIONDATE": None,
-            "_PARTITIONTIME": "DATE", # <date function>
-            "DATE": None, # 'DATE' is a <date_column> not a function
-            "DATETIME": "DATE", # <date function>
-            "TIMESTAMP": "DATE", # <date function>
+            "_PARTITIONTIME": "DATE",  # <date function>
+            "DATE": None,  # 'DATE' is a <date_column> not a function
+            "DATETIME": "DATE",  # <date function>
+            "TIMESTAMP": "DATE",  # <date function>
         }
 
         # TODO: move this dictionary outside the function or to top of function
         sqltypes_w_partitioning_period = {
             # Keys are columns, values are (functions, {allowed_partioning_periods})
-            #"_PARTITIONDATE": ("_PARTITIONDATE", {}),
+            # "_PARTITIONDATE": ("_PARTITIONDATE", {}),
             "DATE": ("DATE_TRUNC", {"MONTH", "YEAR"}),
             "DATETIME": ("DATETIME_TRUNC", {"DAY", "HOUR", "MONTH", "YEAR"}),
             "TIMESTAMP": ("TIMESTAMP_TRUNC", {"DAY", "HOUR", "MONTH", "YEAR"}),
@@ -893,7 +893,7 @@ class BigQueryDDLCompiler(DDLCompiler):
         if partitioning_period is None:
             function = sqltypes_w_no_partitioning_period[column_type]
         else:
-            function, allowed_partitions = sqltypes_w_partitioning_period[column_type]            
+            function, allowed_partitions = sqltypes_w_partitioning_period[column_type]
 
         # Create output:
         # Special Case 1: _PARTITIONDATE does NOT use a function or partitioning_period
