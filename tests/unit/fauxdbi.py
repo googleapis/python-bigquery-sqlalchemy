@@ -482,8 +482,8 @@ class FauxClient:
                 google.cloud.bigquery.table.TableListItem(
                     dict(
                         tableReference=dict(
-                            projectId=dataset.project,
-                            datasetId=dataset.dataset_id,
+                            projectId="myproject",
+                            datasetId=dataset,
                             tableId=row["name"],
                         ),
                         type=row["type"].upper(),

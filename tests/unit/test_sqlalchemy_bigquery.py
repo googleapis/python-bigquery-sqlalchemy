@@ -65,83 +65,70 @@ def table_item(dataset_id, table_id, type_="TABLE"):
 
 
 @pytest.mark.parametrize(
-    ["datasets_list", "tables_lists", "expected"],
+    ["dataset", "tables_list", "expected"],
     [
-        ([], [], []),
-        ([dataset_item("dataset_1")], [[]], []),
+        (None, [], []),
+        ("dataset", [], []),
         (
-            [dataset_item("dataset_1"), dataset_item("dataset_2")],
+            "dataset",
             [
-                [table_item("dataset_1", "d1t1"), table_item("dataset_1", "d1t2")],
-                [
-                    table_item("dataset_2", "d2t1"),
-                    table_item("dataset_2", "d2view", type_="VIEW"),
-                    table_item("dataset_2", "d2ext", type_="EXTERNAL"),
-                    table_item("dataset_2", "d2mv", type_="MATERIALIZED_VIEW"),
-                ],
+                table_item("dataset", "t1"),
+                table_item("dataset", "view", type_="VIEW"),
+                table_item("dataset", "ext", type_="EXTERNAL"),
+                table_item("dataset", "mv", type_="MATERIALIZED_VIEW"),
             ],
-            ["dataset_1.d1t1", "dataset_1.d1t2", "dataset_2.d2t1", "dataset_2.d2ext"],
+            ["t1", "ext"],
         ),
         (
-            [dataset_item("dataset_1"), dataset_item("dataset_deleted")],
-            [
-                [table_item("dataset_1", "d1t1")],
-                google.api_core.exceptions.NotFound("dataset_deleted"),
-            ],
-            ["dataset_1.d1t1"],
+            "dataset",
+            google.api_core.exceptions.NotFound("dataset_deleted"),
+            [],
         ),
     ],
 )
 def test_get_table_names(
-    engine_under_test, mock_bigquery_client, datasets_list, tables_lists, expected
+    engine_under_test, mock_bigquery_client, dataset, tables_list, expected
 ):
-    mock_bigquery_client.list_datasets.return_value = datasets_list
-    mock_bigquery_client.list_tables.side_effect = tables_lists
-    table_names = sqlalchemy.inspect(engine_under_test).get_table_names()
-    mock_bigquery_client.list_datasets.assert_called_once()
-    assert mock_bigquery_client.list_tables.call_count == len(datasets_list)
+    mock_bigquery_client.list_tables.side_effect = [tables_list]
+    table_names = sqlalchemy.inspect(engine_under_test).get_table_names(schema=dataset)
+    if dataset:
+        mock_bigquery_client.list_tables.assert_called_once()
+    else:
+        mock_bigquery_client.list_tables.assert_not_called()
     assert list(sorted(table_names)) == list(sorted(expected))
 
 
 @pytest.mark.parametrize(
-    ["datasets_list", "tables_lists", "expected"],
+    ["dataset", "tables_list", "expected"],
     [
-        ([], [], []),
-        ([dataset_item("dataset_1")], [[]], []),
+        (None, [], []),
+        ("dataset", [], []),
         (
-            [dataset_item("dataset_1"), dataset_item("dataset_2")],
+            "dataset",
             [
-                [
-                    table_item("dataset_1", "d1t1"),
-                    table_item("dataset_1", "d1view", type_="VIEW"),
-                ],
-                [
-                    table_item("dataset_2", "d2t1"),
-                    table_item("dataset_2", "d2view", type_="VIEW"),
-                    table_item("dataset_2", "d2ext", type_="EXTERNAL"),
-                    table_item("dataset_2", "d2mv", type_="MATERIALIZED_VIEW"),
-                ],
+                table_item("dataset", "t1"),
+                table_item("dataset", "view", type_="VIEW"),
+                table_item("dataset", "ext", type_="EXTERNAL"),
+                table_item("dataset", "mv", type_="MATERIALIZED_VIEW"),
             ],
-            ["dataset_1.d1view", "dataset_2.d2view", "dataset_2.d2mv"],
+            ["view", "mv"],
         ),
         (
-            [dataset_item("dataset_1"), dataset_item("dataset_deleted")],
-            [
-                [table_item("dataset_1", "d1view", type_="VIEW")],
-                google.api_core.exceptions.NotFound("dataset_deleted"),
-            ],
-            ["dataset_1.d1view"],
+            "dataset_deleted",
+            google.api_core.exceptions.NotFound("dataset_deleted"),
+            [],
         ),
     ],
 )
 def test_get_view_names(
-    inspector_under_test, mock_bigquery_client, datasets_list, tables_lists, expected
+    inspector_under_test, mock_bigquery_client, dataset, tables_list, expected
 ):
-    mock_bigquery_client.list_datasets.return_value = datasets_list
-    mock_bigquery_client.list_tables.side_effect = tables_lists
-    view_names = inspector_under_test.get_view_names()
-    mock_bigquery_client.list_datasets.assert_called_once()
-    assert mock_bigquery_client.list_tables.call_count == len(datasets_list)
+    mock_bigquery_client.list_tables.side_effect = [tables_list]
+    view_names = inspector_under_test.get_view_names(schema=dataset)
+    if dataset:
+        mock_bigquery_client.list_tables.assert_called_once()
+    else:
+        mock_bigquery_client.list_tables.assert_not_called()
     assert list(sorted(view_names)) == list(sorted(expected))
 
 
