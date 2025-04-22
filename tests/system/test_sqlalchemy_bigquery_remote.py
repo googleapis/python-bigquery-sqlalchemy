@@ -104,4 +104,4 @@ def test_engine_remote_table_fail(urlpath, table_name):
             prepared = sqlalchemy.select(
                 sqlalchemy.distinct(table.c.state)
             ).set_label_style(sqlalchemy.LABEL_STYLE_TABLENAME_PLUS_COL)
-            _rows = conn.execute(prepared).fetchall()
+            conn.execute(prepared).fetchall()
