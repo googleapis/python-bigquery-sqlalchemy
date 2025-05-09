@@ -1,9 +1,9 @@
 attrs==25.3.0
 click==8.1.8
-google-auth==2.38.0
-google-cloud-testutils==1.6.0
+google-auth==2.40.1
+google-cloud-testutils==1.6.2
 iniconfig==2.1.0
-packaging==24.2
+packaging==25.0
 pluggy==1.5.0
 py==1.11.0
 pyasn1==0.6.1
@@ -11,7 +11,7 @@ pyasn1-modules==0.4.2
 pyparsing===3.1.4; python_version == '3.8'
 pyparsing==3.2.3; python_version >= '3.9'
 pytest===6.2.5
-rsa==4.9
+rsa==4.9.1
 six==1.17.0
 toml==0.10.2
-typing-extensions==4.13.0
+typing-extensions==4.13.2
