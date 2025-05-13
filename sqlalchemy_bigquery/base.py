@@ -70,6 +70,33 @@ FIELD_ILLEGAL_CHARACTERS = re.compile(r'[!"$()*,./;?@[\\\]^{}~\n]+', re.ASCII)
 
 TABLE_VALUED_ALIAS_ALIASES = "bigquery_table_valued_alias_aliases"
 
+SQLTYPES = {
+    # column_type | truncation func OR default value | partitioning_period(s)
+    "_PARTITIONDATE": ("_PARTITIONDATE", None),  # default value, no period
+    "_PARTITIONTIME": ("DATE", None),  # trunc_fn, no period
+    "DATE": {
+        "no_period": (None, None),  # date_column, no trunc_fn, no period
+        "period": (
+            "DATE_TRUNC",
+            {"MONTH", "YEAR"},
+        ),  # date_column, trunc_fn, period(s)
+    },
+    "DATETIME": {
+        "no_period": ("DATE", None),  # datetime_column, trunc_fn, no period
+        "period": (
+            "DATETIME_TRUNC",
+            {"DAY", "HOUR", "MONTH", "YEAR"},
+        ),  # datetime_column, trunc_fn, period(s)
+    },
+    "TIMESTAMP": {
+        "no_period": ("DATE", None),  # timestamp_column, trunc_fn, no period
+        "period": (
+            "TIMESTAMP_TRUNC",
+            {"DAY", "HOUR", "MONTH", "YEAR"},
+        ),  # timestamp_column, trunc_fn, period(s)
+    },
+}
+
 
 def assert_(cond, message="Assertion failed"):  # pragma: NO COVER
     if not cond:
@@ -844,48 +871,21 @@ class BigQueryDDLCompiler(DDLCompiler):
         * DATE column
         """
 
-        sqltypes = {
-            # column_type | truncation func OR default value | partitioning_period(s)
-            "_PARTITIONDATE": ("_PARTITIONDATE", None),  # default value, no period
-            "_PARTITIONTIME": ("DATE", None),  # trunc_fn, no period
-            "DATE": {
-                "no_period": (None, None),  # date_column, no trunc_fn, no period
-                "period": (
-                    "DATE_TRUNC",
-                    {"MONTH", "YEAR"},
-                ),  # date_column, trunc_fn, period(s)
-            },
-            "DATETIME": {
-                "no_period": ("DATE", None),  # datetime_column, trunc_fn, no period
-                "period": (
-                    "DATETIME_TRUNC",
-                    {"DAY", "HOUR", "MONTH", "YEAR"},
-                ),  # datetime_column, trunc_fn, period(s)
-            },
-            "TIMESTAMP": {
-                "no_period": ("DATE", None),  # timestamp_column, trunc_fn, no period
-                "period": (
-                    "TIMESTAMP_TRUNC",
-                    {"DAY", "HOUR", "MONTH", "YEAR"},
-                ),  # timestamp_column, trunc_fn, period(s)
-            },
-        }
-
         def parse_sqltypes(coltype, partitioning_period):
             """Returns the default value OR the truncation function to be used
             and the allowed partitioning periods.
             """
 
             if coltype in {"_PARTITIONDATE", "_PARTITIONTIME"}:
-                return sqltypes[coltype]
+                return SQLTYPES[coltype]
 
             # by this point, value must be a nested dict
             if partitioning_period is None:
                 # use "no_period" key
-                return sqltypes[coltype]["no_period"]
+                return SQLTYPES[coltype]["no_period"]
             else:
                 # use "period" key
-                return sqltypes[coltype]["period"]
+                return SQLTYPES[coltype]["period"]
 
         # Extract field (i.e <column_name> or _PARTITIONDATE)
         # AND extract the name of the column_type (i.e. "TIMESTAMP", "DATE",
