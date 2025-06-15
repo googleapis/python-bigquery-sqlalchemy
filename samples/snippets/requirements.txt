@@ -3,7 +3,7 @@ alembic==1.16.1;  python_version >= '3.9'
 certifi==2025.4.26
 charset-normalizer==3.4.2
 geoalchemy2==0.17.1
-google-api-core[grpc]==2.25.0
+google-api-core[grpc]==2.25.1
 google-auth==2.40.3
 google-cloud-bigquery===3.30.0; python_version == '3.8'
 google-cloud-bigquery==3.34.0; python_version >= '3.9'
