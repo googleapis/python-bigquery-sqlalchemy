@@ -78,7 +78,7 @@ UNIT_TEST_EXTRAS_BY_PYTHON: Dict[str, List[str]] = {
     ],
 }
 
-SYSTEM_TEST_PYTHON_VERSIONS: List[str] = ["3.8", "3.11", "3.12", "3.13"]
+SYSTEM_TEST_PYTHON_VERSIONS: List[str] = ["3.8", "3.12", "3.13"]
 SYSTEM_TEST_STANDARD_DEPENDENCIES: List[str] = [
     "mock",
     "pytest",
@@ -94,11 +94,6 @@ SYSTEM_TEST_EXTRAS_BY_PYTHON: Dict[str, List[str]] = {
     "3.8": [
         "tests",
         "alembic",
-        "bqstorage",
-    ],
-    "3.11": [
-        "tests",
-        "geography",
         "bqstorage",
     ],
     "3.12": [
@@ -405,7 +400,7 @@ def compliance(session):
     )
     if session.python == "3.8":
         extras = "[tests,alembic]"
-    elif session.python in ["3.11", "3.12", "3.13"]:
+    elif session.python in ["3.12", "3.13"]:
         extras = "[tests,geography]"
     else:
         extras = "[tests]"
@@ -532,7 +527,7 @@ def docfx(session):
     )
 
 
-@nox.session(python="3.12")
+@nox.session(python="3.13")
 @nox.parametrize(
     "protobuf_implementation",
     ["python", "upb", "cpp"],
