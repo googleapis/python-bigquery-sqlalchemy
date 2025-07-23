@@ -36,7 +36,7 @@ extras_by_python = {
 }
 templated_files = common.py_library(
     unit_test_python_versions=["3.9", "3.10", "3.11", "3.12", "3.13"],
-    system_test_python_versions=["3.12", "3.13"],
+    system_test_python_versions=["3.9", "3.12", "3.13"],
     cov_level=100,
     unit_test_extras=extras,
     unit_test_extras_by_python=extras_by_python,
