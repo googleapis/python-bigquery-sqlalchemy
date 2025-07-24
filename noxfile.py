@@ -427,7 +427,7 @@ def compliance(session):
         constraints_path,
     )
     if session.python in ["3.12", "3.13"]:
-        extras = "[tests,geography]"
+        extras = "[tests,geography,alembic]"
     else:
         extras = "[tests]"
     session.install("-e", f".{extras}", "-c", constraints_path)
