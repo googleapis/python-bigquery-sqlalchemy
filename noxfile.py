@@ -159,7 +159,6 @@ def lint(session):
     serious code quality issues.
     """
     session.install(FLAKE8_VERSION, BLACK_VERSION)
-    session.run("python", "-m", "pip", "freeze")
     session.run(
         "black",
         "--check",
@@ -173,7 +172,6 @@ def lint(session):
 def blacken(session):
     """Run black. Format code to uniform standard."""
     session.install(BLACK_VERSION)
-    session.run("python", "-m", "pip", "freeze")
     session.run(
         "black",
         *LINT_PATHS,
@@ -190,7 +188,6 @@ def format(session):
     session.install(BLACK_VERSION, ISORT_VERSION)
     # Use the --fss option to sort imports using strict alphabetical order.
     # See https://pycqa.github.io/isort/docs/configuration/options.html#force-sort-within-sections
-    session.run("python", "-m", "pip", "freeze")
     session.run(
         "isort",
         "--fss",
@@ -207,7 +204,6 @@ def format(session):
 def lint_setup_py(session):
     """Verify that setup.py is valid (including RST check)."""
     session.install("docutils", "pygments")
-    session.run("python", "-m", "pip", "freeze")
     session.run("python", "setup.py", "check", "--restructuredtext", "--strict")
 
 
@@ -271,7 +267,6 @@ def unit(session, protobuf_implementation, install_extras=True):
         session.install("protobuf<4")
 
     # Run py.test against the unit tests.
-    session.run("python", "-m", "pip", "freeze")
     session.run(
         "py.test",
         "--quiet",
@@ -344,7 +339,6 @@ def system(session):
         session.skip("System tests were not found")
 
     install_systemtest_dependencies(session, "-c", constraints_path)
-    session.run("python", "-m", "pip", "freeze")
 
     # Run py.test against the system tests.
     if system_test_exists:
@@ -391,7 +385,6 @@ def system_noextras(session):
     global SYSTEM_TEST_EXTRAS_BY_PYTHON
     SYSTEM_TEST_EXTRAS_BY_PYTHON = False
     install_systemtest_dependencies(session, "-c", constraints_path)
-    session.run("python", "-m", "pip", "freeze")
 
     # Run py.test against the system tests.
     if system_test_exists:
@@ -444,7 +437,6 @@ def compliance(session):
         extras = "[tests]"
     session.install("-e", f".{extras}", "-c", constraints_path)
 
-    session.run("python", "-m", "pip", "freeze")
 
     session.run(
         "py.test",
@@ -476,11 +468,9 @@ def cover(session):
     test runs (not system test runs), and then erases coverage data.
     """
     session.install("coverage", "pytest-cov")
-    session.run("python", "-m", "pip", "freeze")
     session.run("coverage", "report", "--show-missing", "--fail-under=100")
 
     session.run("coverage", "erase")
-
 
 @nox.session(python="3.10")
 @_calculate_duration
@@ -506,7 +496,6 @@ def docs(session):
     )
 
     shutil.rmtree(os.path.join("docs", "_build"), ignore_errors=True)
-    session.run("python", "-m", "pip", "freeze")
     session.run(
         "sphinx-build",
         "-W",  # warnings as errors
@@ -545,7 +534,6 @@ def docfx(session):
     )
 
     shutil.rmtree(os.path.join("docs", "_build"), ignore_errors=True)
-    session.run("python", "-m", "pip", "freeze")
     session.run(
         "sphinx-build",
         "-T",  # show full traceback on exception
@@ -638,7 +626,6 @@ def prerelease_deps(session, protobuf_implementation):
         "requests",
     ]
     session.install(*other_deps)
-    session.run("python", "-m", "pip", "freeze")
 
     # Print out prerelease package versions
     session.run(
