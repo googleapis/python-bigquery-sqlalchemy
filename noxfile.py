@@ -473,6 +473,7 @@ def cover(session):
 
     session.run("coverage", "erase")
 
+
 @nox.session(python="3.10")
 @_calculate_duration
 def docs(session):
