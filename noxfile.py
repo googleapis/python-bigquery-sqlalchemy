@@ -437,6 +437,7 @@ def compliance(session):
         extras = "[tests]"
     session.install("-e", f".{extras}", "-c", constraints_path)
 
+    session.run("python", "-m", "pip", "freeze")
 
     session.run(
         "py.test",
