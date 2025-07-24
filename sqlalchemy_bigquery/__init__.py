@@ -51,7 +51,7 @@ sys_major, sys_minor, sys_micro = _versions_helpers.extract_runtime_version()
 
 # Now that support for Python 3.7 and 3.8 has been removed, we don't expect the
 # following check to succeed. The warning is only included for robustness.
-if sys_major == 3 and sys_minor in (7, 8):
+if sys_major == 3 and sys_minor in (7, 8):  # pragma: NO COVER
     warnings.warn(
         "The python-bigquery-sqlalchemy library no longer supports Python 3.7 "
         "and Python 3.8. "
