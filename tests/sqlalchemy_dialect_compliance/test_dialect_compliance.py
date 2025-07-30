@@ -57,6 +57,7 @@ from sqlalchemy.testing.suite.test_types import (
 from sqlalchemy.testing.suite.test_reflection import (
     BizarroCharacterTest,
     ComponentReflectionTest,
+    ComponentReflectionTestExtra,
     HasTableTest,
 )
 
@@ -615,6 +616,7 @@ class InsertBehaviorTest(_InsertBehaviorTest):
         pass
 
 
+del ComponentReflectionTestExtra # Multiple tests re: CHECK CONSTRAINTS, etc which
 del ComponentReflectionTest  # Multiple tests re: CHECK CONSTRAINTS, etc which
 # BQ does not support
 # class ComponentReflectionTest(_ComponentReflectionTest):
