@@ -616,7 +616,7 @@ class InsertBehaviorTest(_InsertBehaviorTest):
         pass
 
 
-del ComponentReflectionTestExtra # Multiple tests re: CHECK CONSTRAINTS, etc which
+del ComponentReflectionTestExtra  # Multiple tests re: CHECK CONSTRAINTS, etc which
 del ComponentReflectionTest  # Multiple tests re: CHECK CONSTRAINTS, etc which
 # BQ does not support
 # class ComponentReflectionTest(_ComponentReflectionTest):
