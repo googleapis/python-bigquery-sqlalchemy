@@ -12,7 +12,7 @@
   "packageRules": [
     {
       "matchFileNames": ["requirements.txt"],
-      "matchStrings": ["geoalchemy2 (.*); python_version == '3.9'"],
+      "matchStrings": ["geoalchemy2(.*); python_version == '3.9'"],
       "allowedVersions": ">= 0.17.1, < 0.18.0"
     }
   ]
