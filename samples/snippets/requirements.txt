@@ -1,6 +1,6 @@
 alembic==1.16.4;  python_version >= '3.9'
-certifi==2025.7.14
-charset-normalizer==3.4.2
+certifi==2025.8.3
+charset-normalizer==3.4.3
 geoalchemy2===0.17.1; python_version == '3.9'
 geoalchemy2==0.18.0; python_version >= '3.10'
 google-api-core[grpc]==2.25.1
@@ -10,7 +10,7 @@ google-cloud-core==2.4.3
 google-crc32c==1.7.1; python_version >= '3.9'
 google-resumable-media==2.7.2
 googleapis-common-protos==1.70.0
-greenlet==3.2.3; python_version >= '3.9'
+greenlet==3.2.4; python_version >= '3.9'
 grpcio==1.74.0; python_version >= '3.9'
 grpcio-status==1.74.0; python_version >= '3.9'
 idna==3.10
