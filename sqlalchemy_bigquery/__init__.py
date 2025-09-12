@@ -43,6 +43,7 @@ from ._types import (
     STRUCT,
     TIME,
     TIMESTAMP,
+    JSON,
 )
 
 from . import _versions_helpers
@@ -83,6 +84,7 @@ __all__ = [
     "STRUCT",
     "TIME",
     "TIMESTAMP",
+    "JSON",
 ]
 
 try:
