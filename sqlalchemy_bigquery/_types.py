@@ -47,6 +47,7 @@ _type_map = {
     "STRUCT": STRUCT,
     "TIMESTAMP": sqlalchemy.types.TIMESTAMP,
     "TIME": sqlalchemy.types.TIME,
+    "JSON": sqlalchemy.types.JSON,
 }
 
 # By convention, dialect-provided types are spelled with all upper case.
@@ -66,6 +67,7 @@ RECORD = _type_map["RECORD"]
 STRING = _type_map["STRING"]
 TIMESTAMP = _type_map["TIMESTAMP"]
 TIME = _type_map["TIME"]
+JSON = _type_map["JSON"]
 
 try:
     _type_map["GEOGRAPHY"] = GEOGRAPHY
