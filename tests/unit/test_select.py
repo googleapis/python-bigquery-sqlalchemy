@@ -419,7 +419,7 @@ def test_unnest(faux_conn, alias):
         query = fcall.column_valued("foo_objects")
     compiled = str(sqlalchemy.select(query).compile(faux_conn.engine))
     assert " ".join(compiled.strip().split()) == (
-        "SELECT `foo_objects` FROM `t` `t_1`, unnest(`t_1`.`objects`) AS `foo_objects`"
+        "SELECT `foo_objects` FROM `t` `t_1`, UNNEST(`t_1`.`objects`) AS `foo_objects`"
     )
 
 
@@ -450,7 +450,7 @@ def test_unnest_w_no_table_references(faux_conn, alias):
         query = fcall.column_valued()
     compiled = str(sqlalchemy.select(query).compile(faux_conn.engine))
     assert " ".join(compiled.strip().split()) == (
-        "SELECT `anon_1` FROM unnest(%(unnest_1)s) AS `anon_1`"
+        "SELECT `anon_1` FROM UNNEST(%(unnest_1)s) AS `anon_1`"
     )
 
 
