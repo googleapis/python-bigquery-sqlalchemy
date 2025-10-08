@@ -450,7 +450,7 @@ def test_unnest_w_no_table_references(faux_conn, alias):
         query = fcall.column_valued()
     compiled = str(sqlalchemy.select(query).compile(faux_conn.engine))
     assert " ".join(compiled.strip().split()) == (
-        "SELECT `anon_1` FROM UNNEST(%(unnest_1)s) AS `anon_1`"
+        "SELECT `anon_1` FROM UNNEST(%(param_1)s) AS `anon_1`"
     )
 
 
