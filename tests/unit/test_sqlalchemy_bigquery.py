@@ -226,7 +226,10 @@ def test_unnest_function(args, kw):
 
     f = sqlalchemy.func.unnest(*args, **kw)
     assert isinstance(f.type, sqlalchemy.String)
-    assert isinstance(sqlalchemy.select(f.label("unnested_value")).subquery().c.unnested_value.type, sqlalchemy.String)
+    assert isinstance(
+        sqlalchemy.select(f.label("unnested_value")).subquery().c.unnested_value.type,
+        sqlalchemy.String,
+    )
 
 
 @mock.patch("sqlalchemy_bigquery._helpers.create_bigquery_client")
