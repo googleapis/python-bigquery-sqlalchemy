@@ -8,3 +8,4 @@ libraries:
     preserve_regex: []
     remove_regex: []
     tag_format: v{version}
+
