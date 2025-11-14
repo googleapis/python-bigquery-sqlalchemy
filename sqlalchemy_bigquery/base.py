@@ -59,7 +59,7 @@ from sqlalchemy.sql import elements, selectable
 import re
 
 from .parse_url import parse_url
-from . import _helpers, _struct, _types
+from . import _helpers, _json, _struct, _types
 import sqlalchemy_bigquery_vendored.sqlalchemy.postgresql.base as vendored_postgresql
 from google.cloud.bigquery import QueryJobConfig
 
@@ -640,6 +640,17 @@ class BigQueryTypeCompiler(GenericTypeCompiler):
 
     visit_DECIMAL = visit_NUMERIC
 
+    def visit_JSON(self, type_, **kw):
+        if isinstance(
+            kw.get("type_expression"), Column
+        ):  # column def
+            return "JSON"
+        # FIXME: JSON is not a member of `SqlParameterScalarTypes` in the DBAPI
+        # For now, we hack around this by:
+        # - Rewriting the bindparam type to STRING
+        # - Applying a bind expression that converts the parameter back to JSON
+        return "STRING"
+
 
 class BigQueryDDLCompiler(DDLCompiler):
     option_datatype_mapping = {
@@ -1075,6 +1086,7 @@ class BigQueryDialect(DefaultDialect):
         sqlalchemy.sql.sqltypes.TIMESTAMP: BQTimestamp,
         sqlalchemy.sql.sqltypes.ARRAY: BQArray,
         sqlalchemy.sql.sqltypes.Enum: sqlalchemy.sql.sqltypes.Enum,
+        sqlalchemy.sql.sqltypes.JSON: _json.JSON,
     }
 
     def __init__(
@@ -1086,6 +1098,8 @@ class BigQueryDialect(DefaultDialect):
         credentials_info=None,
         credentials_base64=None,
         list_tables_page_size=1000,
+        json_serializer=None,
+        json_deserializer=None,
         *args,
         **kwargs,
     ):
@@ -1100,6 +1114,8 @@ class BigQueryDialect(DefaultDialect):
         self.identifier_preparer = self.preparer(self)
         self.dataset_id = None
         self.list_tables_page_size = list_tables_page_size
+        self._json_serializer = json_serializer
+        self._json_deserializer = json_deserializer
 
     @classmethod
     def dbapi(cls):
