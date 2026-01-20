@@ -93,7 +93,7 @@ def test_no_alias_for_known_tables(faux_conn, metadata):
 
     expected_sql = (
         "SELECT `table1`.`foo` \n"
-        "FROM `table1`, unnest(`table1`.`bar`) AS `anon_1` \n"
+        "FROM `table1`, UNNEST(`table1`.`bar`) AS `anon_1` \n"
         "WHERE `anon_1` = %(param_1:INT64)s"
     )
     found_sql = q.compile(faux_conn).string
@@ -116,7 +116,7 @@ def test_no_alias_for_known_tables_cte(faux_conn, metadata):
 
     expected_initial_sql = (
         "SELECT `table1`.`foo`, `bar` \n"
-        "FROM `table1`, unnest(`table1`.`bars`) AS `bar`"
+        "FROM `table1`, UNNEST(`table1`.`bars`) AS `bar`"
     )
     found_initial_sql = q.compile(faux_conn).string
     assert found_initial_sql == expected_initial_sql
@@ -127,7 +127,7 @@ def test_no_alias_for_known_tables_cte(faux_conn, metadata):
     expected_cte_sql = (
         "WITH `cte` AS \n"
         "(SELECT `table1`.`foo` AS `foo`, `bar` \n"
-        "FROM `table1`, unnest(`table1`.`bars`) AS `bar`)\n"
+        "FROM `table1`, UNNEST(`table1`.`bars`) AS `bar`)\n"
         " SELECT `cte`.`foo`, `cte`.`bar` \n"
         "FROM `cte`"
     )
@@ -196,7 +196,7 @@ def test_no_implicit_join_asterix_for_inner_unnest_before_2_0(faux_conn, metadat
     q = prepare_implicit_join_base_query(faux_conn, metadata, True, False)
     expected_initial_sql = (
         "SELECT `table1`.`foo`, `table2`.`bar` \n"
-        "FROM `table2`, unnest(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`"
+        "FROM `table2`, UNNEST(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`"
     )
     found_initial_sql = q.compile(faux_conn).string
     assert found_initial_sql == expected_initial_sql
@@ -207,7 +207,7 @@ def test_no_implicit_join_asterix_for_inner_unnest_before_2_0(faux_conn, metadat
     expected_outer_sql = (
         "SELECT * \n"
         "FROM (SELECT `table1`.`foo` AS `foo`, `table2`.`bar` AS `bar` \n"
-        "FROM `table2`, unnest(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`) AS `anon_1`"
+        "FROM `table2`, UNNEST(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`) AS `anon_1`"
     )
     found_outer_sql = q.compile(faux_conn).string
     assert found_outer_sql == expected_outer_sql
@@ -219,7 +219,7 @@ def test_no_implicit_join_asterix_for_inner_unnest(faux_conn, metadata):
     q = prepare_implicit_join_base_query(faux_conn, metadata, True, False)
     expected_initial_sql = (
         "SELECT `table1`.`foo`, `table2`.`bar` \n"
-        "FROM unnest(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`, `table2`"
+        "FROM UNNEST(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`, `table2`"
     )
     found_initial_sql = q.compile(faux_conn).string
     assert found_initial_sql == expected_initial_sql
@@ -230,7 +230,7 @@ def test_no_implicit_join_asterix_for_inner_unnest(faux_conn, metadata):
     expected_outer_sql = (
         "SELECT * \n"
         "FROM (SELECT `table1`.`foo` AS `foo`, `table2`.`bar` AS `bar` \n"
-        "FROM unnest(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`, `table2`) AS `anon_1`"
+        "FROM UNNEST(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`, `table2`) AS `anon_1`"
     )
     found_outer_sql = q.compile(faux_conn).string
     assert found_outer_sql == expected_outer_sql
@@ -242,7 +242,7 @@ def test_no_implicit_join_for_inner_unnest_before_2_0(faux_conn, metadata):
     q = prepare_implicit_join_base_query(faux_conn, metadata, True, False)
     expected_initial_sql = (
         "SELECT `table1`.`foo`, `table2`.`bar` \n"
-        "FROM `table2`, unnest(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`"
+        "FROM `table2`, UNNEST(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`"
     )
     found_initial_sql = q.compile(faux_conn).string
     assert found_initial_sql == expected_initial_sql
@@ -253,7 +253,7 @@ def test_no_implicit_join_for_inner_unnest_before_2_0(faux_conn, metadata):
     expected_outer_sql = (
         "SELECT `anon_1`.`foo` \n"
         "FROM (SELECT `table1`.`foo` AS `foo`, `table2`.`bar` AS `bar` \n"
-        "FROM `table2`, unnest(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`) AS `anon_1`"
+        "FROM `table2`, UNNEST(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`) AS `anon_1`"
     )
     found_outer_sql = q.compile(faux_conn).string
     assert found_outer_sql == expected_outer_sql
@@ -265,7 +265,7 @@ def test_no_implicit_join_for_inner_unnest(faux_conn, metadata):
     q = prepare_implicit_join_base_query(faux_conn, metadata, True, False)
     expected_initial_sql = (
         "SELECT `table1`.`foo`, `table2`.`bar` \n"
-        "FROM unnest(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`, `table2`"
+        "FROM UNNEST(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`, `table2`"
     )
     found_initial_sql = q.compile(faux_conn).string
     assert found_initial_sql == expected_initial_sql
@@ -276,7 +276,7 @@ def test_no_implicit_join_for_inner_unnest(faux_conn, metadata):
     expected_outer_sql = (
         "SELECT `anon_1`.`foo` \n"
         "FROM (SELECT `table1`.`foo` AS `foo`, `table2`.`bar` AS `bar` \n"
-        "FROM unnest(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`, `table2`) AS `anon_1`"
+        "FROM UNNEST(`table2`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`, `table2`) AS `anon_1`"
     )
     found_outer_sql = q.compile(faux_conn).string
     assert found_outer_sql == expected_outer_sql
@@ -289,7 +289,7 @@ def test_no_implicit_join_asterix_for_inner_unnest_no_table2_column(
     q = prepare_implicit_join_base_query(faux_conn, metadata, False, False)
     expected_initial_sql = (
         "SELECT `table1`.`foo` \n"
-        "FROM `table2` `table2_1`, unnest(`table2_1`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`"
+        "FROM `table2` `table2_1`, UNNEST(`table2_1`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`"
     )
     found_initial_sql = q.compile(faux_conn).string
     assert found_initial_sql == expected_initial_sql
@@ -300,7 +300,7 @@ def test_no_implicit_join_asterix_for_inner_unnest_no_table2_column(
     expected_outer_sql = (
         "SELECT * \n"
         "FROM (SELECT `table1`.`foo` AS `foo` \n"
-        "FROM `table2` `table2_1`, unnest(`table2_1`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`) AS `anon_1`"
+        "FROM `table2` `table2_1`, UNNEST(`table2_1`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`) AS `anon_1`"
     )
     found_outer_sql = q.compile(faux_conn).string
     assert found_outer_sql == expected_outer_sql
@@ -311,7 +311,7 @@ def test_no_implicit_join_for_inner_unnest_no_table2_column(faux_conn, metadata)
     q = prepare_implicit_join_base_query(faux_conn, metadata, False, False)
     expected_initial_sql = (
         "SELECT `table1`.`foo` \n"
-        "FROM `table2` `table2_1`, unnest(`table2_1`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`"
+        "FROM `table2` `table2_1`, UNNEST(`table2_1`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`"
     )
     found_initial_sql = q.compile(faux_conn).string
     assert found_initial_sql == expected_initial_sql
@@ -322,7 +322,7 @@ def test_no_implicit_join_for_inner_unnest_no_table2_column(faux_conn, metadata)
     expected_outer_sql = (
         "SELECT `anon_1`.`foo` \n"
         "FROM (SELECT `table1`.`foo` AS `foo` \n"
-        "FROM `table2` `table2_1`, unnest(`table2_1`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`) AS `anon_1`"
+        "FROM `table2` `table2_1`, UNNEST(`table2_1`.`foos`) AS `unnested_foos` JOIN `table1` ON `table1`.`foo` = `unnested_foos`) AS `anon_1`"
     )
     found_outer_sql = q.compile(faux_conn).string
     assert found_outer_sql == expected_outer_sql

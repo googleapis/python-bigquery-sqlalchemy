@@ -1377,7 +1377,12 @@ class BigQueryDialect(DefaultDialect):
         return view.view_query
 
 
-class unnest(sqlalchemy.sql.functions.GenericFunction):
+# unnest is a reserved keyword in some dialects.
+# It is defined here to avoid conflicts.
+# https://github.com/googleapis/python-bigquery-sqlalchemy/issues/882
+class _unnest(sqlalchemy.sql.expression.FunctionElement):
+    inherit_cache = True
+
     def __init__(self, *args, **kwargs):
         expr = kwargs.pop("expr", None)
         if expr is not None:
@@ -1395,7 +1400,16 @@ class unnest(sqlalchemy.sql.functions.GenericFunction):
             ):
                 raise TypeError("The argument to unnest must have an ARRAY type.")
             self.type = arg.type.item_type
+
         super().__init__(*args, **kwargs)
+
+
+@compiles(_unnest, "bigquery")
+def bigquery_unnest(element, compiler, **kw):
+    return "UNNEST({})".format(compiler.process(element.clauses, **kw))
+
+
+sqlalchemy.sql.functions._FunctionGenerator.unnest = _unnest
 
 
 dialect = BigQueryDialect
